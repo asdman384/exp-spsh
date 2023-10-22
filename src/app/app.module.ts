@@ -1,10 +1,12 @@
 import { APP_INITIALIZER, NgModule, isDevMode } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ServiceWorkerModule } from '@angular/service-worker';
+
+import { UIKitModule } from 'src/modules/uikit.module';
+import { LocalStorageService, SecurityService, StorageService } from 'src/services';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { SecurityService, StorageService, LocalStorageService } from 'src/services';
 
 @NgModule({
   declarations: [AppComponent],
@@ -16,7 +18,9 @@ import { SecurityService, StorageService, LocalStorageService } from 'src/servic
       // Register the ServiceWorker as soon as the application is stable
       // or after 30 seconds (whichever comes first).
       registrationStrategy: 'registerWhenStable:30000'
-    })
+    }),
+    BrowserAnimationsModule,
+    UIKitModule
   ],
   providers: [
     SecurityService,

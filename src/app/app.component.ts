@@ -9,6 +9,7 @@ import { SecurityService } from 'src/services';
 })
 export class AppComponent implements OnInit {
   readonly user$ = this.securityService.user$;
+  readonly loading$ = this.securityService.loading$;
 
   constructor(private readonly securityService: SecurityService) {}
 

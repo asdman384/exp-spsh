@@ -1,5 +1,14 @@
-<pre>
-  {{ user$ | async | json }}
-</pre>
+<mat-toolbar color="primary">
+  <mat-toolbar-row *ngIf="user$ | async as user">
+    <span class="header-title">Custom Toolbar</span>
+
+    <button mat-icon-button color="primary">
+      <img class="avatar" width="38" height="38" [src]="user.picture" />
+    </button>
+  </mat-toolbar-row>
+</mat-toolbar>
+<div class="progress-container">
+  <mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+</div>
 
 <button (click)="test()">test</button>
