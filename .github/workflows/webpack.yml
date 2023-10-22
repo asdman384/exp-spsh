@@ -28,7 +28,12 @@ jobs:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
 
         run: |
-          echo '{ "CLIENT_ID": "$CLIENT_ID", "API_KEY": "$API_KEY" }' >keys.json
+          keys='{ "CLIENT_ID": "'
+          keys+="$CLIENT_ID"
+          keys+='", "API_KEY": "'
+          keys+="$API_KEY"
+          keys+='" }'
+          echo keys >keys.json
           npm install
           npm run build
 
