@@ -1,16 +1,32 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <title>ExpSpsh</title>
-  <base href="/">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico">
-  <link rel="manifest" href="manifest.webmanifest">
-  <meta name="theme-color" content="#1976d2">
-</head>
-<body>
-  <app-root></app-root>
-  <noscript>Please enable JavaScript to continue using this application.</noscript>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <title>ExpSpsh</title>
+    <base href="/" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="translucent" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#3f51b5" />
+
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+
+    <script type="text/javascript">
+      var onGsiLoaded;
+      var onApiLoaded;
+      const gsiLoaded = new Promise((resolve) => (onGsiLoaded = resolve));
+      const apiLoaded = new Promise((resolve) => (onApiLoaded = resolve));
+    </script>
+    <script async defer src="https://accounts.google.com/gsi/client" onload="onGsiLoaded()"></script>
+    <script async defer src="https://apis.google.com/js/api.js" onload="onApiLoaded()"></script>
+  </head>
+  <body>
+    <app-root></app-root>
+    <noscript> Please enable JavaScript to continue using this application. </noscript>
+  </body>
 </html>
