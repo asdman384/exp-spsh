@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Subject } from 'rxjs';
 import { environment } from 'src/environments/environment';
+import { CLIENT_ID, API_KEY } from 'src/keys.json';
 
 declare var apiLoaded: Promise<void>; // see index.html
 declare var gsiLoaded: Promise<void>; // see index.html
@@ -57,7 +58,7 @@ export class SecurityService {
 
   private initAuthClient(): void {
     this.client = google.accounts.oauth2.initTokenClient({
-      client_id: environment.CLIENT_ID,
+      client_id: CLIENT_ID,
       scope: SCOPES,
       callback: (token: google.accounts.oauth2.TokenResponse) => {
         if (token.error) {
@@ -81,7 +82,7 @@ export class SecurityService {
     gapi.load('client', () => {
       gapi.client.load(environment.OAUTH2_DISCOVERY_DOC);
       gapi.client
-        .init({ apiKey: environment.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
+        .init({ apiKey: API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
         .then(configured)
         .catch(error);
     });
