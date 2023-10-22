@@ -33,7 +33,7 @@ jobs:
           keys+='", "API_KEY": "'
           keys+="$API_KEY"
           keys+='" }'
-          echo keys >keys.json
+          echo $keys >keys.json
           npm install
           npm run build
 
