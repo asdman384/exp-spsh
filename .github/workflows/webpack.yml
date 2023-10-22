@@ -28,7 +28,7 @@ jobs:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
 
         run: |
-          echo '{ "CLIENT_ID": "$env:CLIENT_ID", "API_KEY": "$env:API_KEY" }' >keys.json
+          echo '{ "CLIENT_ID": "${{ env:CLIENT_ID }}", "API_KEY": "${{ env:API_KEY }}" }' >keys.json
           npm install
           npm run build
 
