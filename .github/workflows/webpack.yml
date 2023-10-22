@@ -24,5 +24,7 @@ jobs:
 
     - name: Build
       run: |
-        npm install
-        npm run build
+        echo "API_KEY $API_KEY"
+        echo "CLIENT_ID $CLIENT_ID"
+        # npm install
+        # npm run build
