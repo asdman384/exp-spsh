@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import keys from '../../keys.json';
+import { StorageService } from './storage';
 
 declare var apiLoaded: Promise<void>; // see index.html
 declare var gsiLoaded: Promise<void>; // see index.html
@@ -15,12 +16,16 @@ class Token {
   }
 }
 
+class Userinfo implements gapi.client.oauth2.Userinfo {
+  constructor(obj: gapi.client.oauth2.Userinfo) {
+    Object.assign(this, obj);
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class SecurityService {
   private readonly loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  private readonly user: BehaviorSubject<gapi.client.oauth2.Userinfo | undefined> = new BehaviorSubject<
-    gapi.client.oauth2.Userinfo | undefined
-  >(undefined);
+  private readonly user: BehaviorSubject<Userinfo | undefined> = new BehaviorSubject<Userinfo | undefined>(undefined);
   private client!: google.accounts.oauth2.TokenClient;
   private tokenResolver!: (value: google.accounts.oauth2.TokenResponse) => void;
   private tokenError!: (reason?: any) => void;
@@ -32,8 +37,10 @@ export class SecurityService {
   readonly user$ = this.user.asObservable();
   readonly loading$ = this.loading.asObservable();
 
+  constructor(private readonly storageService: StorageService) {}
+
   init(): void {
-    let user = getStored<gapi.client.oauth2.Userinfo>('user');
+    let user = this.storageService.get(Userinfo);
     user && this.user.next(user);
 
     this.loading.next(true);
@@ -51,7 +58,7 @@ export class SecurityService {
       })
       .then((user) => {
         this.user.next(user);
-        setStored('user', user);
+        this.storageService.put(Userinfo, user);
         this.loading.next(false);
       });
   }
@@ -69,7 +76,7 @@ export class SecurityService {
         }
 
         this.tokenResolver(token);
-        setStored('token', new Token(token));
+        this.storageService.put(Token, new Token(token));
       }
     });
   }
@@ -94,7 +101,7 @@ export class SecurityService {
   }
 
   private auth(user: gapi.client.oauth2.Userinfo | undefined): void {
-    const token = getStored<Token>('token');
+    const token = this.storageService.get(Token);
 
     if (!token || !user) {
       // Prompt the user to select a Google Account and ask for consent to share their data
@@ -111,13 +118,4 @@ export class SecurityService {
 
     this.tokenResolver(token.googleToken);
   }
-}
-
-function getStored<T>(type: 'token' | 'user'): T | undefined {
-  const text = sessionStorage.getItem(type);
-  return text ? (JSON.parse(text) as T) : undefined;
-}
-
-function setStored<T>(type: 'token' | 'user', value: T): void {
-  sessionStorage.setItem(type, JSON.stringify(value));
 }
