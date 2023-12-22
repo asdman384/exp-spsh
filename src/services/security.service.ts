@@ -63,6 +63,7 @@ export class SecurityService {
   constructor(private readonly storageService: StorageService) {}
 
   init(): void {
+    log('SecurityService::init');
     let user = this.storageService.get(Userinfo);
     user && this.user.next(user);
 
