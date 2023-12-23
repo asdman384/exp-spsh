@@ -5,11 +5,10 @@ declare global {
 }
 
 const urlParams = new URLSearchParams(window.location.search);
-const logger = urlParams.get('logger');
-let loggerOutput: Element | null;
+const loggerType = urlParams.get('logger');
+const loggerOutput: Element | null = document.querySelector('#logger-output');
 
-if (logger === 'window') {
-  loggerOutput = document.querySelector('#logger-output');
+if (loggerType === 'window') {
   loggerOutput?.classList.remove('hidden');
 }
 
@@ -21,4 +20,4 @@ function windowLog(...args: any[]): void {
   }
 }
 
-window.log = logger === 'console' ? console.log : logger === 'window' ? windowLog : () => {};
+window.log = loggerType === 'console' ? console.log : loggerType === 'window' ? windowLog : console.log;

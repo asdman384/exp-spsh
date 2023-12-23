@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { SwUpdate } from '@angular/service-worker';
 import { Observable, from, map } from 'rxjs';
 import { SecurityService } from 'src/services';
 
@@ -10,8 +11,9 @@ import { SecurityService } from 'src/services';
 export class AppComponent implements OnInit {
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
+  readonly version$ = this.sw.versionUpdates;
 
-  constructor(private readonly securityService: SecurityService) {}
+  constructor(private readonly securityService: SecurityService, private readonly sw: SwUpdate) {}
 
   ngOnInit(): void {}
 
@@ -26,7 +28,8 @@ export class AppComponent implements OnInit {
     );
   }
 
-  test() {
-    this.loadSpreadSheetInfo().subscribe(console.log);
+  test(): void {
+    
+    this.loadSpreadSheetInfo().subscribe({ next: log, error: (e) => log(e) });
   }
 }
