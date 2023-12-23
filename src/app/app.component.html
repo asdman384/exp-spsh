@@ -3,7 +3,7 @@
     <span class="header-title">Custom Toolbar</span>
 
     <button mat-icon-button [matMenuTriggerFor]="menu" color="primary">
-      <img class="avatar" width="38" height="38" [src]="user.picture" />
+      <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
     </button>
   </mat-toolbar-row>
 </mat-toolbar>
@@ -15,6 +15,10 @@
   <button mat-menu-item [routerLink]="[]" [queryParams]="{ logger: 'window' }" [replaceUrl]="true">
     <mat-icon>memory</mat-icon>
     <span>Debug console</span>
+  </button>
+  <button mat-menu-item (click)="logout()" [disabled]="(isOnline$ | async) === false">
+    <mat-icon>logout</mat-icon>
+    <span>Logout</span>
   </button>
 </mat-menu>
 

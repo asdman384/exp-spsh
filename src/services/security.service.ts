@@ -1,8 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, first } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import keys from '../../keys.json';
 import { StorageService } from './storage';
+import { NetworkStatusService } from './network-status.service';
 
 declare var apiLoaded: Promise<void>; // see index.html
 declare var gsiLoaded: Promise<void>; // see index.html
@@ -60,19 +61,23 @@ export class SecurityService {
   readonly user$ = this.user.asObservable();
   readonly loading$ = this.loading.asObservable();
 
-  constructor(private readonly storageService: StorageService) {}
+  constructor(private readonly storageService: StorageService, private readonly status: NetworkStatusService) {}
 
+  /**
+   * https://developers.google.com/sheets/api/quickstart/js?hl=ru
+   */
   init(): void {
     log('SecurityService::init begin');
     let user = this.storageService.get(Userinfo);
     user && this.user.next(user);
 
-    this.loading.next(true);
-
     gsiLoaded.then(() => {
       log('SecurityService: oauth2 client ready');
       this.initAuthClient();
-      this.auth(user);
+      this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
+        this.loading.next(true);
+        this.auth(user);
+      });
     });
 
     Promise.all([this.token, this.initGapiClient()])
@@ -87,6 +92,17 @@ export class SecurityService {
         this.loading.next(false);
         log('SecurityService::init finish');
       });
+  }
+
+  logout(): void {
+    const token = this.storageService.get(Token);
+    if (token) {
+      google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
+    }
+    gapi.client.setToken(null);
+    this.storageService.remove(Userinfo);
+    this.storageService.remove(Token);
+    this.user.next(undefined);
   }
 
   private initAuthClient(): void {
@@ -117,11 +133,14 @@ export class SecurityService {
     let configured: (value: void | PromiseLike<void>) => void;
     let error: (reason?: any) => void;
     gapi.load('client', () => {
-      gapi.client.load(environment.OAUTH2_DISCOVERY_DOC);
-      gapi.client
-        .init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
-        .then(configured)
-        .catch(error);
+      this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
+        log('SecurityService: gapi client loading');
+        gapi.client.load(environment.OAUTH2_DISCOVERY_DOC);
+        gapi.client
+          .init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
+          .then(configured)
+          .catch(error);
+      });
     });
 
     return new Promise((resolve, reject) => {

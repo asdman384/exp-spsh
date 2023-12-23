@@ -13,4 +13,8 @@ export class LocalStorageService implements StorageService {
   put<T>(key: new (...args: any[]) => T, value: T): void {
     if (value) localStorage.setItem(key.name, JSON.stringify(value));
   }
+
+  remove<T>(key: new (...args: any[]) => T): void {
+    localStorage.removeItem(key.name);
+  }
 }

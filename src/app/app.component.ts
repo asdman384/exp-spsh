@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { SwUpdate } from '@angular/service-worker';
 import { Observable, from, map } from 'rxjs';
-import { SecurityService } from 'src/services';
+import { NetworkStatusService, SecurityService } from 'src/services';
 
 @Component({
   selector: 'app-root',
@@ -12,8 +12,13 @@ export class AppComponent implements OnInit {
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
   readonly version$ = this.sw.versionUpdates;
+  readonly isOnline$ = this.status.online$;
 
-  constructor(private readonly securityService: SecurityService, private readonly sw: SwUpdate) {}
+  constructor(
+    private readonly securityService: SecurityService,
+    private readonly sw: SwUpdate,
+    private readonly status: NetworkStatusService
+  ) {}
 
   ngOnInit(): void {}
 
@@ -26,6 +31,10 @@ export class AppComponent implements OnInit {
     return from(gapi.client.sheets.spreadsheets.get({ spreadsheetId: settings.sheetId })).pipe(
       map((response) => response.result)
     );
+  }
+
+  logout(): void {
+    this.securityService.logout();
   }
 
   test(): void {
