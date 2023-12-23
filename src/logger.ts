@@ -13,6 +13,7 @@ if (loggerType === 'window') {
 }
 
 function windowLog(...args: any[]): void {
+  console.log(...args);
   for (const arg of args) {
     const newDiv = document.createElement('div');
     newDiv.appendChild(document.createTextNode(String(arg)));
@@ -20,4 +21,4 @@ function windowLog(...args: any[]): void {
   }
 }
 
-window.log = loggerType === 'console' ? console.log : loggerType === 'window' ? windowLog : console.log;
+window.log = loggerType === 'console' ? console.log : loggerType === 'window' ? windowLog : () => {};

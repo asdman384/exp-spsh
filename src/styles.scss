@@ -9,6 +9,14 @@ body {
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
+#logger-output {
+  border: 1px solid #dbdbdb;
+
+  div {
+    border-bottom: 1px solid #dbdbdb;
+  }
+}
+
 .hidden {
   display: none;
 }

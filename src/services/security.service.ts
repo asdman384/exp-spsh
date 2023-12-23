@@ -63,13 +63,14 @@ export class SecurityService {
   constructor(private readonly storageService: StorageService) {}
 
   init(): void {
-    log('SecurityService::init');
+    log('SecurityService::init begin');
     let user = this.storageService.get(Userinfo);
     user && this.user.next(user);
 
     this.loading.next(true);
 
     gsiLoaded.then(() => {
+      log('SecurityService: oauth2 client ready');
       this.initAuthClient();
       this.auth(user);
     });
@@ -84,6 +85,7 @@ export class SecurityService {
         this.user.next(user);
         this.storageService.put(Userinfo, user);
         this.loading.next(false);
+        log('SecurityService::init finish');
       });
   }
 
@@ -93,12 +95,16 @@ export class SecurityService {
       scope: SCOPES,
       callback: (token: google.accounts.oauth2.TokenResponse) => {
         if (token.error) {
-          alert('SecurityService: ' + token.error);
+          log('SecurityService: token request error', token.error);
           sessionStorage.removeItem('token');
           this.tokenError(token);
           return;
         }
 
+        log(
+          'SecurityService: got token, expiration:',
+          new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
+        );
         this.tokenResolver(token);
         this.storageService.put(Token, new Token(token));
       }
@@ -119,8 +125,14 @@ export class SecurityService {
     });
 
     return new Promise((resolve, reject) => {
-      configured = resolve;
-      error = reject;
+      configured = () => {
+        log('SecurityService: gapi client ready');
+        resolve();
+      };
+      error = (reason: any) => {
+        log('SecurityService: gapi load error:', reason);
+        reject();
+      };
     });
   }
 
@@ -130,16 +142,19 @@ export class SecurityService {
     if (!token || !user) {
       // Prompt the user to select a Google Account and ask for consent to share their data
       // when establishing a new session.
+      log('SecurityService: no token, no user, ask for consent ');
       this.client.requestAccessToken({});
       return;
     }
 
     // Skip display of account chooser and consent dialog for an existing expired session.
     if (Date.now() > token.expiration) {
+      log('SecurityService: refresh token without consent');
       this.client.requestAccessToken({ prompt: 'none', login_hint: user.id });
       return;
     }
 
+    log('SecurityService: token still valid, no request, expiration:', new Date(token.expiration).toString());
     this.tokenResolver(token.googleToken);
   }
 }

@@ -29,7 +29,6 @@ export class AppComponent implements OnInit {
   }
 
   test(): void {
-    
     this.loadSpreadSheetInfo().subscribe({ next: log, error: (e) => log(e) });
   }
 }
