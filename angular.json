@@ -70,10 +70,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "browserTarget": "exp-spsh:build:production"
+              "buildTarget": "exp-spsh:build:production"
             },
             "development": {
-              "browserTarget": "exp-spsh:build:development"
+              "buildTarget": "exp-spsh:build:development"
             }
           },
           "defaultConfiguration": "development"
@@ -81,7 +81,7 @@
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "exp-spsh:build"
+            "buildTarget": "exp-spsh:build"
           }
         },
         "test": {
