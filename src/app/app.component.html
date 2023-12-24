@@ -1,6 +1,6 @@
 <mat-toolbar color="primary">
   <mat-toolbar-row *ngIf="user$ | async as user">
-    <span class="header-title">Custom Toolbar</span>
+    <span class="header-title">{{ title$ | async }}</span>
 
     <button mat-icon-button [matMenuTriggerFor]="menu" color="primary">
       <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />

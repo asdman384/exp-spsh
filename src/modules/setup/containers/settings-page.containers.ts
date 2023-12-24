@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 
+import { AppActions } from 'src/@state';
 import { ROUTE } from 'src/constants';
 
 @Component({
@@ -29,7 +31,9 @@ import { ROUTE } from 'src/constants';
   ]
 })
 export class SettingsPageContainer {
-  constructor(private readonly router: Router) {}
+  constructor(private readonly router: Router, private readonly store: Store) {
+    this.store.dispatch(AppActions.setTitle({ title: 'Settings' }));
+  }
 
   next(): void {
     this.router.navigate([ROUTE.dashboard]);

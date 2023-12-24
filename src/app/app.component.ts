@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
+import { Store } from '@ngrx/store';
 
 import { Observable, from, map } from 'rxjs';
+import { selectTitle } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
 
@@ -16,8 +18,10 @@ export class AppComponent implements OnInit {
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
   readonly isOnline$ = this.status.online$;
+  readonly title$ = this.store.select(selectTitle);
 
   constructor(
+    private readonly store: Store,
     private readonly router: Router,
     private readonly securityService: SecurityService,
     private readonly sw: SwUpdate,
