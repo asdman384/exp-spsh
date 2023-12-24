@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
+
 import { Observable, from, map } from 'rxjs';
+import { ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
 
 @Component({
@@ -10,6 +12,7 @@ import { NetworkStatusService, SecurityService } from 'src/services';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent implements OnInit {
+  readonly route = ROUTE;
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
   readonly isOnline$ = this.status.online$;
@@ -38,7 +41,7 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.securityService.logout();
-    this.router.navigate(['setup']);
+    this.router.navigate([ROUTE.setup]);
   }
 
   test(): void {

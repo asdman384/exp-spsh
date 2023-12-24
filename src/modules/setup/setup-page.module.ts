@@ -1,11 +1,15 @@
 import { CommonModule } from '@angular/common';
 import { NgModule, inject } from '@angular/core';
-import { UIKitModule } from '../../shared/modules/uikit.module';
-import { LoginPageContainer } from './containers/login-page.containers';
 import { RouterModule, Routes } from '@angular/router';
-import { SettingsPageContainer } from './containers/settings-page.containers';
-import { SecurityService } from 'src/services';
+
 import { map } from 'rxjs';
+
+import { ROUTE } from 'src/constants';
+import { SecurityService } from 'src/services';
+import { UIKitModule } from 'src/shared/modules';
+
+import { LoginPageContainer } from './containers/login-page.containers';
+import { SettingsPageContainer } from './containers/settings-page.containers';
 
 const routes: Routes = [
   {
@@ -14,11 +18,11 @@ const routes: Routes = [
     pathMatch: 'full'
   },
   {
-    path: 'login',
+    path: ROUTE.login,
     component: LoginPageContainer
   },
   {
-    path: 'settings',
+    path: ROUTE.settings,
     canActivate: [() => inject(SecurityService).user$.pipe(map((user) => !!user))],
     component: SettingsPageContainer
   }

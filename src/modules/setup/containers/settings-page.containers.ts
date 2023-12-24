@@ -1,6 +1,8 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
+import { ROUTE } from 'src/constants';
+
 @Component({
   selector: 'settings-page',
   template: `
@@ -30,6 +32,6 @@ export class SettingsPageContainer {
   constructor(private readonly router: Router) {}
 
   next(): void {
-    this.router.navigate(['dashboard']);
+    this.router.navigate([ROUTE.dashboard]);
   }
 }

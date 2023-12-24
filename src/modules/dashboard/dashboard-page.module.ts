@@ -1,7 +1,8 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { UIKitModule } from '../../shared/modules/uikit.module';
 import { RouterModule, Routes } from '@angular/router';
+
+import { UIKitModule } from 'src/shared/modules';
 import { DashboardPageContainer } from './containers/dashboard-page.containers';
 
 const routes: Routes = [

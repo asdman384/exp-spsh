@@ -1,6 +1,7 @@
 import { NgModule, inject } from '@angular/core';
 import { Router, RouterModule, Routes, UrlTree } from '@angular/router';
 import { Observable, map } from 'rxjs';
+import { ROUTE } from 'src/constants';
 import { SecurityService } from 'src/services';
 
 function isLoggedIn(): Observable<boolean | UrlTree> {
@@ -12,16 +13,16 @@ function isLoggedIn(): Observable<boolean | UrlTree> {
 const routes: Routes = [
   {
     path: '',
-    redirectTo: 'dashboard',
+    redirectTo: ROUTE.dashboard,
     pathMatch: 'full'
   },
   {
-    path: 'dashboard',
+    path: ROUTE.dashboard,
     canActivate: [isLoggedIn],
     loadChildren: () => import('src/modules/dashboard/dashboard-page.module').then((m) => m.DashboardPageModule)
   },
   {
-    path: 'setup',
+    path: ROUTE.setup,
     loadChildren: () => import('src/modules/setup/setup-page.module').then((m) => m.SetupPageModule)
   }
 ];
