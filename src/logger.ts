@@ -4,7 +4,8 @@ declare global {
   function log(...args: any[]): void;
 }
 
-const urlParams = new URLSearchParams(window.location.search);
+const search = window.location.href.split('?')[1];
+const urlParams = new URLSearchParams(search);
 const loggerType = urlParams.get('logger');
 const loggerOutput: Element | null = document.querySelector('#logger-output');
 

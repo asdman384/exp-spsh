@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, first } from 'rxjs';
+import { BehaviorSubject, Subject, combineLatest, filter, first, tap } from 'rxjs';
 import { environment } from 'src/environments/environment';
 import keys from '../../keys.json';
-import { StorageService } from './storage';
 import { NetworkStatusService } from './network-status.service';
+import { StorageService } from './storage';
 
 declare var apiLoaded: Promise<void>; // see index.html
 declare var gsiLoaded: Promise<void>; // see index.html
@@ -48,15 +48,12 @@ class Userinfo implements gapi.client.oauth2.Userinfo {
 
 @Injectable({ providedIn: 'root' })
 export class SecurityService {
+  private readonly securityClient$ = new BehaviorSubject<google.accounts.oauth2.TokenClient | undefined>(undefined);
   private readonly loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  private readonly user: BehaviorSubject<Userinfo | undefined> = new BehaviorSubject<Userinfo | undefined>(undefined);
-  private client!: google.accounts.oauth2.TokenClient;
-  private tokenResolver!: (value: google.accounts.oauth2.TokenResponse) => void;
-  private tokenError!: (reason?: any) => void;
-  private readonly token = new Promise<google.accounts.oauth2.TokenResponse>((resolve, reject) => {
-    this.tokenResolver = resolve;
-    this.tokenError = reject;
-  });
+  private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get(Userinfo));
+  private readonly token$ = new BehaviorSubject<google.accounts.oauth2.TokenResponse | undefined>(
+    this.storageService.get(Token)?.googleToken
+  );
 
   readonly user$ = this.user.asObservable();
   readonly loading$ = this.loading.asObservable();
@@ -68,30 +65,37 @@ export class SecurityService {
    */
   init(): void {
     log('SecurityService::init begin');
-    let user = this.storageService.get(Userinfo);
-    user && this.user.next(user);
 
-    gsiLoaded.then(() => {
-      log('SecurityService: oauth2 client ready');
-      this.initAuthClient();
-      this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
-        this.loading.next(true);
-        this.auth(user);
-      });
+    this.initSecurityClient();
+    const gapiClientReady = this.initGapiClient();
+    this.refreshToken();
+
+    combineLatest([this.token$, gapiClientReady])
+      .pipe(filter(([t]) => !!t))
+      .subscribe(([t]) => gapi.client.setToken(t!));
+  }
+
+  login(): void {
+    this.loading.next(true);
+
+    this.securityClient$.pipe(first((c) => !!c)).subscribe((client) => {
+      // Prompt the user to select a Google Account and ask for consent to share their data
+      // when establishing a new session.
+      log('SecurityService: no token, no user, ask for consent ');
+      client!.requestAccessToken({});
     });
 
-    Promise.all([this.token, this.initGapiClient()])
-      .then(([token]) => {
-        gapi.client.setToken(token);
-        if (user) return user;
-        return gapi.client.oauth2.userinfo.get().then((resp) => resp.result);
-      })
-      .then((user) => {
-        this.user.next(user);
-        this.storageService.put(Userinfo, user);
-        this.loading.next(false);
-        log('SecurityService::init finish');
-      });
+    this.token$.pipe(first((t) => !!t)).subscribe(() => {
+      gapi.client.oauth2.userinfo
+        .get()
+        .then((resp) => resp.result)
+        .then((user) => {
+          this.user.next(user);
+          this.storageService.put(Userinfo, user);
+          this.loading.next(false);
+          log('SecurityService: logged user' + (user.name ?? user.given_name));
+        });
+    });
   }
 
   logout(): void {
@@ -100,80 +104,82 @@ export class SecurityService {
       google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
     }
     gapi.client.setToken(null);
+    this.user.next(undefined);
+    this.token$.next(undefined);
     this.storageService.remove(Userinfo);
     this.storageService.remove(Token);
-    this.user.next(undefined);
   }
 
-  private initAuthClient(): void {
-    this.client = google.accounts.oauth2.initTokenClient({
+  refreshToken(): void {
+    const user = this.storageService.get(Userinfo);
+    const token = this.storageService.get(Token);
+
+    if (!user) {
+      log('SecurityService: no User, cannot refresh token');
+      return;
+    }
+
+    if (token && Date.now() < token.expiration) {
+      log('SecurityService: token still valid, no refresh, expiration:', new Date(token.expiration).toString());
+      return;
+    }
+
+    log('SecurityService: refresh token without consent');
+    combineLatest([this.securityClient$, this.status.online$])
+      .pipe(first(([client, online]) => !!client && online))
+      .subscribe(([client]) => {
+        // Skip display of account chooser and consent dialog for an existing expired session.
+        client!.requestAccessToken({ prompt: 'none', login_hint: user!.id });
+      });
+  }
+
+  private async initSecurityClient(): Promise<void> {
+    await gsiLoaded;
+    const client = google.accounts.oauth2.initTokenClient({
       client_id: keys.CLIENT_ID,
       scope: SCOPES,
       callback: (token: google.accounts.oauth2.TokenResponse) => {
         if (token.error) {
           log('SecurityService: token request error', token.error);
-          sessionStorage.removeItem('token');
-          this.tokenError(token);
+          this.storageService.remove(Token);
+          this.token$.error(token.error);
           return;
         }
 
         log(
-          'SecurityService: got token, expiration:',
+          'SecurityService: token request success, expiration:',
           new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
         );
-        this.tokenResolver(token);
+        this.token$.next(token);
         this.storageService.put(Token, new Token(token));
       }
     });
+
+    this.securityClient$.next(client);
+    log('SecurityService: security client ready');
   }
 
-  private async initGapiClient(): Promise<void> {
-    await apiLoaded;
+  private initGapiClient(): Subject<void> {
+    const gapiClientReady$ = new Subject<void>();
 
-    let configured: (value: void | PromiseLike<void>) => void;
-    let error: (reason?: any) => void;
-    gapi.load('client', () => {
-      this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
-        log('SecurityService: gapi client loading');
-        gapi.client.load(environment.OAUTH2_DISCOVERY_DOC);
-        gapi.client
-          .init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
-          .then(configured)
-          .catch(error);
+    apiLoaded.then(() => {
+      gapi.load('client', () => {
+        this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
+          log('SecurityService: gapi client loading');
+          Promise.all([
+            gapi.client.load(environment.OAUTH2_DISCOVERY_DOC),
+            gapi.client.init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
+          ])
+            .then(() => {
+              log('SecurityService: gapi client ready');
+              gapiClientReady$.next();
+              gapiClientReady$.complete();
+            })
+            .catch((error) => gapiClientReady$.error(error));
+        });
       });
     });
 
-    return new Promise((resolve, reject) => {
-      configured = () => {
-        log('SecurityService: gapi client ready');
-        resolve();
-      };
-      error = (reason: any) => {
-        log('SecurityService: gapi load error:', reason);
-        reject();
-      };
-    });
-  }
-
-  private auth(user: gapi.client.oauth2.Userinfo | undefined): void {
-    const token = this.storageService.get(Token);
-
-    if (!token || !user) {
-      // Prompt the user to select a Google Account and ask for consent to share their data
-      // when establishing a new session.
-      log('SecurityService: no token, no user, ask for consent ');
-      this.client.requestAccessToken({});
-      return;
-    }
-
-    // Skip display of account chooser and consent dialog for an existing expired session.
-    if (Date.now() > token.expiration) {
-      log('SecurityService: refresh token without consent');
-      this.client.requestAccessToken({ prompt: 'none', login_hint: user.id });
-      return;
-    }
-
-    log('SecurityService: token still valid, no request, expiration:', new Date(token.expiration).toString());
-    this.tokenResolver(token.googleToken);
+    return gapiClientReady$;
   }
 }

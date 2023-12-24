@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { SwUpdate } from '@angular/service-worker';
 import { Observable, from, map } from 'rxjs';
 import { NetworkStatusService, SecurityService } from 'src/services';
@@ -11,14 +12,16 @@ import { NetworkStatusService, SecurityService } from 'src/services';
 export class AppComponent implements OnInit {
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
-  readonly version$ = this.sw.versionUpdates;
   readonly isOnline$ = this.status.online$;
 
   constructor(
+    private readonly router: Router,
     private readonly securityService: SecurityService,
     private readonly sw: SwUpdate,
     private readonly status: NetworkStatusService
-  ) {}
+  ) {
+    this.sw.versionUpdates.subscribe((v) => log(v.type));
+  }
 
   ngOnInit(): void {}
 
@@ -35,6 +38,7 @@ export class AppComponent implements OnInit {
 
   logout(): void {
     this.securityService.logout();
+    this.router.navigate(['setup']);
   }
 
   test(): void {
