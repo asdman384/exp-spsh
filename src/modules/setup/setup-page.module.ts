@@ -10,6 +10,7 @@ import { UIKitModule } from 'src/shared/modules';
 
 import { LoginPageContainer } from './containers/login-page.containers';
 import { SettingsPageContainer } from './containers/settings-page.containers';
+import { FormsModule } from '@angular/forms';
 
 const routes: Routes = [
   {
@@ -29,7 +30,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [CommonModule, RouterModule.forChild(routes), UIKitModule],
+  imports: [CommonModule, FormsModule, RouterModule.forChild(routes), UIKitModule],
   exports: [],
   declarations: [LoginPageContainer, SettingsPageContainer],
   providers: []

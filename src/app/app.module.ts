@@ -6,12 +6,14 @@ import { ServiceWorkerModule } from '@angular/service-worker';
 
 import { StoreModule } from '@ngrx/store';
 
+import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 import { metaReducers, reducers } from 'src/@state';
 import { LocalStorageService, SecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
+import { EffectsModule } from '@ngrx/effects';
+import { AppEffects } from 'src/@state/app.effects';
 
 @NgModule({
   declarations: [AppComponent],
@@ -34,7 +36,8 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
       trace: false, //  If set to true, will include stack trace for every dispatched action, so you can see it in trace tab jumping directly to that part of code
       traceLimit: 75, // maximum stack trace frames to be stored (in case trace option was provided as true)
       connectInZone: false // If set to true, the connection is established within the Angular zone
-    })
+    }),
+    EffectsModule.forRoot(AppEffects)
   ],
   providers: [
     { provide: LocationStrategy, useClass: HashLocationStrategy },
