@@ -8,9 +8,11 @@ const search = window.location.href.split('?')[1];
 const urlParams = new URLSearchParams(search);
 const loggerType = urlParams.get('logger');
 const loggerOutput: Element | null = document.querySelector('#logger-output');
+const clear = document.querySelector<HTMLSpanElement>('#logger-clear');
 
 if (loggerType === 'window') {
-  loggerOutput?.classList.remove('hidden');
+  document.querySelector('#logger-wrapper')?.classList.remove('hidden');
+  clear?.addEventListener('click', () => loggerOutput?.replaceChildren());
 }
 
 function windowLog(...args: any[]): void {

@@ -13,7 +13,7 @@ import { SecurityService } from 'src/services';
   template: `
     <div class="info">
       <form #form="ngForm">
-        <mat-form-field appearance="outline" style="width: 450px;">
+        <mat-form-field appearance="outline" style="width: 400px">
           <mat-label>Spreadsheet id</mat-label>
           <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" [required]="true" />
           <mat-icon matSuffix>help_outline</mat-icon>
