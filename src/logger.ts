@@ -16,9 +16,10 @@ if (loggerType === 'window') {
 function windowLog(...args: any[]): void {
   console.log(...args);
   for (const arg of args) {
-    const newDiv = document.createElement('div');
-    newDiv.appendChild(document.createTextNode(String(arg)));
-    loggerOutput?.appendChild(newDiv);
+    const element = document.createElement('pre');
+    const text = typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg);
+    element.appendChild(document.createTextNode(text));
+    loggerOutput?.appendChild(element);
   }
 }
 

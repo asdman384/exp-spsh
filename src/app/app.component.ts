@@ -1,6 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { SwUpdate } from '@angular/service-worker';
 import { Store } from '@ngrx/store';
 
 import { titleSelector } from 'src/@state';
@@ -12,24 +11,19 @@ import { NetworkStatusService, SecurityService } from 'src/services';
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss']
 })
-export class AppComponent implements OnInit {
+export class AppComponent {
   readonly route = ROUTE;
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.securityService.loading$;
-  readonly isOnline$ = this.status.online$;
+  readonly isOnline$ = this.networkStatus.online$;
   readonly title$ = this.store.select(titleSelector);
 
   constructor(
     private readonly store: Store,
     private readonly router: Router,
     private readonly securityService: SecurityService,
-    private readonly sw: SwUpdate,
-    private readonly status: NetworkStatusService
-  ) {
-    this.sw.versionUpdates.subscribe((v) => log(v.type));
-  }
-
-  ngOnInit(): void {}
+    private readonly networkStatus: NetworkStatusService
+  ) {}
 
   logout(): void {
     this.securityService.logout();

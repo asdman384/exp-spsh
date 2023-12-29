@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { Observable, exhaustMap, first, firstValueFrom, from, map, switchMap } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AppActions, spreadsheetIdSelector } from 'src/@state';
+import { SecurityService } from 'src/services';
 
 @Component({
   selector: 'dashboard-page',
@@ -9,13 +10,9 @@ import { AppActions, spreadsheetIdSelector } from 'src/@state';
   styleUrl: './dashboard-page.containers.scss'
 })
 export class DashboardPageContainer {
-  constructor(private readonly store: Store) {
+  constructor(private readonly store: Store, private readonly security: SecurityService) {
     this.store.dispatch(AppActions.setTitle({ title: 'Dashboard' }));
   }
 
-  async test(): Promise<void> {
-    const id = await firstValueFrom(this.store.select(spreadsheetIdSelector));
-    const response = await gapi.client.sheets.spreadsheets.get({ spreadsheetId: id! });
-    log(response.result);
-  }
+  async test(): Promise<void> {}
 }

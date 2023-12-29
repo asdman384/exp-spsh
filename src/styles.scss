@@ -10,12 +10,14 @@ body {
 }
 
 #logger-output {
-  border: 1px solid #dbdbdb;
+  width: 100%;
   max-height: 500px;
-  overflow-y: overlay;
+  border: 1px solid #dbdbdb;
+  overflow: overlay;
 
-  div {
+  pre {
     border-bottom: 1px solid #dbdbdb;
+    margin: 0;
   }
 }
 
