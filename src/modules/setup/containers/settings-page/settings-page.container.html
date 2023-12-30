@@ -1,0 +1,25 @@
+<div class="info">
+  <div class="loading-container">
+    @if (loading) {
+    <mat-progress-spinner color="primary" mode="indeterminate" [value]="0"> </mat-progress-spinner>
+    }
+    <mat-icon class="doc-icon" color="primary">description</mat-icon>
+  </div>
+
+  <form #form="ngForm" class="info">
+    <mat-form-field appearance="outline" style="width: 400px">
+      <mat-label>Spreadsheet id</mat-label>
+      <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" [required]="true" />
+      <mat-icon matSuffix>help_outline</mat-icon>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Sheet id</mat-label>
+      <input [name]="sheetIdField" matInput [ngModel]="sheetId | async" readonly />
+    </mat-form-field>
+  </form>
+
+  <button mat-flat-button color="primary" (click)="checkSetup(form, state)" [disabled]="!form.valid || loading">
+    {{ state }}
+  </button>
+</div>

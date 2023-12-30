@@ -1,4 +1,5 @@
 export interface AppState {
   title: string;
-  spreadsheetId: string | null;
+  spreadsheetId: string | undefined;
+  sheetId: number | undefined;
 }
