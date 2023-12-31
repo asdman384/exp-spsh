@@ -4,7 +4,7 @@ expenses app
 
 ## Development server
 
-Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
+Run `npm run serve` for a dev server. Navigate to `http://localhost:4200/`. The application will not automatically reload if you change any of the source files.
 
 ## Code scaffolding
 
