@@ -3,7 +3,7 @@ import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
 import { UIKitModule } from 'src/shared/modules';
-import { DashboardPageContainer } from './containers/dashboard-page.containers';
+import { DashboardPageContainer } from './containers/dashboard/dashboard-page.container';
 
 const routes: Routes = [
   {

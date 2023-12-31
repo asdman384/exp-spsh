@@ -9,7 +9,7 @@ import { SecurityService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules';
 
 import { LoginPageContainer } from './containers/login-page.containers';
-import { SettingsPageContainer } from './containers/settings-page/settings-page.container';
+import { SettingsPageContainer } from './containers/setup-page/setup-page.container';
 import { FormsModule } from '@angular/forms';
 
 const routes: Routes = [

@@ -17,6 +17,11 @@
       <mat-label>Sheet id</mat-label>
       <input [name]="sheetIdField" matInput [ngModel]="sheetId | async" readonly />
     </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Categories Sheet id</mat-label>
+      <input [name]="categoriesSheetIdField" matInput [ngModel]="categoriesSheetId | async" readonly />
+    </mat-form-field>
   </form>
 
   <button mat-flat-button color="primary" (click)="checkSetup(form, state)" [disabled]="!form.valid || loading">

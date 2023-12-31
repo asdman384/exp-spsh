@@ -1,8 +1,9 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
-  constructor() {}
+  constructor(private readonly http: HttpClient) {}
 
   /**
    * https://developers.google.com/sheets/api/reference/rest#rest-resource:-v4.spreadsheets
@@ -11,19 +12,25 @@ export class SpreadsheetService {
    */
   getSpreadsheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
     return gapi.client.sheets.spreadsheets
-      .get({ spreadsheetId, includeGridData: true })
+      .get({ spreadsheetId /*, includeGridData: true */ })
       .then((response) => response.result);
   }
 
   /**
    * https://developers.google.com/sheets/api/reference/rest#rest-resource:-v4.spreadsheets
    * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request#addsheetrequest
+   * @param title
    * @param spreadsheetId
+   * @param columnCount
    * @returns
    */
-  addSheet(title: string, spreadsheetId: string): Promise<gapi.client.sheets.SheetProperties | undefined> {
+  addSheet(
+    title: string,
+    spreadsheetId: string,
+    columnCount: number
+  ): Promise<gapi.client.sheets.SheetProperties | undefined> {
     const addSheet: gapi.client.sheets.AddSheetRequest = {
-      properties: { title, gridProperties: { rowCount: 1, columnCount: 4 } }
+      properties: { title, gridProperties: { rowCount: 1, columnCount } }
     };
 
     return gapi.client.sheets.spreadsheets
@@ -38,7 +45,10 @@ export class SpreadsheetService {
    * @param sheetId
    * @returns
    */
-  setSheetFormats(spreadsheetId: string, sheetId: number) {
+  setDataSheetFormats(
+    spreadsheetId: string,
+    sheetId: number
+  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const repeatCell: gapi.client.sheets.RepeatCellRequest = {
       range: {
         sheetId,
@@ -72,7 +82,7 @@ export class SpreadsheetService {
    * @param spreadsheetId The ID of the spreadsheet to update.
    * @param sheetId The ID of the sheet(tab) to update
    */
-  prependRow(spreadsheetId: string, sheetId: number) {
+  prependRow(spreadsheetId: string, sheetId: number): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       inheritFromBefore: false
@@ -84,8 +94,8 @@ export class SpreadsheetService {
       rows: [
         {
           values: [
-            { userEnteredValue: { stringValue: 'qqq' } },
             { userEnteredValue: { stringValue: 'category' } },
+            { userEnteredValue: { stringValue: 'description' } },
             { userEnteredValue: { numberValue: 1 } },
             { userEnteredValue: { numberValue: getDateSerialNumber(new Date()) } }
           ]
@@ -96,6 +106,31 @@ export class SpreadsheetService {
     return gapi.client.sheets.spreadsheets
       .batchUpdate({ spreadsheetId, resource: { requests: [{ insertDimension }, { updateCells }] } })
       .then((response) => response.result);
+  }
+
+  /**
+   * https://developers.google.com/chart/interactive/docs/spreadsheets#example:-using-oauth-to-access-gviztq
+   * @param spreadsheetId
+   * @param sheetId
+   */
+  getData(spreadsheetId: string, sheetId: number) {
+    const today = new Date();
+    // https://developers.google.com/chart/interactive/docs/querylanguage#overview
+    const gvizQuery = `
+        select A, B, C, D 
+        where D >= date '${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}'
+    `.trim();
+
+    this.http
+      .get(
+        `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +
+          `/gviz/tq?tq=${encodeURIComponent(gvizQuery)}` +
+          `&gid=${sheetId}` +
+          `&tqx=out:csv` +
+          `&access_token=${encodeURIComponent(gapi.client.getToken().access_token)}`,
+        { responseType: 'text' }
+      )
+      .subscribe(log);
   }
 }
 

@@ -5,6 +5,7 @@ export const AppActions = createActionGroup({
   events: {
     'Set Title': props<{ title: string }>(),
     'Spreadsheet Id': props<{ spreadsheetId: string | undefined }>(),
-    'Sheet Id': props<{ sheetId: number | undefined }>()
+    'Sheet Id': props<{ sheetId: number | undefined }>(),
+    'Categories Sheet Id': props<{ categoriesSheetId: number | undefined }>()
   }
 });

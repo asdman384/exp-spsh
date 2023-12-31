@@ -13,12 +13,14 @@ import { LocalStorageService, SecurityService, StorageService } from 'src/servic
 import { UIKitModule } from 'src/shared/modules/uikit.module';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
+import { HttpClientModule } from '@angular/common/http';
 
 @NgModule({
   declarations: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
+    HttpClientModule,
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: true, // !isDevMode(),
