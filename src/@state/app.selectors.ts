@@ -7,3 +7,4 @@ export const titleSelector = createSelector(selectAppFeature, (state: AppState) 
 export const spreadsheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.spreadsheetId);
 export const sheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.sheetId);
 export const categoriesSheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.categoriesSheetId);
+export const categoriesSelector = createSelector(selectAppFeature, (state: AppState) => state.categories);

@@ -13,7 +13,8 @@ export const initialState: AppState = {
   title: '',
   spreadsheetId: localStorage.getItem(SPREADSHEET_ID) ?? undefined,
   sheetId: sheetId ? parseInt(sheetId, 10) : undefined,
-  categoriesSheetId: categoriesSheetId ? parseInt(categoriesSheetId, 10) : undefined
+  categoriesSheetId: categoriesSheetId ? parseInt(categoriesSheetId, 10) : undefined,
+  categories: []
 };
 
 export const reducers: ActionReducerMap<{ app: AppState }> = {
@@ -22,7 +23,8 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
     on(AppActions.setTitle, (state, { title }) => ({ ...state, title })),
     on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
     on(AppActions.sheetId, (state, { sheetId }) => ({ ...state, sheetId })),
-    on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId }))
+    on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId })),
+    on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories }))
   )
 };
 

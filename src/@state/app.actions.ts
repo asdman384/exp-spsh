@@ -1,11 +1,13 @@
-import { createActionGroup, props } from '@ngrx/store';
+import { createActionGroup, emptyProps, props } from '@ngrx/store';
 
 export const AppActions = createActionGroup({
   source: 'App shell',
   events: {
-    'Set Title': props<{ title: string }>(),
-    'Spreadsheet Id': props<{ spreadsheetId: string | undefined }>(),
-    'Sheet Id': props<{ sheetId: number | undefined }>(),
-    'Categories Sheet Id': props<{ categoriesSheetId: number | undefined }>()
+    setTitle: props<{ title: string }>(),
+    spreadsheetId: props<{ spreadsheetId: string | undefined }>(),
+    sheetId: props<{ sheetId: number | undefined }>(),
+    categoriesSheetId: props<{ categoriesSheetId: number | undefined }>(),
+    loadCategories: emptyProps(),
+    storeCategories: props<{ categories: Array<string> }>()
   }
 });

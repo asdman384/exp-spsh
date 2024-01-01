@@ -1,9 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
+import { Observable, of } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient) {}
+
+  getAllCategories(): Observable<Array<string>> {
+    return of<Array<string>>(['lil']);
+  }
 
   /**
    * https://developers.google.com/sheets/api/reference/rest#rest-resource:-v4.spreadsheets
