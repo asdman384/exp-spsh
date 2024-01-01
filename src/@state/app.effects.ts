@@ -1,11 +1,13 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, catchError, exhaustMap, map, of, tap } from 'rxjs';
+import { EMPTY, catchError, exhaustMap, map, of, repeat, tap, withLatestFrom } from 'rxjs';
 
+import { Store } from '@ngrx/store';
 import { CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
-import { AppActions } from './app.actions';
 import { SpreadsheetService } from 'src/services';
+import { AppActions } from './app.actions';
+import { spreadsheetIdSelector } from './app.selectors';
 
 @Injectable()
 export class AppEffects {
@@ -42,14 +44,19 @@ export class AppEffects {
   readonly loadCategories$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.loadCategories),
-      exhaustMap(() =>
-        this.spreadSheetService.getAllCategories().pipe(
-          map((categories) => AppActions.storeCategories({ categories })),
-          catchError(() => EMPTY)
-        )
-      )
+      withLatestFrom(this.store.select(spreadsheetIdSelector)),
+      exhaustMap(([action, id]) => this.spreadSheetService.getAllCategories(id!)),
+      map((categories) => AppActions.storeCategories({ categories })),
+      catchError((e) => {
+        log(e);
+        return EMPTY;
+      })
     )
   );
 
-  constructor(private readonly actions$: Actions, private readonly spreadSheetService: SpreadsheetService) {}
+  constructor(
+    private readonly store: Store,
+    private readonly actions$: Actions,
+    private readonly spreadSheetService: SpreadsheetService
+  ) {}
 }

@@ -1,14 +1,7 @@
-import { NgModule, inject } from '@angular/core';
-import { Router, RouterModule, Routes, UrlTree } from '@angular/router';
-import { Observable, map } from 'rxjs';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 import { ROUTE } from 'src/constants';
-import { SecurityService } from 'src/services';
-
-function isLoggedIn(): Observable<boolean | UrlTree> {
-  const securityService = inject(SecurityService);
-  const router = inject(Router);
-  return securityService.user$.pipe(map((user) => (user ? true : router.createUrlTree(['setup']))));
-}
+import { isLoggedIn } from 'src/shared/guards';
 
 const routes: Routes = [
   {

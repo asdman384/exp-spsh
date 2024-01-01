@@ -1,5 +1,6 @@
 import { NgModule } from '@angular/core';
 
+import { DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,27 +9,28 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatToolbarModule } from '@angular/material/toolbar';
-
 @NgModule({
   imports: [
-    MatToolbarModule,
-    MatProgressBarModule,
+    DragDropModule,
     MatButtonModule,
-    MatMenuModule,
+    MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule
+    MatMenuModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatToolbarModule
   ],
   exports: [
-    MatToolbarModule,
-    MatProgressBarModule,
+    DragDropModule,
     MatButtonModule,
-    MatMenuModule,
+    MatFormFieldModule,
     MatIconModule,
     MatInputModule,
-    MatFormFieldModule,
-    MatProgressSpinnerModule
+    MatMenuModule,
+    MatProgressBarModule,
+    MatProgressSpinnerModule,
+    MatToolbarModule
   ]
 })
 export class UIKitModule {}

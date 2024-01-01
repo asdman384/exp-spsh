@@ -1,13 +1,21 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, of } from 'rxjs';
+
+import { CATEGORIES_SHEET_TITLE } from 'src/constants';
+import { Category } from 'src/shared/models';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient) {}
 
-  getAllCategories(): Observable<Array<string>> {
-    return of<Array<string>>(['lil']);
+  getAllCategories(spreadsheetId: string): Promise<Array<Category>> {
+    return gapi.client.sheets.spreadsheets.values
+      .get({
+        spreadsheetId,
+        valueRenderOption: 'UNFORMATTED_VALUE',
+        range: CATEGORIES_SHEET_TITLE + `!A:B`
+      })
+      .then((resp) => resp.result.values?.map<Category>(([name, position]) => ({ name, position })) || []);
   }
 
   /**
@@ -50,6 +58,8 @@ export class SpreadsheetService {
    * @param sheetId
    * @returns
    */
+  // TODO: add validation rule on categories column of the data sheet
+  // TODO: add validation rule on position column of the categories sheet
   setDataSheetFormats(
     spreadsheetId: string,
     sheetId: number
