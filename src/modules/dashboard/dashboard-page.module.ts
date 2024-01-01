@@ -2,20 +2,18 @@ import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 
+import { ROUTE } from 'src/constants';
 import { UIKitModule } from 'src/shared/modules';
-import { DashboardPageContainer } from './containers/dashboard/dashboard-page.container';
+
+import { DashboardPageContainer, SettingsPageContainer, containers } from './containers';
 
 const routes: Routes = [
-  {
-    path: '',
-    component: DashboardPageContainer
-  }
+  { path: '', component: DashboardPageContainer },
+  { path: ROUTE.categories, component: SettingsPageContainer }
 ];
 
 @NgModule({
   imports: [CommonModule, RouterModule.forChild(routes), UIKitModule],
-  exports: [],
-  declarations: [DashboardPageContainer],
-  providers: []
+  declarations: [containers]
 })
 export class DashboardPageModule {}

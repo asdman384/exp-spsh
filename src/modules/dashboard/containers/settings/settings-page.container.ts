@@ -5,4 +5,4 @@ import { Component } from '@angular/core';
   templateUrl: './settings-page.container.html',
   styleUrl: './settings-page.container.scss'
 })
-export class SettingsComponent {}
+export class SettingsPageContainer {}

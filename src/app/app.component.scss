@@ -3,6 +3,10 @@
   flex-direction: column;
 }
 
+:host ::ng-deep .mat-mdc-icon-button {
+  padding: 3px;
+}
+
 .progress-container {
   height: 4px;
 }
@@ -19,8 +23,4 @@
   &.online {
     border-color: #00ff00;
   }
-}
-
-:host ::ng-deep .mat-mdc-icon-button {
-  padding: 3px;
 }

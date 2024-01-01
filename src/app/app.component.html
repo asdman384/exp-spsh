@@ -12,17 +12,17 @@
 </div>
 
 <mat-menu #menu="matMenu">
-  <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve">
-    <mat-icon>settings</mat-icon>
-    <span>Settings</span>
+  <button mat-menu-item [routerLink]="[route.dashboard, route.categories]" queryParamsHandling="preserve">
+    <mat-icon>category</mat-icon> <span>Categories</span>
+  </button>
+  <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
+    <mat-icon>settings</mat-icon> <span>Settings</span>
   </button>
   <button mat-menu-item [routerLink]="[]" [queryParams]="{ logger: 'window' }" [replaceUrl]="true">
-    <mat-icon>memory</mat-icon>
-    <span>Debug console</span>
+    <mat-icon>memory</mat-icon> <span>Debug console</span>
   </button>
   <button mat-menu-item (click)="logout()" [disabled]="(isOnline$ | async) === false">
-    <mat-icon>logout</mat-icon>
-    <span>Logout</span>
+    <mat-icon>logout</mat-icon> <span>Logout</span>
   </button>
 </mat-menu>
 
