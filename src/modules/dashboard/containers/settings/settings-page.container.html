@@ -1,3 +1,11 @@
+<div class="controls">
+  <mat-form-field appearance="outline" class="category-input">
+    <mat-label>New Category</mat-label>
+    <input matInput [(ngModel)]="category" [required]="true" />
+  </mat-form-field>
+  <button mat-stroked-button color="primary" class="category-add-button" (click)="addCategory(category)">Add</button>
+</div>
+
 <div cdkDropList class="drop-list" (cdkDropListDropped)="onDrop($event)" [cdkDropListDisabled]="listDisabled">
   @for (category of categories$ | async; track category) {
   <div class="drag-item" cdkDrag [cdkDragData]="category" (cdkDragMoved)="cdkDragMoved($event)">

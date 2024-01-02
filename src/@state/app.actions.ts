@@ -9,6 +9,7 @@ export const AppActions = createActionGroup({
     sheetId: props<{ sheetId: number | undefined }>(),
     categoriesSheetId: props<{ categoriesSheetId: number | undefined }>(),
     loadCategories: emptyProps(),
-    storeCategories: props<{ categories: Array<Category> }>()
+    storeCategories: props<{ categories: Array<Category> }>(),
+    adCategory: props<{ newCategory: Category }>()
   }
 });

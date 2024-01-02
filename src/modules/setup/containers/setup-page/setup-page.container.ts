@@ -5,7 +5,7 @@ import { Store } from '@ngrx/store';
 import { Observable, firstValueFrom } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, sheetIdSelector, spreadsheetIdSelector } from 'src/@state';
-import { CATEGORIES_SHEET_ID, ROUTE, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
+import { CATEGORIES_SHEET_ID, CATEGORIES_SHEET_TITLE, ROUTE, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
 import { SecurityService, SpreadsheetService } from 'src/services';
 
 type State = 'check document' | 'finish';
@@ -52,11 +52,15 @@ export class SettingsPageContainer {
     const spreadsheet = await this.loadSpreadSheet(spreadsheetId);
     const dataSheetId = await this.createSheet(user.id, 4, spreadsheet);
     this.store.dispatch(AppActions.sheetId({ sheetId: dataSheetId }));
+    const categoriesSheetId = await this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet);
+    this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId }));
+
+    log('categories sheet format adjust');
+    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheetId);
+    log('categories sheet format adjust finish');
     log('data sheet format adjust');
     await this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheetId);
     log('data sheet format adjust finish');
-    const categoriesSheetId = await this.createSheet('categories', 2, spreadsheet);
-    this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId }));
 
     this.loading = false;
     this.state = 'finish';

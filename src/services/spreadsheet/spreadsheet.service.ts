@@ -8,6 +8,23 @@ import { Category } from 'src/shared/models';
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient) {}
 
+  addCategory(spreadsheetId: string, { name, position }: Category): Promise<gapi.client.sheets.AppendValuesResponse> {
+    return gapi.client.sheets.spreadsheets.values
+      .append({
+        spreadsheetId: spreadsheetId,
+        range: `${CATEGORIES_SHEET_TITLE}!A1:B1`,
+        valueInputOption: 'RAW',
+        insertDataOption: 'INSERT_ROWS',
+        resource: { values: [[name, position]] }
+      })
+      .then((resp) => resp.result);
+  }
+
+  /**
+   *
+   * @param spreadsheetId
+   * @returns
+   */
   getAllCategories(spreadsheetId: string): Promise<Array<Category>> {
     return gapi.client.sheets.spreadsheets.values
       .get({
@@ -25,7 +42,10 @@ export class SpreadsheetService {
    */
   getSpreadsheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
     return gapi.client.sheets.spreadsheets
-      .get({ spreadsheetId /*, includeGridData: true */ })
+      .get({
+        spreadsheetId
+        // includeGridData: true
+      })
       .then((response) => response.result);
   }
 
@@ -58,26 +78,40 @@ export class SpreadsheetService {
    * @param sheetId
    * @returns
    */
-  // TODO: add validation rule on categories column of the data sheet
-  // TODO: add validation rule on position column of the categories sheet
   setDataSheetFormats(
     spreadsheetId: string,
     sheetId: number
   ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
-    const repeatCell: gapi.client.sheets.RepeatCellRequest = {
-      range: {
-        sheetId,
-        startRowIndex: 0,
-        endRowIndex: 1048576,
-        startColumnIndex: 3,
-        endColumnIndex: 4
-      },
+    const dateCellValidation: gapi.client.sheets.RepeatCellRequest = {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 3, endColumnIndex: 4 },
       cell: {
-        dataValidation: { condition: { type: 'DATE_IS_VALID' } },
+        dataValidation: { condition: { type: 'DATE_IS_VALID' }, strict: true },
         effectiveFormat: { numberFormat: { type: 'DATE_TIME', pattern: 'd"/"mm"/"yyyy" "HH":"mm' } },
         userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: 'd"/"mm"/"yyyy" "HH":"mm' } }
       },
       fields: 'dataValidation.condition,effectiveFormat.numberFormat,userEnteredFormat.numberFormat'
+    };
+
+    const categoriesCellValidation: gapi.client.sheets.RepeatCellRequest = {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 0, endColumnIndex: 1 },
+      cell: {
+        dataValidation: {
+          condition: { type: 'ONE_OF_RANGE', values: [{ userEnteredValue: `=${CATEGORIES_SHEET_TITLE}!$A:$A` }] },
+          strict: true
+        }
+      },
+      fields: 'dataValidation.condition'
+    };
+
+    const currencyCellValidation: gapi.client.sheets.RepeatCellRequest = {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 2, endColumnIndex: 3 },
+      cell: {
+        dataValidation: {
+          condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
+          strict: true
+        }
+      },
+      fields: 'dataValidation.condition'
     };
 
     const updateDimensionProperties = {
@@ -87,7 +121,44 @@ export class SpreadsheetService {
     };
 
     return gapi.client.sheets.spreadsheets
-      .batchUpdate({ spreadsheetId, resource: { requests: [{ repeatCell }, { updateDimensionProperties }] } })
+      .batchUpdate({
+        spreadsheetId,
+        resource: {
+          requests: [
+            { repeatCell: dateCellValidation },
+            { repeatCell: categoriesCellValidation },
+            { repeatCell: currencyCellValidation },
+            { updateDimensionProperties }
+          ]
+        }
+      })
+      .then((response) => response.result);
+  }
+
+  /**
+   * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request#repeatcellrequest
+   * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/request#updatedimensionpropertiesrequest
+   * @param spreadsheetId
+   * @param sheetId
+   * @returns
+   */
+  setCategoriesSheetFormats(
+    spreadsheetId: string,
+    sheetId: number
+  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+    const repeatCell: gapi.client.sheets.RepeatCellRequest = {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 1, endColumnIndex: 2 },
+      cell: {
+        dataValidation: {
+          condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
+          strict: true
+        }
+      },
+      fields: 'dataValidation.condition'
+    };
+
+    return gapi.client.sheets.spreadsheets
+      .batchUpdate({ spreadsheetId, resource: { requests: [{ repeatCell }] } })
       .then((response) => response.result);
   }
 
