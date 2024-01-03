@@ -1,6 +1,7 @@
 import { Category } from 'src/shared/models';
 
 export interface AppState {
+  loading: boolean;
   title: string;
   spreadsheetId: string | undefined;
   sheetId: number | undefined;

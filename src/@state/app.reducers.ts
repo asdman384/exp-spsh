@@ -10,6 +10,7 @@ const sheetId = localStorage.getItem(SHEET_ID);
 const categoriesSheetId = localStorage.getItem(CATEGORIES_SHEET_ID);
 
 export const initialState: AppState = {
+  loading: false,
   title: '',
   spreadsheetId: localStorage.getItem(SPREADSHEET_ID) ?? undefined,
   sheetId: sheetId ? parseInt(sheetId, 10) : undefined,
@@ -20,6 +21,7 @@ export const initialState: AppState = {
 export const reducers: ActionReducerMap<{ app: AppState }> = {
   app: createReducer(
     initialState,
+    on(AppActions.loading, (state, { loading }) => ({ ...state, loading })),
     on(AppActions.setTitle, (state, { title }) => ({ ...state, title })),
     on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
     on(AppActions.sheetId, (state, { sheetId }) => ({ ...state, sheetId })),

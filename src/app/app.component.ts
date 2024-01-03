@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 
-import { titleSelector } from 'src/@state';
+import { loadingSelector, titleSelector } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
 
@@ -14,7 +14,7 @@ import { NetworkStatusService, SecurityService } from 'src/services';
 export class AppComponent {
   readonly route = ROUTE;
   readonly user$ = this.securityService.user$;
-  readonly loading$ = this.securityService.loading$;
+  readonly loading$ = this.store.select(loadingSelector);
   readonly isOnline$ = this.networkStatus.online$;
   readonly title$ = this.store.select(titleSelector);
 

@@ -8,6 +8,12 @@ import { Category } from 'src/shared/models';
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient) {}
 
+  /**
+   *
+   * @param spreadsheetId
+   * @param param1
+   * @returns
+   */
   addCategory(spreadsheetId: string, { name, position }: Category): Promise<gapi.client.sheets.AppendValuesResponse> {
     return gapi.client.sheets.spreadsheets.values
       .append({
@@ -17,6 +23,27 @@ export class SpreadsheetService {
         insertDataOption: 'INSERT_ROWS',
         resource: { values: [[name, position]] }
       })
+      .then((resp) => resp.result);
+  }
+
+  /**
+   *
+   * @param spreadsheetId
+   * @param sheetId
+   * @param index
+   * @returns
+   */
+  deleteCategory(
+    spreadsheetId: string,
+    sheetId: number,
+    index: number
+  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+    const deleteDimension: gapi.client.sheets.DeleteDimensionRequest = {
+      range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
+    };
+
+    return gapi.client.sheets.spreadsheets
+      .batchUpdate({ spreadsheetId, resource: { requests: [{ deleteDimension }] } })
       .then((resp) => resp.result);
   }
 

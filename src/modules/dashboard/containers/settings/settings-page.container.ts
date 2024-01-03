@@ -1,12 +1,14 @@
-import { CdkDrag, CdkDragMove } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragMove } from '@angular/cdk/drag-drop';
 import { Component, OnInit } from '@angular/core';
 
 import { Store } from '@ngrx/store';
 import { first } from 'rxjs';
 
-import { AppActions, categoriesSelector } from 'src/@state';
+import { AppActions, categoriesSelector, loadingSelector } from 'src/@state';
+import { Category } from 'src/shared/models';
 
 const DELETE_THRESHOLD = 150;
+const MOVE_THRESHOLD = 23;
 
 @Component({
   selector: 'settings-page',
@@ -14,33 +16,56 @@ const DELETE_THRESHOLD = 150;
   styleUrl: './settings-page.container.scss'
 })
 export class SettingsPageContainer implements OnInit {
+  readonly loading$ = this.store.select(loadingSelector);
   readonly categories$ = this.store.select(categoriesSelector);
   category: string = '';
-  listDisabled = false;
   dragPlaceholderText: string = '';
 
   constructor(private readonly store: Store) {
-    store.dispatch(AppActions.setTitle({ title: 'Categories' }));
+    this.store.dispatch(AppActions.loadCategories());
+    this.store.dispatch(AppActions.setTitle({ title: 'Categories' }));
   }
 
-  ngOnInit(): void {
-    this.store.dispatch(AppActions.loadCategories());
-  }
+  ngOnInit(): void {}
 
   addCategory(name: string): void {
     this.categories$.pipe(first()).subscribe((categories) => {
-      const position = Math.max(...categories.map((c) => c.position)) + 1;
+      const position = Math.max(...categories.map((c) => c.position), -1) + 1;
       if (~categories.findIndex((c) => c.name === name)) {
         log(`category [${name}] already exists`);
         return;
       }
+      this.category = '';
       this.store.dispatch(AppActions.adCategory({ newCategory: { name, position } }));
     });
   }
 
-  onDrop(e: any): void {}
+  onDrop(event: CdkDragDrop<undefined, undefined, Category>): void {
+    if (this.tryDelete(event)) {
+      return;
+    }
+
+    this.changePosition(event);
+  }
 
   cdkDragMoved(event: CdkDragMove) {
-    this.dragPlaceholderText = event.distance.x > DELETE_THRESHOLD ? 'Drop to remove' : '';
+    this.dragPlaceholderText =
+      event.distance.x > DELETE_THRESHOLD && event.distance.y < MOVE_THRESHOLD ? 'Drop to remove' : '';
+  }
+
+  private tryDelete(event: CdkDragDrop<undefined, undefined, Category>): boolean {
+    if (event.previousIndex !== event.currentIndex) {
+      return false;
+    }
+
+    if (event.distance.x > DELETE_THRESHOLD) {
+      this.store.dispatch(AppActions.deleteCategory({ category: event.item.data }));
+    }
+
+    return true;
+  }
+
+  private changePosition(event: CdkDragDrop<undefined, undefined, Category>): void {
+    throw new Error('Method not implemented.');
   }
 }
