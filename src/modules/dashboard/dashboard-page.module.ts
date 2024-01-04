@@ -8,6 +8,8 @@ import { UIKitModule } from 'src/shared/modules';
 
 import { isLoggedIn, isOnlineAndReady } from 'src/shared/guards';
 import { DashboardPageContainer, SettingsPageContainer, containers } from './containers';
+import { StoreModule } from '@ngrx/store';
+import { EffectsModule } from '@ngrx/effects';
 
 const routes: Routes = [
   {
@@ -22,7 +24,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, RouterModule.forChild(routes), UIKitModule],
+  imports: [CommonModule, FormsModule, StoreModule, EffectsModule, RouterModule.forChild(routes), UIKitModule],
   declarations: [containers]
 })
 export class DashboardPageModule {}
