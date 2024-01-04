@@ -1,8 +1,12 @@
 import { Component } from '@angular/core';
+import { NgForm } from '@angular/forms';
+
 import { Store } from '@ngrx/store';
-import { firstValueFrom } from 'rxjs';
-import { AppActions, sheetIdSelector, spreadsheetIdSelector } from 'src/@state';
-import { SpreadsheetService } from 'src/services';
+import { first, firstValueFrom, map } from 'rxjs';
+
+import { AppActions, categoriesSelector, loadingSelector, sheetIdSelector, spreadsheetIdSelector } from 'src/@state';
+import { SecurityService, SpreadsheetService } from 'src/services';
+import { Expense } from 'src/shared/models';
 
 @Component({
   selector: 'dashboard-page',
@@ -10,15 +14,41 @@ import { SpreadsheetService } from 'src/services';
   styleUrl: './dashboard-page.container.scss'
 })
 export class DashboardPageContainer {
-  constructor(private readonly store: Store, private readonly spreadsheetService: SpreadsheetService) {
+  readonly loading$ = this.store.select(loadingSelector);
+  readonly usersLookup: Array<{ name?: string; value?: string }> = [];
+  readonly categories$ = this.store
+    .select(categoriesSelector)
+    .pipe(map((categories) => [...categories].sort((a, b) => a.position - b.position)));
+
+  expense: Expense = {
+    date: new Date(),
+    userId: '',
+    amount: undefined,
+    category: undefined,
+    comment: undefined
+  };
+
+  constructor(
+    private readonly store: Store,
+    private readonly spreadsheetService: SpreadsheetService,
+    private readonly security: SecurityService
+  ) {
     this.store.dispatch(AppActions.setTitle({ title: 'Dashboard' }));
+    security.user$.pipe(first()).subscribe((user) => {
+      if (!user) return;
+      this.expense.userId = user.id!;
+      this.usersLookup.push({ name: user.name, value: user.id });
+    });
   }
 
-  async append(): Promise<void> {
-    const spreadsheetId = await firstValueFrom(this.store.select(spreadsheetIdSelector));
-    const sheetId = await firstValueFrom(this.store.select(sheetIdSelector));
-
-    this.spreadsheetService.prependRow(spreadsheetId!, sheetId!).then((res) => log(res));
+  onSubmit(form: NgForm): void {
+    if (!form.valid) {
+      return;
+    }
+    const userId = form.value['userId'];
+    this.store.dispatch(AppActions.addExpense({ expense: form.value as Expense }));
+    form.resetForm({ date: new Date(), userId, amount: undefined, category: undefined, comment: undefined });
+    log(form.value);
   }
 
   async get(): Promise<void> {

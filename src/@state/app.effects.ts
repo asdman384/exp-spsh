@@ -4,10 +4,10 @@ import { Actions, createEffect, ofType } from '@ngrx/effects';
 import { EMPTY, catchError, exhaustMap, map, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
-import { CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
+import { CATEGORIES, CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
 import { SpreadsheetService } from 'src/services';
 import { AppActions } from './app.actions';
-import { categoriesSelector, categoriesSheetIdSelector, spreadsheetIdSelector } from './app.selectors';
+import { categoriesSelector, categoriesSheetIdSelector, sheetIdSelector, spreadsheetIdSelector } from './app.selectors';
 
 @Injectable()
 export class AppEffects {
@@ -41,6 +41,15 @@ export class AppEffects {
     { dispatch: false }
   );
 
+  readonly saveCategories$ = createEffect(
+    () =>
+      this.actions$.pipe(
+        ofType(AppActions.storeCategories),
+        tap(({ categories }) => localStorage.setItem(CATEGORIES, JSON.stringify(categories)))
+      ),
+    { dispatch: false }
+  );
+
   readonly loadCategories$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.loadCategories),
@@ -59,7 +68,7 @@ export class AppEffects {
 
   readonly addCategory$ = createEffect(() =>
     this.actions$.pipe(
-      ofType(AppActions.adCategory),
+      ofType(AppActions.addCategory),
       withLatestFrom(this.store.select(spreadsheetIdSelector)),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       exhaustMap(([{ newCategory }, id]) =>
@@ -124,6 +133,24 @@ export class AppEffects {
       })
     )
   );
+
+  readonly addExpense$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AppActions.addExpense),
+      tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
+      withLatestFrom(this.store.select(spreadsheetIdSelector), this.store.select(sheetIdSelector)),
+      exhaustMap(([{ expense }, spreadsheetId, sheetId]) =>
+        this.spreadSheetService.addExpense(spreadsheetId!, sheetId!, expense).then(() => expense)
+      ),
+      map(() => AppActions.loading({ loading: false })),
+      catchError((e) => {
+        log(e);
+        this.store.dispatch(AppActions.loading({ loading: false }));
+        return EMPTY;
+      })
+    )
+  );
+
   constructor(
     private readonly store: Store,
     private readonly actions$: Actions,

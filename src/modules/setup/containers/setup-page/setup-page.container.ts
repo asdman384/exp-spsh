@@ -43,7 +43,7 @@ export class SettingsPageContainer {
     if (!form.valid) return;
     const spreadsheetId: string = form.value[this.spreadsheetIdField];
     const user = await firstValueFrom(this.security.user$);
-    if (!user || !user.id) {
+    if (!user ) {
       throw 'error getting user';
     }
 

@@ -2,7 +2,7 @@ import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
-import { Category } from 'src/shared/models';
+import { Category, Expense } from 'src/shared/models';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
@@ -206,7 +206,11 @@ export class SpreadsheetService {
    * @param spreadsheetId The ID of the spreadsheet to update.
    * @param sheetId The ID of the sheet(tab) to update
    */
-  prependRow(spreadsheetId: string, sheetId: number): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  addExpense(
+    spreadsheetId: string,
+    sheetId: number,
+    expense: Expense
+  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       inheritFromBefore: false
@@ -218,10 +222,10 @@ export class SpreadsheetService {
       rows: [
         {
           values: [
-            { userEnteredValue: { stringValue: 'category' } },
-            { userEnteredValue: { stringValue: 'description' } },
-            { userEnteredValue: { numberValue: 1 } },
-            { userEnteredValue: { numberValue: getDateSerialNumber(new Date()) } }
+            { userEnteredValue: { stringValue: expense.category } },
+            { userEnteredValue: { stringValue: expense.comment } },
+            { userEnteredValue: { numberValue: expense.amount } },
+            { userEnteredValue: { numberValue: getDateSerialNumber(expense.date) } }
           ]
         }
       ]
@@ -269,18 +273,20 @@ export class SpreadsheetService {
  * @returns SERIAL_NUMBER
  */
 function getDateSerialNumber(date: Date): number {
-  // Set the base date
-  const baseDate = new Date('1899-12-29T21:00:00.000Z');
+  //   // Set the base date
+  //   const baseDate = new Date('1899-12-29T21:00:00.000Z');
 
-  // Calculate the difference in milliseconds
-  const dateDifference = date.getTime() - baseDate.getTime();
+  //   // Calculate the difference in milliseconds
+  //   const dateDifference = date.getTime() - baseDate.getTime();
 
-  // Convert milliseconds to days
-  const days = Math.trunc(dateDifference / (24 * 60 * 60 * 1000));
+  //   // Convert milliseconds to days
+  //   const days = Math.trunc(dateDifference / (24 * 60 * 60 * 1000));
 
-  // Get the fractional part representing the time
-  const fractionalPart = (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / (24 * 60 * 60);
+  //   // Get the fractional part representing the time
+  //   const fractionalPart = (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / (24 * 60 * 60);
 
-  // Combine the whole and fractional parts and return as SerialNumber
-  return days + fractionalPart;
+  //   // Combine the whole and fractional parts and return as SerialNumber
+  //   return days + fractionalPart;
+
+  return 25569.0 + (date.getTime() - date.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24);
 }

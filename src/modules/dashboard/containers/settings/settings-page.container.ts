@@ -38,7 +38,7 @@ export class SettingsPageContainer implements OnInit {
         return;
       }
       this.category = '';
-      this.store.dispatch(AppActions.adCategory({ newCategory: { name, position } }));
+      this.store.dispatch(AppActions.addCategory({ newCategory: { name, position } }));
     });
   }
 

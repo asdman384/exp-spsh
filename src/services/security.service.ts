@@ -57,7 +57,7 @@ export class SecurityService {
     this.token$.pipe(first((t) => !!t)).subscribe(() => {
       gapi.client.oauth2.userinfo
         .get()
-        .then((resp) => resp.result)
+        .then((resp) => new Userinfo(resp.result))
         .then((user) => {
           this.user.next(user);
           this.storageService.put(Userinfo, user);
@@ -99,7 +99,7 @@ export class SecurityService {
       .pipe(first(([client, online]) => !!client && online))
       .subscribe(([client]) => {
         // Skip display of account chooser and consent dialog for an existing expired session.
-        client!.requestAccessToken({ prompt: 'none', login_hint: user!.id });
+        client!.requestAccessToken({ prompt: 'none', login_hint: user.id });
       });
   }
 

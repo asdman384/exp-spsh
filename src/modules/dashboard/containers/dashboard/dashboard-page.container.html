@@ -1,2 +1,63 @@
-<button mat-flat-button color="accent" (click)="append()">append</button>
-<button mat-flat-button color="accent" (click)="get()">get</button>
+<form #form="ngForm" class="main-form" (ngSubmit)="onSubmit(form)">
+  <div class="form-row">
+    <!-- DATE -->
+    <mat-form-field appearance="outline">
+      <mat-label>Date</mat-label>
+      <input
+        matInput
+        name="date"
+        [(ngModel)]="expense.date"
+        [matDatepicker]="picker"
+        (click)="picker.open()"
+        readonly
+      />
+      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
+    </mat-form-field>
+
+    <!-- USER -->
+    <mat-form-field appearance="outline">
+      <mat-label>User</mat-label>
+      <mat-select name="userId" [(ngModel)]="expense.userId">
+        @for (user of usersLookup; track user.value) {
+        <mat-option [value]="user.value"> {{ user.name }} </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="form-row">
+    <!-- AMOUNT -->
+    <mat-form-field appearance="outline" class="input-amount">
+      <mat-label>Amount</mat-label>
+      <input name="amount" type="number" matInput [(ngModel)]="expense.amount" required />
+    </mat-form-field>
+
+    <!-- CATEGORY -->
+    <mat-form-field appearance="outline" class="input-category">
+      <mat-label>Category</mat-label>
+      <mat-select name="category" [(ngModel)]="expense.category" required>
+        @for (category of categories$ | async; track category.name) {
+        <mat-option [value]="category.name"> {{ category.name }} </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- COMMENT -->
+  <mat-form-field appearance="outline" class="full-width">
+    <mat-label>Comment</mat-label>
+    <textarea matInput name="comment" [(ngModel)]="expense.comment" cdkTextareaAutosize></textarea>
+    <mat-icon matSuffix *ngIf="expense.comment" (click)="expense.comment=''" aria-label="Clear">close</mat-icon>
+  </mat-form-field>
+
+  <button
+    mat-stroked-button
+    color="primary"
+    class="submit-button"
+    type="submit"
+    [disabled]="!form.valid || (loading$ | async)"
+  >
+    Add Expense
+  </button>
+</form>

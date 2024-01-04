@@ -1,0 +1,26 @@
+.main-form {
+  width: 100%;
+  padding: 10px;
+
+  .form-row {
+    display: flex;
+    gap: 10px;
+  }
+
+  .input-amount {
+    width: 100px;
+  }
+
+  .input-category {
+    flex-grow: 1;
+  }
+
+  .submit-button {
+    width: 100%;
+    height: 56px;
+  }
+}
+
+.full-width {
+  width: 100%;
+}

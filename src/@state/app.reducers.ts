@@ -2,12 +2,14 @@ import { isDevMode } from '@angular/core';
 
 import { ActionReducerMap, MetaReducer, createReducer, on } from '@ngrx/store';
 
-import { CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
+import { CATEGORIES, CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
 import { AppActions } from './app.actions';
 import { AppState } from './app.model';
+import { Category } from 'src/shared/models';
 
 const sheetId = localStorage.getItem(SHEET_ID);
 const categoriesSheetId = localStorage.getItem(CATEGORIES_SHEET_ID);
+const categories = localStorage.getItem(CATEGORIES);
 
 export const initialState: AppState = {
   loading: false,
@@ -15,7 +17,7 @@ export const initialState: AppState = {
   spreadsheetId: localStorage.getItem(SPREADSHEET_ID) ?? undefined,
   sheetId: sheetId ? parseInt(sheetId, 10) : undefined,
   categoriesSheetId: categoriesSheetId ? parseInt(categoriesSheetId, 10) : undefined,
-  categories: []
+  categories: categories ? (JSON.parse(categories) as Array<Category>) : []
 };
 
 export const reducers: ActionReducerMap<{ app: AppState }> = {
