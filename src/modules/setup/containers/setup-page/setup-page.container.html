@@ -9,7 +9,13 @@
   <form #form="ngForm" class="info">
     <mat-form-field appearance="outline" style="width: 400px">
       <mat-label>Spreadsheet id</mat-label>
-      <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" [required]="true" />
+      <input
+        [name]="spreadsheetIdField"
+        matInput
+        [ngModel]="spreadsheetId | async"
+        [required]="true"
+        autocomplete="off"
+      />
       <mat-icon matSuffix>help_outline</mat-icon>
     </mat-form-field>
 
