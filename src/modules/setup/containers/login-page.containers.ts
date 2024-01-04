@@ -50,6 +50,6 @@ export class LoginPageContainer {
     this.securityService.login();
     this.securityService.user$
       .pipe(first((user) => !!user))
-      .subscribe(() => this.router.navigate([ROUTE.setup, ROUTE.settings]));
+      .subscribe(() => this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true }));
   }
 }

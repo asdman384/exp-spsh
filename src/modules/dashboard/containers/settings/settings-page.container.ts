@@ -1,5 +1,6 @@
 import { CdkDragDrop, CdkDragMove } from '@angular/cdk/drag-drop';
 import { Component, OnInit } from '@angular/core';
+import { NgModel } from '@angular/forms';
 
 import { Store } from '@ngrx/store';
 import { first, map } from 'rxjs';
@@ -30,14 +31,14 @@ export class SettingsPageContainer implements OnInit {
 
   ngOnInit(): void {}
 
-  addCategory(name: string): void {
+  addCategory(name: string, control: NgModel): void {
     this.categories$.pipe(first()).subscribe((categories) => {
       const position = Math.max(...categories.map((c) => c.position), -1) + 1;
       if (~categories.findIndex((c) => c.name === name)) {
         log(`category [${name}] already exists`);
         return;
       }
-      this.category = '';
+      control.reset();
       this.store.dispatch(AppActions.addCategory({ newCategory: { name, position } }));
     });
   }
