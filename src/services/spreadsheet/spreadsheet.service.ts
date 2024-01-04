@@ -8,6 +8,17 @@ import { Category } from 'src/shared/models';
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient) {}
 
+  updateCategories(spreadsheetId: string, categories: Array<Category>) {
+    return gapi.client.sheets.spreadsheets.values
+      .update({
+        spreadsheetId,
+        range: `${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`,
+        valueInputOption: 'RAW',
+        resource: { values: categories.map((c) => [c.name, c.position]) }
+      })
+      .then((resp) => resp.result);
+  }
+
   /**
    *
    * @param spreadsheetId

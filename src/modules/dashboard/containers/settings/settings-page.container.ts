@@ -2,7 +2,7 @@ import { CdkDragDrop, CdkDragMove } from '@angular/cdk/drag-drop';
 import { Component, OnInit } from '@angular/core';
 
 import { Store } from '@ngrx/store';
-import { first } from 'rxjs';
+import { first, map } from 'rxjs';
 
 import { AppActions, categoriesSelector, loadingSelector } from 'src/@state';
 import { Category } from 'src/shared/models';
@@ -17,7 +17,9 @@ const MOVE_THRESHOLD = 23;
 })
 export class SettingsPageContainer implements OnInit {
   readonly loading$ = this.store.select(loadingSelector);
-  readonly categories$ = this.store.select(categoriesSelector);
+  readonly categories$ = this.store
+    .select(categoriesSelector)
+    .pipe(map((categories) => [...categories].sort((a, b) => a.position - b.position)));
   category: string = '';
   dragPlaceholderText: string = '';
 
@@ -40,7 +42,7 @@ export class SettingsPageContainer implements OnInit {
     });
   }
 
-  onDrop(event: CdkDragDrop<undefined, undefined, Category>): void {
+  onDrop(event: CdkDragDrop<Array<Category>, undefined, Category>): void {
     if (this.tryDelete(event)) {
       return;
     }
@@ -53,7 +55,7 @@ export class SettingsPageContainer implements OnInit {
       event.distance.x > DELETE_THRESHOLD && event.distance.y < MOVE_THRESHOLD ? 'Drop to remove' : '';
   }
 
-  private tryDelete(event: CdkDragDrop<undefined, undefined, Category>): boolean {
+  private tryDelete(event: CdkDragDrop<Array<Category>, undefined, Category>): boolean {
     if (event.previousIndex !== event.currentIndex) {
       return false;
     }
@@ -65,7 +67,18 @@ export class SettingsPageContainer implements OnInit {
     return true;
   }
 
-  private changePosition(event: CdkDragDrop<undefined, undefined, Category>): void {
-    throw new Error('Method not implemented.');
+  private changePosition(event: CdkDragDrop<Array<Category>, undefined, Category>): void {
+    const categories = [...event.container.data];
+    const start = event.previousIndex;
+    const end = event.currentIndex;
+    const delta = (end - start) / Math.abs(end - start);
+
+    for (let i = start + delta; i !== end + delta; i += delta) {
+      categories[i] = { ...categories[i], position: categories[i].position + delta * -1 };
+    }
+
+    categories[start] = { ...categories[start], position: end };
+
+    this.store.dispatch(AppActions.updateCategoryPosition({ categories }));
   }
 }

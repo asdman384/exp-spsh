@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, catchError, exhaustMap, from, map, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, catchError, exhaustMap, map, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
@@ -62,11 +62,11 @@ export class AppEffects {
       ofType(AppActions.adCategory),
       withLatestFrom(this.store.select(spreadsheetIdSelector)),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      exhaustMap(([action, id]) =>
-        from(this.spreadSheetService.addCategory(id!, action.newCategory)).pipe(map(() => action))
+      exhaustMap(([{ newCategory }, id]) =>
+        this.spreadSheetService.addCategory(id!, newCategory).then(() => newCategory)
       ),
       withLatestFrom(this.store.select(categoriesSelector)),
-      map(([action, categories]) => AppActions.storeCategories({ categories: [...categories, action.newCategory] })),
+      map(([newCategory, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
         log(e);
@@ -79,13 +79,13 @@ export class AppEffects {
   readonly deleteCategory$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.deleteCategory),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       withLatestFrom(
         this.store.select(spreadsheetIdSelector),
         this.store.select(categoriesSheetIdSelector),
         this.store.select(categoriesSelector)
       ),
       exhaustMap(([action, spreadsheetId, sheetId, categories]) => {
+        this.store.dispatch(AppActions.loading({ loading: true }));
         const index = categories.findIndex((c) => c.name === action.category.name);
         if (!~index) {
           throw `cannot find category [${action.category.name}]`;
@@ -104,6 +104,26 @@ export class AppEffects {
     )
   );
 
+  private categoriesBackUp: any;
+  readonly updateCategoryPosition$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AppActions.updateCategoryPosition),
+      withLatestFrom(this.store.select(spreadsheetIdSelector), this.store.select(categoriesSelector)),
+      exhaustMap(([action, id, categoriesBackUp]) => {
+        this.categoriesBackUp = categoriesBackUp;
+        this.store.dispatch(AppActions.loading({ loading: true }));
+        this.store.dispatch(AppActions.storeCategories({ categories: action.categories }));
+        return this.spreadSheetService.updateCategories(id!, action.categories);
+      }),
+      map(() => AppActions.loading({ loading: false })),
+      catchError((e) => {
+        log(e);
+        AppActions.storeCategories({ categories: this.categoriesBackUp });
+        this.store.dispatch(AppActions.loading({ loading: false }));
+        return EMPTY;
+      })
+    )
+  );
   constructor(
     private readonly store: Store,
     private readonly actions$: Actions,
