@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
 
 import { BehaviorSubject, Subject, combineLatest, filter, first } from 'rxjs';
 
@@ -26,7 +26,11 @@ export class SecurityService {
   readonly loading$ = this.loading.asObservable();
   readonly gapiReady$ = this.gapiReady.asObservable();
 
-  constructor(private readonly storageService: StorageService, private readonly status: NetworkStatusService) {}
+  constructor(
+    private readonly storageService: StorageService,
+    private readonly status: NetworkStatusService,
+    private readonly zone: NgZone
+  ) {}
 
   /**
    * https://developers.google.com/sheets/api/quickstart/js?hl=ru
@@ -59,9 +63,11 @@ export class SecurityService {
         .get()
         .then((resp) => new Userinfo(resp.result))
         .then((user) => {
-          this.user.next(user);
           this.storageService.put(Userinfo, user);
-          this.loading.next(false);
+          this.zone.run(() => {
+            this.user.next(user);
+            this.loading.next(false);
+          });
           log('SecurityService: logged user' + (user.name ?? user.given_name));
         });
     });
@@ -75,8 +81,7 @@ export class SecurityService {
     gapi.client.setToken(null);
     this.user.next(undefined);
     this.token$.next(undefined);
-    this.storageService.remove(Userinfo);
-    this.storageService.remove(Token);
+    this.storageService.clear();
   }
 
   refreshToken(): void {
@@ -140,9 +145,9 @@ export class SecurityService {
           ])
             .then(() => {
               log('SecurityService: gapi client ready');
-              this.gapiReady.next(true);
+              this.zone.run(() => this.gapiReady.next(true));
             })
-            .catch((error) => this.gapiReady.error(error));
+            .catch((error) => this.zone.run(() => this.gapiReady.error(error)));
         });
       });
     });

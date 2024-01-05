@@ -1,12 +1,14 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone } from '@angular/core';
+import { Observable } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
+import { nonZonePromiseToObservable } from 'src/shared/helpers';
 import { Category, Expense } from 'src/shared/models';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient, private readonly zone: NgZone) {}
 
   updateCategories(spreadsheetId: string, categories: Array<Category>) {
     return gapi.client.sheets.spreadsheets.values
@@ -63,14 +65,16 @@ export class SpreadsheetService {
    * @param spreadsheetId
    * @returns
    */
-  getAllCategories(spreadsheetId: string): Promise<Array<Category>> {
-    return gapi.client.sheets.spreadsheets.values
+  getAllCategories(spreadsheetId: string): Observable<Array<Category>> {
+    const request = gapi.client.sheets.spreadsheets.values
       .get({
         spreadsheetId,
         valueRenderOption: 'UNFORMATTED_VALUE',
         range: CATEGORIES_SHEET_TITLE + `!A:B`
       })
       .then((resp) => resp.result.values?.map<Category>(([name, position]) => ({ name, position })) || []);
+
+    return nonZonePromiseToObservable(request, this.zone);
   }
 
   /**

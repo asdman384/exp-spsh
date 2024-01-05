@@ -49,11 +49,8 @@ export class LoginPageContainer {
 
   login(): void {
     this.securityService.login();
-    this.securityService.user$.pipe(first((user) => !!user)).subscribe(() => {
-      // after google sign in popup is closed, navigation performs outside NgZone for some reason
-      this.ngZone.run(() => {
-        this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true });
-      });
-    });
+    this.securityService.user$
+      .pipe(first((user) => !!user))
+      .subscribe(() => this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true }));
   }
 }

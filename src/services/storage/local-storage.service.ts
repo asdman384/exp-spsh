@@ -17,4 +17,8 @@ export class LocalStorageService implements StorageService {
   remove<T>(key: new (...args: any[]) => T): void {
     localStorage.removeItem(key.name);
   }
+
+  clear(): void {
+    localStorage.clear();
+  }
 }
