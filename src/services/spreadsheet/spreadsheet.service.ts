@@ -10,15 +10,20 @@ import { Category, Expense } from 'src/shared/models';
 export class SpreadsheetService {
   constructor(private readonly http: HttpClient, private readonly zone: NgZone) {}
 
-  updateCategories(spreadsheetId: string, categories: Array<Category>) {
-    return gapi.client.sheets.spreadsheets.values
+  updateCategories(
+    spreadsheetId: string,
+    categories: Array<Category>
+  ): Observable<gapi.client.sheets.UpdateValuesResponse> {
+    const request = gapi.client.sheets.spreadsheets.values
       .update({
         spreadsheetId,
         range: `${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`,
         valueInputOption: 'RAW',
-        resource: { values: categories.map((c) => [c.name, c.position]) }
+        resource: { values: categories.map((c) => [c.name, c.id]) }
       })
       .then((resp) => resp.result);
+
+    return nonZonePromiseToObservable(request, this.zone);
   }
 
   /**
@@ -27,8 +32,11 @@ export class SpreadsheetService {
    * @param param1
    * @returns
    */
-  addCategory(spreadsheetId: string, { name, position }: Category): Promise<gapi.client.sheets.AppendValuesResponse> {
-    return gapi.client.sheets.spreadsheets.values
+  addCategory(
+    spreadsheetId: string,
+    { name, id: position }: Category
+  ): Observable<gapi.client.sheets.AppendValuesResponse> {
+    const request = gapi.client.sheets.spreadsheets.values
       .append({
         spreadsheetId: spreadsheetId,
         range: `${CATEGORIES_SHEET_TITLE}!A1:B1`,
@@ -37,6 +45,8 @@ export class SpreadsheetService {
         resource: { values: [[name, position]] }
       })
       .then((resp) => resp.result);
+
+    return nonZonePromiseToObservable(request, this.zone);
   }
 
   /**
@@ -50,14 +60,16 @@ export class SpreadsheetService {
     spreadsheetId: string,
     sheetId: number,
     index: number
-  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const deleteDimension: gapi.client.sheets.DeleteDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
     };
 
-    return gapi.client.sheets.spreadsheets
+    const request = gapi.client.sheets.spreadsheets
       .batchUpdate({ spreadsheetId, resource: { requests: [{ deleteDimension }] } })
       .then((resp) => resp.result);
+
+    return nonZonePromiseToObservable(request, this.zone);
   }
 
   /**
@@ -72,7 +84,7 @@ export class SpreadsheetService {
         valueRenderOption: 'UNFORMATTED_VALUE',
         range: CATEGORIES_SHEET_TITLE + `!A:B`
       })
-      .then((resp) => resp.result.values?.map<Category>(([name, position]) => ({ name, position })) || []);
+      .then((resp) => resp.result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []);
 
     return nonZonePromiseToObservable(request, this.zone);
   }
@@ -214,7 +226,7 @@ export class SpreadsheetService {
     spreadsheetId: string,
     sheetId: number,
     expense: Expense
-  ): Promise<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       inheritFromBefore: false
@@ -235,9 +247,11 @@ export class SpreadsheetService {
       ]
     };
 
-    return gapi.client.sheets.spreadsheets
+    const request = gapi.client.sheets.spreadsheets
       .batchUpdate({ spreadsheetId, resource: { requests: [{ insertDimension }, { updateCells }] } })
       .then((response) => response.result);
+
+    return nonZonePromiseToObservable(request, this.zone);
   }
 
   /**

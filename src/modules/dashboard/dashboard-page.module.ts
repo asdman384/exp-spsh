@@ -7,7 +7,7 @@ import { ROUTE } from 'src/constants';
 import { UIKitModule } from 'src/shared/modules';
 
 import { isLoggedIn, isOnlineAndReady } from 'src/shared/guards';
-import { DashboardPageContainer, SettingsPageContainer, containers } from './containers';
+import { DashboardPageContainer, CategoriesPageContainer, containers } from './containers';
 
 const routes: Routes = [
   {
@@ -17,7 +17,7 @@ const routes: Routes = [
   {
     path: ROUTE.categories,
     canActivate: [isLoggedIn, isOnlineAndReady],
-    component: SettingsPageContainer
+    component: CategoriesPageContainer
   }
 ];
 

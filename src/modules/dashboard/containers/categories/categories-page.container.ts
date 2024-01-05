@@ -1,9 +1,9 @@
-import { CdkDragDrop, CdkDragMove } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragMove, moveItemInArray } from '@angular/cdk/drag-drop';
 import { Component, OnInit } from '@angular/core';
 import { NgModel } from '@angular/forms';
 
 import { Store } from '@ngrx/store';
-import { first, map } from 'rxjs';
+import { first } from 'rxjs';
 
 import { AppActions, categoriesSelector, loadingSelector } from 'src/@state';
 import { Category } from 'src/shared/models';
@@ -12,15 +12,13 @@ const DELETE_THRESHOLD = 150;
 const MOVE_THRESHOLD = 23;
 
 @Component({
-  selector: 'settings-page',
-  templateUrl: './settings-page.container.html',
-  styleUrl: './settings-page.container.scss'
+  selector: 'categories-page',
+  templateUrl: './categories-page.container.html',
+  styleUrl: './categories-page.container.scss'
 })
-export class SettingsPageContainer implements OnInit {
+export class CategoriesPageContainer implements OnInit {
   readonly loading$ = this.store.select(loadingSelector);
-  readonly categories$ = this.store
-    .select(categoriesSelector)
-    .pipe(map((categories) => [...categories].sort((a, b) => a.position - b.position)));
+  readonly categories$ = this.store.select(categoriesSelector);
   category: string = '';
   dragPlaceholderText: string = '';
 
@@ -33,13 +31,13 @@ export class SettingsPageContainer implements OnInit {
 
   addCategory(name: string, control: NgModel): void {
     this.categories$.pipe(first()).subscribe((categories) => {
-      const position = Math.max(...categories.map((c) => c.position), -1) + 1;
+      const position = Math.max(...categories.map((c) => c.id), -1) + 1;
       if (~categories.findIndex((c) => c.name === name)) {
         log(`category [${name}] already exists`);
         return;
       }
       control.reset();
-      this.store.dispatch(AppActions.addCategory({ newCategory: { name, position } }));
+      this.store.dispatch(AppActions.addCategory({ newCategory: { name, id: position } }));
     });
   }
 
@@ -70,16 +68,7 @@ export class SettingsPageContainer implements OnInit {
 
   private changePosition(event: CdkDragDrop<Array<Category>, undefined, Category>): void {
     const categories = [...event.container.data];
-    const start = event.previousIndex;
-    const end = event.currentIndex;
-    const delta = (end - start) / Math.abs(end - start);
-
-    for (let i = start + delta; i !== end + delta; i += delta) {
-      categories[i] = { ...categories[i], position: categories[i].position + delta * -1 };
-    }
-
-    categories[start] = { ...categories[start], position: end };
-
+    moveItemInArray(categories, event.previousIndex, event.currentIndex);
     this.store.dispatch(AppActions.updateCategoryPosition({ categories }));
   }
 }

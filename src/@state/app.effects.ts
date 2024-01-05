@@ -72,7 +72,7 @@ export class AppEffects {
       withLatestFrom(this.store.select(spreadsheetIdSelector)),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       exhaustMap(([{ newCategory }, id]) =>
-        this.spreadSheetService.addCategory(id!, newCategory).then(() => newCategory)
+        this.spreadSheetService.addCategory(id!, newCategory).pipe(map(() => newCategory))
       ),
       withLatestFrom(this.store.select(categoriesSelector)),
       map(([newCategory, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
@@ -101,7 +101,7 @@ export class AppEffects {
         }
         const newCategories = [...categories];
         newCategories.splice(index, 1);
-        return this.spreadSheetService.deleteCategory(spreadsheetId!, sheetId!, index).then(() => newCategories);
+        return this.spreadSheetService.deleteCategory(spreadsheetId!, sheetId!, index).pipe(map(() => newCategories));
       }),
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
@@ -140,7 +140,7 @@ export class AppEffects {
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       withLatestFrom(this.store.select(spreadsheetIdSelector), this.store.select(sheetIdSelector)),
       exhaustMap(([{ expense }, spreadsheetId, sheetId]) =>
-        this.spreadSheetService.addExpense(spreadsheetId!, sheetId!, expense).then(() => expense)
+        this.spreadSheetService.addExpense(spreadsheetId!, sheetId!, expense).pipe(map(() => expense))
       ),
       map(() => AppActions.loading({ loading: false })),
       catchError((e) => {

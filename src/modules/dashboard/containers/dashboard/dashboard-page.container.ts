@@ -16,9 +16,7 @@ import { Expense } from 'src/shared/models';
 export class DashboardPageContainer {
   readonly loading$ = this.store.select(loadingSelector);
   readonly usersLookup: Array<{ name?: string; value?: string }> = [];
-  readonly categories$ = this.store
-    .select(categoriesSelector)
-    .pipe(map((categories) => [...categories].sort((a, b) => a.position - b.position)));
+  readonly categories$ = this.store.select(categoriesSelector);
 
   expense: Expense = {
     date: new Date(),
