@@ -24,7 +24,7 @@ const routes: Routes = [
 ];
 
 @NgModule({
-  imports: [CommonModule, FormsModule, StoreModule, EffectsModule, RouterModule.forChild(routes), UIKitModule],
+  imports: [CommonModule, FormsModule, RouterModule.forChild(routes), UIKitModule],
   declarations: [containers]
 })
 export class DashboardPageModule {}
