@@ -45,3 +45,11 @@ body {
 .hidden {
   display: none;
 }
+
+.full-width {
+  width: 100%;
+}
+
+.non-selectable {
+  user-select: none;
+}

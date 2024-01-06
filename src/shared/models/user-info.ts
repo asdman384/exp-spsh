@@ -16,7 +16,7 @@ export class Userinfo implements gapi.client.oauth2.Userinfo {
   /** The user's preferred locale. */
   locale?: string;
   /** The user's full name. */
-  name?: string;
+  name: string;
   /** URL of the user's picture image. */
   picture?: string;
   /** Boolean flag which is true if the email address is verified. Always verified because we only return the user's primary email address. */
@@ -24,6 +24,7 @@ export class Userinfo implements gapi.client.oauth2.Userinfo {
 
   constructor(obj: gapi.client.oauth2.Userinfo) {
     this.id = '';
+    this.name = '';
     Object.assign(this, obj);
   }
 }

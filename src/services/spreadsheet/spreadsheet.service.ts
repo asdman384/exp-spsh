@@ -102,8 +102,8 @@ export class SpreadsheetService {
   getSpreadsheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
     return gapi.client.sheets.spreadsheets
       .get({
-        spreadsheetId
-        // includeGridData: true
+        spreadsheetId,
+        includeGridData: true
       })
       .then((response) => response.result);
   }
@@ -116,18 +116,14 @@ export class SpreadsheetService {
    * @param columnCount
    * @returns
    */
-  addSheet(
-    title: string,
-    spreadsheetId: string,
-    columnCount: number
-  ): Promise<gapi.client.sheets.SheetProperties | undefined> {
+  addSheet(title: string, spreadsheetId: string, columnCount: number): Promise<gapi.client.sheets.SheetProperties> {
     const addSheet: gapi.client.sheets.AddSheetRequest = {
       properties: { title, gridProperties: { rowCount: 1, columnCount } }
     };
 
     return gapi.client.sheets.spreadsheets
       .batchUpdate({ spreadsheetId, resource: { requests: [{ addSheet }] } })
-      .then((response) => response.result.replies?.[0].addSheet?.properties);
+      .then((response) => response.result.replies![0].addSheet!.properties!);
   }
 
   /**
@@ -265,7 +261,7 @@ export class SpreadsheetService {
    * @param spreadsheetId
    * @param sheetId
    */
-  loadExpenses(spreadsheetId: string, sheetId: number, filter: { from?: Date; to?: Date }): Observable<Array<Expense>> {
+  loadExpenses(spreadsheetId: string, filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
     let gvizQuery = `
       select A, B, C, D 
@@ -280,7 +276,7 @@ export class SpreadsheetService {
       this.http.get(
         `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +
           `/gviz/tq?tq=${encodeURIComponent(gvizQuery)}` +
-          `&tqx=responseHandler:myResponseHandler&gid=${sheetId}` +
+          `&tqx=responseHandler:myResponseHandler&gid=${filter.sheetId}` +
           `&access_token=${encodeURIComponent(token)}`,
         { responseType: 'text' }
       );

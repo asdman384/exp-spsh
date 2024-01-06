@@ -10,6 +10,7 @@
         [matDatepicker]="picker"
         (click)="picker.open()"
         readonly
+        required
       />
       <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
       <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
@@ -18,9 +19,9 @@
     <!-- USER -->
     <mat-form-field appearance="outline">
       <mat-label>User</mat-label>
-      <mat-select name="userId" [(ngModel)]="expense.userId">
-        @for (user of usersLookup; track user.value) {
-        <mat-option [value]="user.value"> {{ user.name }} </mat-option>
+      <mat-select name="sheet" [(ngModel)]="sheet" (valueChange)="onSheetChange($event)" required>
+        @for (sheet of sheets$ | async; track sheet.id) {
+        <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
         }
       </mat-select>
     </mat-form-field>
@@ -39,6 +40,8 @@
       <mat-select name="category" [(ngModel)]="expense.category" required>
         @for (category of categories$ | async; track category.name) {
         <mat-option [value]="category.name"> {{ category.name }} </mat-option>
+        }@empty {
+        <mat-option [value]="undefined" (click)="loadCategories()"> Click to Load </mat-option>
         }
       </mat-select>
     </mat-form-field>

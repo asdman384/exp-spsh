@@ -1,5 +1,5 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { Category, Expense } from 'src/shared/models';
+import { Category, Expense, Sheet } from 'src/shared/models';
 
 export const AppActions = createActionGroup({
   source: 'App shell',
@@ -10,7 +10,8 @@ export const AppActions = createActionGroup({
 
     // setup
     spreadsheetId: props<{ spreadsheetId: string | undefined }>(),
-    sheetId: props<{ sheetId: number | undefined }>(),
+    setCurrentSheet: props<{ sheet: Sheet | string }>(),
+    upsertDataSheet: props<{ dataSheet: Sheet }>(),
     categoriesSheetId: props<{ categoriesSheetId: number | undefined }>(),
 
     // categories
@@ -21,8 +22,8 @@ export const AppActions = createActionGroup({
     updateCategoryPosition: props<{ categories: Array<Category> }>(),
 
     // expenses
-    addExpense: props<{ expense: Expense }>(),
-    loadExpenses: props<{ from?: Date; to?: Date }>(),
+    addExpense: props<{ sheetId: number; expense: Expense }>(),
+    loadExpenses: props<{ sheetId: number; from?: Date; to?: Date }>(),
     storeExpenses: props<{ expenses: Array<Expense> }>()
   }
 });

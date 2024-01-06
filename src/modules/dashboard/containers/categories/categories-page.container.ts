@@ -16,7 +16,7 @@ const MOVE_THRESHOLD = 23;
   templateUrl: './categories-page.container.html',
   styleUrl: './categories-page.container.scss'
 })
-export class CategoriesPageContainer implements OnInit {
+export class CategoriesPageContainer {
   readonly loading$ = this.store.select(loadingSelector);
   readonly categories$ = this.store.select(categoriesSelector);
   category: string = '';
@@ -26,8 +26,6 @@ export class CategoriesPageContainer implements OnInit {
     this.store.dispatch(AppActions.loadCategories());
     this.store.dispatch(AppActions.setTitle({ title: 'Categories' }));
   }
-
-  ngOnInit(): void {}
 
   addCategory(name: string, control: NgModel): void {
     this.categories$.pipe(first()).subscribe((categories) => {

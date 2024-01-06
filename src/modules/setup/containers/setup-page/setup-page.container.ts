@@ -2,11 +2,19 @@ import { Component } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, first, firstValueFrom } from 'rxjs';
 
-import { AppActions, categoriesSheetIdSelector, sheetIdSelector, spreadsheetIdSelector } from 'src/@state';
-import { CATEGORIES_SHEET_ID, CATEGORIES_SHEET_TITLE, ROUTE, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
+import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
+import {
+  CATEGORIES_SHEET_ID,
+  CATEGORIES_SHEET_TITLE,
+  DATA_SHEETS,
+  DATA_SHEET_TITLE_PREFIX,
+  ROUTE,
+  SPREADSHEET_ID
+} from 'src/constants';
 import { SecurityService, SpreadsheetService } from 'src/services';
+import { Sheet } from 'src/shared/models';
 
 type State = 'check document' | 'finish';
 
@@ -17,10 +25,10 @@ type State = 'check document' | 'finish';
 })
 export class SettingsPageContainer {
   readonly spreadsheetIdField = SPREADSHEET_ID;
-  readonly sheetIdField = SHEET_ID;
+  readonly sheetField = DATA_SHEETS;
   readonly categoriesSheetIdField = CATEGORIES_SHEET_ID;
   readonly spreadsheetId: Observable<string | undefined> = this.store.select(spreadsheetIdSelector);
-  readonly sheetId: Observable<number | undefined> = this.store.select(sheetIdSelector);
+  readonly sheet$: Observable<Sheet | undefined> = this.store.select(currentSheetSelector);
   readonly categoriesSheetId: Observable<number | undefined> = this.store.select(categoriesSheetIdSelector);
   loading: boolean = false;
   state: State = 'check document';
@@ -43,23 +51,30 @@ export class SettingsPageContainer {
     if (!form.valid) return;
     const spreadsheetId: string = form.value[this.spreadsheetIdField];
     const user = await firstValueFrom(this.security.user$);
-    if (!user ) {
+    if (!user) {
       throw 'error getting user';
     }
 
     this.loading = true;
 
     const spreadsheet = await this.loadSpreadSheet(spreadsheetId);
-    const dataSheetId = await this.createSheet(user.id, 4, spreadsheet);
-    this.store.dispatch(AppActions.sheetId({ sheetId: dataSheetId }));
-    const categoriesSheetId = await this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet);
-    this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId }));
+
+    spreadsheet.sheets
+      ?.filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
+      .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }))
+      .forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
+
+    const dataSheet = await this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 4, spreadsheet);
+    this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
+    this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));
+    const categoriesSheet = await this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet);
+    this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
 
     log('categories sheet format adjust');
-    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheetId);
+    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
     log('categories sheet format adjust finish');
     log('data sheet format adjust');
-    await this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheetId);
+    await this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id);
     log('data sheet format adjust finish');
 
     this.loading = false;
@@ -86,26 +101,21 @@ export class SettingsPageContainer {
     title: string,
     columnCount: number,
     spreadsheet: gapi.client.sheets.Spreadsheet
-  ): Promise<number> {
-    const sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title);
-    let sheetId: number | undefined = sheet?.properties?.sheetId;
+  ): Promise<Sheet> {
+    let sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
 
     if (!sheet) {
-      log(`${title} sheet creation`);
-
-      sheetId = await this.spreadsheetService
-        .addSheet(title, spreadsheet.spreadsheetId!, columnCount)
-        .then((sheet) => sheet?.sheetId);
-
-      log(`${title} sheet created sheetId: ${sheetId}`);
+      log(`sheet creation [${title}]`);
+      sheet = await this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount);
+      log(`sheet created [${sheet.title}]`);
     } else {
-      log(`${title} sheet exists: ${sheetId}`);
+      log(`sheet exists [${sheet.title}]`);
     }
 
-    if (sheetId === undefined) {
+    if (sheet === undefined) {
       throw `error getting ${title} sheet`;
     }
 
-    return sheetId;
+    return { id: sheet.sheetId!, title: sheet.title! };
   }
 }
