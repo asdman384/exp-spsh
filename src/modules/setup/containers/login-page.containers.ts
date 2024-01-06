@@ -1,4 +1,4 @@
-import { Component, NgZone } from '@angular/core';
+import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { first } from 'rxjs';
@@ -43,8 +43,7 @@ export class LoginPageContainer {
   constructor(
     private readonly router: Router,
     private readonly securityService: SecurityService,
-    private readonly status: NetworkStatusService,
-    private readonly ngZone: NgZone
+    private readonly status: NetworkStatusService
   ) {}
 
   login(): void {

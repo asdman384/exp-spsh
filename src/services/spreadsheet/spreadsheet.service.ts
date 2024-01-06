@@ -1,14 +1,19 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable } from 'rxjs';
+import { Observable, first, map, mergeMap } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { nonZonePromiseToObservable } from 'src/shared/helpers';
 import { Category, Expense } from 'src/shared/models';
+import { SecurityService } from '../security.service';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
-  constructor(private readonly http: HttpClient, private readonly zone: NgZone) {}
+  constructor(
+    private readonly http: HttpClient,
+    private readonly security: SecurityService,
+    private readonly zone: NgZone
+  ) {}
 
   updateCategories(
     spreadsheetId: string,
@@ -256,27 +261,34 @@ export class SpreadsheetService {
 
   /**
    * https://developers.google.com/chart/interactive/docs/spreadsheets#example:-using-oauth-to-access-gviztq
+   * https://developers.google.com/chart/interactive/docs/querylanguage#overview
    * @param spreadsheetId
    * @param sheetId
    */
-  getData(spreadsheetId: string, sheetId: number) {
-    const today = new Date();
-    // https://developers.google.com/chart/interactive/docs/querylanguage#overview
-    const gvizQuery = `
-        select A, B, C, D 
-        where D >= date '${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}'
+  loadExpenses(spreadsheetId: string, sheetId: number, filter: { from?: Date; to?: Date }): Observable<Array<Expense>> {
+    const from = filter.from ?? new Date();
+    let gvizQuery = `
+      select A, B, C, D 
+      where D >= date '${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}'
     `.trim();
 
-    this.http
-      .get(
+    if (filter.to) {
+      gvizQuery += `and D <= date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
+    }
+
+    const request = (token: string) =>
+      this.http.get(
         `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +
           `/gviz/tq?tq=${encodeURIComponent(gvizQuery)}` +
-          `&gid=${sheetId}` +
-          `&tqx=out:csv` +
-          `&access_token=${encodeURIComponent(gapi.client.getToken().access_token)}`,
+          `&tqx=responseHandler:myResponseHandler&gid=${sheetId}` +
+          `&access_token=${encodeURIComponent(token)}`,
         { responseType: 'text' }
-      )
-      .subscribe(log);
+      );
+
+    return this.security.token$.pipe(
+      first(),
+      mergeMap((token) => request(token!.access_token).pipe(map(translateTextToExpense)))
+    );
   }
 }
 
@@ -291,20 +303,34 @@ export class SpreadsheetService {
  * @returns SERIAL_NUMBER
  */
 function getDateSerialNumber(date: Date): number {
-  //   // Set the base date
-  //   const baseDate = new Date('1899-12-29T21:00:00.000Z');
-
-  //   // Calculate the difference in milliseconds
-  //   const dateDifference = date.getTime() - baseDate.getTime();
-
-  //   // Convert milliseconds to days
-  //   const days = Math.trunc(dateDifference / (24 * 60 * 60 * 1000));
-
-  //   // Get the fractional part representing the time
-  //   const fractionalPart = (date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()) / (24 * 60 * 60);
-
-  //   // Combine the whole and fractional parts and return as SerialNumber
-  //   return days + fractionalPart;
-
   return 25569.0 + (date.getTime() - date.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24);
+}
+
+function translateTextToExpense(text: string): Array<Expense> {
+  function myResponseHandler(data: ExpensesDTO): Array<Expense> {
+    return data.table.rows.map<Expense>((row) => ({
+      category: String(row.c[0].v),
+      comment: String(row.c[1].v),
+      amount: Number(row.c[2].v),
+      date: eval(`new ${row.c[3].v}`),
+      userId: ''
+    }));
+  }
+
+  return eval(text);
+}
+
+interface ExpensesDTO {
+  table: {
+    cols: Array<{
+      id: string;
+      label: string;
+      type: 'string' | 'number' | 'datetime';
+      pattern?: 'General' | string;
+    }>;
+
+    rows: Array<{
+      c: Array<{ v: string | number; f?: string }>;
+    }>;
+  };
 }

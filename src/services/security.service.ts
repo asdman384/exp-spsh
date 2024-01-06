@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 
-import { BehaviorSubject, Subject, combineLatest, filter, first } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject, combineLatest, filter, first, shareReplay } from 'rxjs';
 
 import { environment } from 'src/environments/environment';
 import { Token, Userinfo } from 'src/shared/models';
@@ -19,9 +19,10 @@ export class SecurityService {
   private readonly securityClient$ = new BehaviorSubject<google.accounts.oauth2.TokenClient | undefined>(undefined);
   private readonly loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
   private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get(Userinfo));
-  private readonly token$ = new Subject<google.accounts.oauth2.TokenResponse | undefined>();
+  private readonly token = new Subject<google.accounts.oauth2.TokenResponse>();
   private readonly gapiReady = new BehaviorSubject<boolean>(false);
 
+  readonly token$ = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
   readonly user$ = this.user.asObservable();
   readonly loading$ = this.loading.asObservable();
   readonly gapiReady$ = this.gapiReady.asObservable();
@@ -41,10 +42,11 @@ export class SecurityService {
     this.initSecurityClient();
     this.initGapiClient();
 
-    combineLatest([this.token$, this.gapiReady$])
+    combineLatest([this.token, this.gapiReady$])
       .pipe(filter(([t, ready]) => !!t && ready))
       .subscribe(([t]) => gapi.client.setToken(t!));
-
+    this.token.subscribe(this.token$);
+    
     this.refreshToken();
   }
 
@@ -58,7 +60,7 @@ export class SecurityService {
       client!.requestAccessToken({});
     });
 
-    this.token$.pipe(first((t) => !!t)).subscribe(() => {
+    this.token.pipe(first((t) => !!t)).subscribe(() => {
       gapi.client.oauth2.userinfo
         .get()
         .then((resp) => new Userinfo(resp.result))
@@ -79,8 +81,8 @@ export class SecurityService {
       google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
     }
     gapi.client.setToken(null);
-    this.user.next(undefined);
-    this.token$.next(undefined);
+    this.user.complete();
+    this.token.complete();
     this.storageService.clear();
   }
 
@@ -94,7 +96,7 @@ export class SecurityService {
     }
 
     if (token && Date.now() < token.expiration) {
-      this.token$.next(token.googleToken);
+      this.token.next(token.googleToken);
       log('SecurityService: token still valid, no refresh, expiration:', new Date(token.expiration).toString());
       return;
     }
@@ -117,7 +119,7 @@ export class SecurityService {
         if (token.error) {
           log('SecurityService: token request error', token.error);
           this.storageService.remove(Token);
-          this.token$.error(token.error);
+          this.token.error(token.error);
           return;
         }
 
@@ -125,7 +127,7 @@ export class SecurityService {
           'SecurityService: token request success, expiration:',
           new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
         );
-        this.token$.next(token);
+        this.token.next(token);
         this.storageService.put(Token, new Token(token));
       }
     });

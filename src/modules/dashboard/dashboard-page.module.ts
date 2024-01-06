@@ -7,7 +7,8 @@ import { ROUTE } from 'src/constants';
 import { UIKitModule } from 'src/shared/modules';
 
 import { isLoggedIn, isOnlineAndReady } from 'src/shared/guards';
-import { DashboardPageContainer, CategoriesPageContainer, containers } from './containers';
+import { components } from './components';
+import { CategoriesPageContainer, DashboardPageContainer, containers } from './containers';
 
 const routes: Routes = [
   {
@@ -23,6 +24,6 @@ const routes: Routes = [
 
 @NgModule({
   imports: [CommonModule, FormsModule, RouterModule.forChild(routes), UIKitModule],
-  declarations: [containers]
+  declarations: [...containers, ...components]
 })
 export class DashboardPageModule {}

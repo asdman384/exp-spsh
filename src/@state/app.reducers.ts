@@ -17,7 +17,8 @@ export const initialState: AppState = {
   spreadsheetId: localStorage.getItem(SPREADSHEET_ID) ?? undefined,
   sheetId: sheetId ? parseInt(sheetId, 10) : undefined,
   categoriesSheetId: categoriesSheetId ? parseInt(categoriesSheetId, 10) : undefined,
-  categories: categories ? (JSON.parse(categories) as Array<Category>) : []
+  categories: categories ? (JSON.parse(categories) as Array<Category>) : [],
+  expenses: []
 };
 
 export const reducers: ActionReducerMap<{ app: AppState }> = {
@@ -28,7 +29,8 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
     on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
     on(AppActions.sheetId, (state, { sheetId }) => ({ ...state, sheetId })),
     on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId })),
-    on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories }))
+    on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories })),
+    on(AppActions.storeExpenses, (state, { expenses }) => ({ ...state, expenses }))
   )
 };
 

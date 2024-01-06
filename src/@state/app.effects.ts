@@ -1,11 +1,24 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, catchError, exhaustMap, map, tap, withLatestFrom } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  concatMap,
+  exhaustMap,
+  filter,
+  first,
+  map,
+  mergeMap,
+  of,
+  switchMap,
+  tap,
+  withLatestFrom
+} from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, SHEET_ID, SPREADSHEET_ID } from 'src/constants';
-import { SpreadsheetService } from 'src/services';
+import { NetworkStatusService, SpreadsheetService } from 'src/services';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, sheetIdSelector, spreadsheetIdSelector } from './app.selectors';
 
@@ -142,7 +155,31 @@ export class AppEffects {
       exhaustMap(([{ expense }, spreadsheetId, sheetId]) =>
         this.spreadSheetService.addExpense(spreadsheetId!, sheetId!, expense).pipe(map(() => expense))
       ),
-      map(() => AppActions.loading({ loading: false })),
+      map(() => AppActions.loadExpenses({})),
+      catchError((e) => {
+        log(e);
+        this.store.dispatch(AppActions.loading({ loading: false }));
+        return EMPTY;
+      })
+    )
+  );
+
+  readonly loadExpenses$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AppActions.loadExpenses),
+      withLatestFrom(this.store.select(spreadsheetIdSelector), this.store.select(sheetIdSelector)),
+      exhaustMap(([action, spreadsheetId, sheetId]) => {
+        this.store.dispatch(AppActions.loading({ loading: true }));
+        return this.status.online$.pipe(
+          first((online) => online),
+          map(() => ({ action, spreadsheetId, sheetId }))
+        );
+      }),
+      exhaustMap(({ action, spreadsheetId, sheetId }) =>
+        this.spreadSheetService.loadExpenses(spreadsheetId!, sheetId!, action)
+      ),
+      map((expenses) => AppActions.storeExpenses({ expenses })),
+      tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
         log(e);
         this.store.dispatch(AppActions.loading({ loading: false }));
@@ -154,6 +191,7 @@ export class AppEffects {
   constructor(
     private readonly store: Store,
     private readonly actions$: Actions,
+    private readonly status: NetworkStatusService,
     private readonly spreadSheetService: SpreadsheetService
   ) {}
 }

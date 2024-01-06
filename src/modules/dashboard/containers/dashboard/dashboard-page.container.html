@@ -61,3 +61,5 @@
     Add Expense
   </button>
 </form>
+
+<expenses-table [dataSource]="(expenses$ | async) || []"></expenses-table>

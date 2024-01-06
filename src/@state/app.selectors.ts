@@ -9,3 +9,4 @@ export const spreadsheetIdSelector = createSelector(selectAppFeature, (state: Ap
 export const sheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.sheetId);
 export const categoriesSheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.categoriesSheetId);
 export const categoriesSelector = createSelector(selectAppFeature, (state: AppState) => state.categories);
+export const expensesSelector = createSelector(selectAppFeature, (state: AppState) => state.expenses);

@@ -11,7 +11,10 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
+import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
+import { MatTooltipModule } from '@angular/material/tooltip';
+
 @NgModule({
   imports: [
     DragDropModule,
@@ -25,7 +28,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatToolbarModule
+    MatTableModule,
+    MatToolbarModule,
+    MatTooltipModule
   ],
   exports: [
     DragDropModule,
@@ -39,7 +44,9 @@ import { MatToolbarModule } from '@angular/material/toolbar';
     MatProgressBarModule,
     MatProgressSpinnerModule,
     MatSelectModule,
-    MatToolbarModule
+    MatTableModule,
+    MatToolbarModule,
+    MatTooltipModule
   ]
 })
 export class UIKitModule {}

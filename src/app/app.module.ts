@@ -8,7 +8,7 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
-import { HttpClientModule } from '@angular/common/http';
+import { HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
 import { AppEffects, metaReducers, reducers } from 'src/@state';
 import { LocalStorageService, SecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
@@ -38,6 +38,7 @@ if (loggerType) {
     BrowserModule,
     BrowserAnimationsModule,
     HttpClientModule,
+    HttpClientJsonpModule,
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: true, // !isDevMode(),
