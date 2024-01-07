@@ -103,7 +103,7 @@ export class SpreadsheetService {
     return gapi.client.sheets.spreadsheets
       .get({
         spreadsheetId,
-        includeGridData: true
+        // includeGridData: true
       })
       .then((response) => response.result);
   }
