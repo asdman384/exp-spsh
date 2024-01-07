@@ -65,8 +65,8 @@ export class AppEffects {
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
+        log(String(e));
         this.store.dispatch(AppActions.loading({ loading: false }));
-        log(e);
         return EMPTY;
       })
     )
@@ -85,7 +85,7 @@ export class AppEffects {
       map(([newCategory, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
-        log(e);
+        log(String(e));
         this.store.dispatch(AppActions.loading({ loading: false }));
         return EMPTY;
       })
@@ -114,7 +114,7 @@ export class AppEffects {
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
-        log(e);
+        log(String(e));
         this.store.dispatch(AppActions.loading({ loading: false }));
         return EMPTY;
       })
@@ -135,7 +135,7 @@ export class AppEffects {
       }),
       map(() => AppActions.loading({ loading: false })),
       catchError((e) => {
-        log(e);
+        log(String(e));
         AppActions.storeCategories({ categories: this.categoriesBackUp });
         this.store.dispatch(AppActions.loading({ loading: false }));
         return EMPTY;
@@ -158,7 +158,7 @@ export class AppEffects {
         return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
       }),
       catchError((e) => {
-        log(e);
+        log(String(e));
         this.store.dispatch(AppActions.loading({ loading: false }));
         return EMPTY;
       })
@@ -181,7 +181,7 @@ export class AppEffects {
       map((expenses) => AppActions.storeExpenses({ expenses })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
-        log(e);
+        log(String(e));
         this.store.dispatch(AppActions.loading({ loading: false }));
         return EMPTY;
       })

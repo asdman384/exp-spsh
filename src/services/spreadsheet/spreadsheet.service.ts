@@ -304,13 +304,16 @@ function getDateSerialNumber(date: Date): number {
 
 function translateTextToExpense(text: string): Array<Expense> {
   function myResponseHandler(data: ExpensesDTO): Array<Expense> {
-    return data.table.rows.map<Expense>((row) => ({
-      category: String(row.c[0].v),
-      comment: String(row.c[1].v),
-      amount: Number(row.c[2].v),
-      date: eval(`new ${row.c[3].v}`),
-      userId: ''
-    }));
+    return data.table.rows.map<Expense>((row) => {
+      const comment = row.c[1]?.v;
+      return {
+        category: String(row.c[0].v),
+        comment: comment ? String(comment) : undefined,
+        amount: Number(row.c[2].v),
+        date: eval(`new ${row.c[3].v}`),
+        userId: ''
+      };
+    });
   }
 
   return eval(text);

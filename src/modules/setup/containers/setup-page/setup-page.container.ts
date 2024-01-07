@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
-import { Observable, first, firstValueFrom } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
 import {
@@ -61,13 +61,14 @@ export class SettingsPageContainer {
 
     log('load SpreadSheet...');
     const spreadsheet = await this.loadSpreadSheet(spreadsheetId);
-    log('load SpreadSheet done');
+    log('load SpreadSheet done, sheets:', spreadsheet.sheets);
 
-    spreadsheet.sheets
-      ?.filter((sheet) => !sheet.properties?.index)
+    const dataSheets = spreadsheet.sheets
+      ?.filter((sheet) => !sheet.properties?.hidden)
       .filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
-      .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }))
-      .forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
+      .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }));
+    log('filtered dataSheets', dataSheets);
+    dataSheets?.forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
 
     const dataSheet = await this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 4, spreadsheet);
     this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
