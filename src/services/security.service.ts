@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 
-import { BehaviorSubject, ReplaySubject, Subject, combineLatest, filter, first, shareReplay } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject, combineLatest, filter, first } from 'rxjs';
 
 import { environment } from 'src/environments/environment';
 import { Token, Userinfo } from 'src/shared/models';
@@ -12,13 +12,16 @@ import { StorageService } from './storage';
 declare var apiLoaded: Promise<void>; // see index.html
 declare var gsiLoaded: Promise<void>; // see index.html
 
+const USER = 'user';
+const TOKEN = 'token';
+
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile';
 
 @Injectable({ providedIn: 'root' })
 export class SecurityService {
   private readonly securityClient$ = new BehaviorSubject<google.accounts.oauth2.TokenClient | undefined>(undefined);
   private readonly loading: BehaviorSubject<boolean> = new BehaviorSubject(false);
-  private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get(Userinfo));
+  private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get<Userinfo>(USER));
   private readonly token = new Subject<google.accounts.oauth2.TokenResponse>();
   private readonly gapiReady = new BehaviorSubject<boolean>(false);
 
@@ -46,7 +49,7 @@ export class SecurityService {
       .pipe(filter(([t, ready]) => !!t && ready))
       .subscribe(([t]) => gapi.client.setToken(t!));
     this.token.subscribe(this.token$);
-    
+
     this.refreshToken();
   }
 
@@ -65,7 +68,7 @@ export class SecurityService {
         .get()
         .then((resp) => new Userinfo(resp.result))
         .then((user) => {
-          this.storageService.put(Userinfo, user);
+          this.storageService.put(USER, user);
           this.zone.run(() => {
             this.user.next(user);
             this.loading.next(false);
@@ -76,7 +79,7 @@ export class SecurityService {
   }
 
   logout(): void {
-    const token = this.storageService.get(Token);
+    const token = this.storageService.get<Token>(TOKEN);
     if (token) {
       google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
     }
@@ -87,8 +90,8 @@ export class SecurityService {
   }
 
   refreshToken(): void {
-    const user = this.storageService.get(Userinfo);
-    const token = this.storageService.get(Token);
+    const user = this.storageService.get<Userinfo>(USER);
+    const token = this.storageService.get<Token>(TOKEN);
 
     if (!user) {
       log('SecurityService: no User, cannot refresh token');
@@ -118,7 +121,7 @@ export class SecurityService {
       callback: (token: google.accounts.oauth2.TokenResponse) => {
         if (token.error) {
           log('SecurityService: token request error', token.error);
-          this.storageService.remove(Token);
+          this.storageService.remove(TOKEN);
           this.token.error(token.error);
           return;
         }
@@ -128,7 +131,7 @@ export class SecurityService {
           new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
         );
         this.token.next(token);
-        this.storageService.put(Token, new Token(token));
+        this.storageService.put(TOKEN, new Token(token));
       }
     });
 

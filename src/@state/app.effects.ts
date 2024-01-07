@@ -5,7 +5,7 @@ import { EMPTY, catchError, exhaustMap, first, map, switchMap, tap, withLatestFr
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
-import { NetworkStatusService, SpreadsheetService } from 'src/services';
+import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, sheetsSelector, spreadsheetIdSelector } from './app.selectors';
 
@@ -16,7 +16,7 @@ export class AppEffects {
       this.actions$.pipe(
         ofType(AppActions.spreadsheetId),
         tap(log),
-        tap(({ spreadsheetId }) => spreadsheetId !== undefined && localStorage.setItem(SPREADSHEET_ID, spreadsheetId))
+        tap(({ spreadsheetId }) => spreadsheetId && LocalStorageService.put(SPREADSHEET_ID, spreadsheetId))
       ),
     { dispatch: false }
   );
@@ -27,7 +27,7 @@ export class AppEffects {
         ofType(AppActions.upsertDataSheet),
         tap(log),
         switchMap(() => this.store.select(sheetsSelector)),
-        tap((sheets) => localStorage.setItem(DATA_SHEETS, JSON.stringify(sheets)))
+        tap((sheets) => LocalStorageService.put(DATA_SHEETS, sheets))
       ),
     { dispatch: false }
   );
@@ -39,7 +39,7 @@ export class AppEffects {
         tap(log),
         tap(
           ({ categoriesSheetId }) =>
-            categoriesSheetId !== undefined && localStorage.setItem(CATEGORIES_SHEET_ID, String(categoriesSheetId))
+            categoriesSheetId !== undefined && LocalStorageService.put(CATEGORIES_SHEET_ID, categoriesSheetId)
         )
       ),
     { dispatch: false }
@@ -50,7 +50,7 @@ export class AppEffects {
       this.actions$.pipe(
         ofType(AppActions.storeCategories),
         tap(log),
-        tap(({ categories }) => localStorage.setItem(CATEGORIES, JSON.stringify(categories)))
+        tap(({ categories }) => LocalStorageService.put(CATEGORIES, categories))
       ),
     { dispatch: false }
   );

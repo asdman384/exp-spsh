@@ -3,19 +3,27 @@ import { StorageService } from './interfaces/storage';
 
 @Injectable()
 export class LocalStorageService implements StorageService {
-  get<T>(key: new (...args: any[]) => T): T | undefined {
-    let item = localStorage.getItem(key.name);
+  static get<T>(key: string): T | undefined {
+    let item = localStorage.getItem(key);
     if (item) return JSON.parse(item) as T;
 
     return undefined;
   }
 
-  put<T>(key: new (...args: any[]) => T, value: T): void {
-    if (value) localStorage.setItem(key.name, JSON.stringify(value));
+  static put<T>(key: string, value: T): void {
+    if (value) localStorage.setItem(key, JSON.stringify(value));
   }
 
-  remove<T>(key: new (...args: any[]) => T): void {
-    localStorage.removeItem(key.name);
+  get<T>(key: string): T | undefined {
+    return LocalStorageService.get<T>(key);
+  }
+
+  put<T>(key: string, value: T): void {
+    LocalStorageService.put<T>(key, value);
+  }
+
+  remove(key: string): void {
+    localStorage.removeItem(key);
   }
 
   clear(): void {

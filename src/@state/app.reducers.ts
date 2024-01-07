@@ -4,32 +4,27 @@ import { ActionReducerMap, MetaReducer, createReducer, on } from '@ngrx/store';
 
 import { EntityAdapter, createEntityAdapter } from '@ngrx/entity';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
+import { LocalStorageService } from 'src/services';
 import { Category, Sheet } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { AppState } from './app.model';
-
-const categoriesSheetId = localStorage.getItem(CATEGORIES_SHEET_ID);
-const categories = localStorage.getItem(CATEGORIES);
 
 export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ selectId: (e) => e.title });
 
 export const initialState: AppState = {
   loading: false,
   title: '',
-  spreadsheetId: localStorage.getItem(SPREADSHEET_ID) ?? undefined,
+  spreadsheetId: LocalStorageService.get<string>(SPREADSHEET_ID) ?? undefined,
   dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }),
-  categoriesSheetId: categoriesSheetId ? parseInt(categoriesSheetId, 10) : undefined,
-  categories: categories ? (JSON.parse(categories) as Array<Category>) : [],
+  categoriesSheetId: LocalStorageService.get<number>(CATEGORIES_SHEET_ID) ?? undefined,
+  categories: LocalStorageService.get<Array<Category>>(CATEGORIES) ?? [],
   expenses: []
 };
 
 // INIT DATA SHEETS
-const initialDataSheets = localStorage.getItem(DATA_SHEETS);
+const initialDataSheets = LocalStorageService.get<Array<Sheet>>(DATA_SHEETS);
 if (initialDataSheets) {
-  initialState.dataSheets = sheetsAdapter.upsertMany(
-    JSON.parse(initialDataSheets) as unknown as Array<Sheet>,
-    initialState.dataSheets
-  );
+  initialState.dataSheets = sheetsAdapter.upsertMany(initialDataSheets, initialState.dataSheets);
 }
 
 export const reducers: ActionReducerMap<{ app: AppState }> = {
