@@ -9,26 +9,28 @@
 
 <form #form="ngForm" class="info full-width">
   <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Spreadsheet id</mat-label>
+    <mat-label>Spreadsheet URL</mat-label>
     <textarea
       matInput
       [name]="spreadsheetIdField"
       [ngModel]="spreadsheetId | async"
       [required]="true"
-      rows="2"
+      rows="3"
       autocomplete="off"
     ></textarea>
     <mat-icon matSuffix>help_outline</mat-icon>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
-    <mat-label>Sheet id</mat-label>
+    <mat-label>Data Sheet id</mat-label>
     <input [name]="sheetField" matInput [ngModel]="(sheet$ | async)?.id" readonly />
+    <mat-icon [class]="sheetDone ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
   </mat-form-field>
 
   <mat-form-field appearance="outline">
     <mat-label>Categories Sheet id</mat-label>
     <input [name]="categoriesSheetIdField" matInput [ngModel]="categoriesSheetId | async" readonly />
+    <mat-icon [class]="categoriesSheetDone ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
   </mat-form-field>
 
   <button mat-flat-button color="primary" (click)="checkSetup(form, state)" [disabled]="!form.valid || loading">

@@ -1,16 +1,14 @@
 import { CommonModule } from '@angular/common';
-import { NgModule, inject } from '@angular/core';
+import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { RouterModule, Routes } from '@angular/router';
 
-import { map } from 'rxjs';
-
 import { ROUTE } from 'src/constants';
-import { SecurityService } from 'src/services';
+import { isLoggedIn } from 'src/shared/guards';
 import { UIKitModule } from 'src/shared/modules';
 
 import { LoginPageContainer } from './containers/login-page.containers';
 import { SettingsPageContainer } from './containers/setup-page/setup-page.container';
-import { FormsModule } from '@angular/forms';
 
 const routes: Routes = [
   {
@@ -24,7 +22,7 @@ const routes: Routes = [
   },
   {
     path: ROUTE.settings,
-    canActivate: [() => inject(SecurityService).user$.pipe(map((user) => !!user))],
+    canActivate: [isLoggedIn],
     component: SettingsPageContainer
   }
 ];

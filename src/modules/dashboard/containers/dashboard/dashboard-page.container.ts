@@ -26,6 +26,8 @@ export class DashboardPageContainer {
   readonly categories$ = this.store.select(categoriesSelector);
   readonly expenses$ = this.store.select(expensesSelector);
 
+  minDate: Date = new Date(new Date().getFullYear(), 0, 0, 0, 0, 0, 0);
+  maxDate: Date = new Date();
   sheet?: Sheet;
   expense: Expense = { date: new Date() };
 
@@ -44,8 +46,9 @@ export class DashboardPageContainer {
     }
     log('DashboardPageContainer::onSubmit', form.value);
     const sheet = form.value['sheet'] as Sheet;
+    const date = form.value['date'] as Date;
     this.store.dispatch(AppActions.addExpense({ expense: form.value as Expense, sheetId: sheet.id }));
-    form.resetForm({ date: new Date(), sheet, amount: undefined, category: undefined, comment: undefined });
+    form.resetForm({ date, sheet, amount: undefined, category: undefined, comment: undefined });
   }
 
   onSheetChange(sheet: Sheet): void {
@@ -53,7 +56,27 @@ export class DashboardPageContainer {
     this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet!.id }));
   }
 
+  onDateChange(date: Date): void {
+    log('DashboardPageContainer::onDateChange', date);
+
+    if (!this.sheet) {
+      return;
+    }
+    const to = new Date(date);
+    to.setDate(to.getDate() + 1); // add a day
+
+    this.store.dispatch(AppActions.loadExpenses({ sheetId: this.sheet.id, from: date, to }));
+
+    const currentTime = new Date(date);
+    currentTime.setHours(new Date().getHours(), new Date().getMinutes());
+    this.expense.date = currentTime;
+  }
+
   loadCategories(): void {
     this.store.dispatch(AppActions.loadCategories());
+  }
+
+  updateMaxDate(): void {
+    this.maxDate = new Date();
   }
 }

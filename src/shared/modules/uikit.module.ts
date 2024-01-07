@@ -2,7 +2,7 @@ import { NgModule } from '@angular/core';
 
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
-import { MatNativeDateModule } from '@angular/material/core';
+import { MAT_DATE_LOCALE, MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -47,6 +47,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatTableModule,
     MatToolbarModule,
     MatTooltipModule
-  ]
+  ],
+  providers: [{ provide: MAT_DATE_LOCALE, useValue: 'en-GB' }]
 })
 export class UIKitModule {}

@@ -8,11 +8,17 @@
         name="date"
         [(ngModel)]="expense.date"
         [matDatepicker]="picker"
-        (click)="picker.open()"
+        [min]="minDate"
+        [max]="maxDate"
+        (click)="updateMaxDate(); picker.open()"
+        (dateChange)="onDateChange($event.value)"
         readonly
         required
       />
-      <mat-datepicker-toggle matSuffix [for]="picker"></mat-datepicker-toggle>
+      <div class="date-suffix" matSuffix>
+        {{ expense.date | date:'HH:mm' }}
+        <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+      </div>
       <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
     </mat-form-field>
 

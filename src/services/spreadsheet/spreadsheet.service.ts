@@ -269,7 +269,7 @@ export class SpreadsheetService {
     `.trim();
 
     if (filter.to) {
-      gvizQuery += `and D <= date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
+      gvizQuery += `and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
     const request = (token: string) =>

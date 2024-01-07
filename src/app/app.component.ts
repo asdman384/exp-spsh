@@ -31,6 +31,15 @@ export class AppComponent {
     });
   }
 
+  enableDebug(): void {
+    this.router
+      .navigate([], {
+        queryParams: { logger: 'window' },
+        replaceUrl: true
+      })
+      .then(() => location.reload());
+  }
+
   logout(): void {
     this.securityService.logout();
     this.router.navigate([ROUTE.setup]);

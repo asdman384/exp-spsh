@@ -6,7 +6,7 @@ import { RouterModule, Routes } from '@angular/router';
 import { ROUTE } from 'src/constants';
 import { UIKitModule } from 'src/shared/modules';
 
-import { isLoggedIn, isOnlineAndReady } from 'src/shared/guards';
+import { isLoggedIn, isOnlineAndGapiReady } from 'src/shared/guards';
 import { components } from './components';
 import { CategoriesPageContainer, DashboardPageContainer, containers } from './containers';
 
@@ -17,7 +17,7 @@ const routes: Routes = [
   },
   {
     path: ROUTE.categories,
-    canActivate: [isLoggedIn, isOnlineAndReady],
+    canActivate: [isLoggedIn, isOnlineAndGapiReady],
     component: CategoriesPageContainer
   }
 ];

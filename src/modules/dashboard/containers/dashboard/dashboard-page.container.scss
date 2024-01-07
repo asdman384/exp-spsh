@@ -2,6 +2,12 @@
   width: 100%;
   padding: 16px;
 
+  .date-suffix {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
   .form-row {
     display: flex;
     gap: 10px;

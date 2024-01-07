@@ -4,4 +4,7 @@ import { AppModule } from './app/app.module';
 
 import('./logger')
   .then(() => platformBrowserDynamic().bootstrapModule(AppModule))
-  .catch((err) => console.error(err));
+  .catch((err) => {
+    console.error(err);
+    log(err);
+  });

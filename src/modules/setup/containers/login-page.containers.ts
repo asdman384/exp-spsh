@@ -44,12 +44,15 @@ export class LoginPageContainer {
     private readonly router: Router,
     private readonly securityService: SecurityService,
     private readonly status: NetworkStatusService
-  ) {}
+  ) {
+    this.securityService.user$
+      .pipe(first((user) => !!user))
+      .subscribe(() =>
+        this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true, queryParamsHandling: 'preserve' })
+      );
+  }
 
   login(): void {
     this.securityService.login();
-    this.securityService.user$
-      .pipe(first((user) => !!user))
-      .subscribe(() => this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true }));
   }
 }

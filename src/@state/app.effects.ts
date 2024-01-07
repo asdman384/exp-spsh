@@ -146,13 +146,17 @@ export class AppEffects {
   readonly addExpense$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.addExpense),
-      tap(log),
+      tap<ReturnType<typeof AppActions.addExpense>>(log),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       withLatestFrom(this.store.select(spreadsheetIdSelector)),
       exhaustMap(([action, spreadsheetId]) =>
         this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense).pipe(map(() => action))
       ),
-      map(AppActions.loadExpenses),
+      map((action) => {
+        const to = new Date(action.expense.date);
+        to.setDate(to.getDate() + 1); // add a day
+        return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
+      }),
       catchError((e) => {
         log(e);
         this.store.dispatch(AppActions.loading({ loading: false }));

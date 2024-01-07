@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { ROUTE } from 'src/constants';
-import { isLoggedIn } from 'src/shared/guards';
+import { isLoggedIn, isSetupReady } from 'src/shared/guards';
 
 const routes: Routes = [
   {
@@ -11,7 +11,7 @@ const routes: Routes = [
   },
   {
     path: ROUTE.dashboard,
-    canActivate: [isLoggedIn],
+    canActivate: [isLoggedIn, isSetupReady],
     loadChildren: () => import('src/modules/dashboard/dashboard-page.module').then((m) => m.DashboardPageModule)
   },
   {

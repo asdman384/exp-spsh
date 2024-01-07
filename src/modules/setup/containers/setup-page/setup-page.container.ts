@@ -32,6 +32,8 @@ export class SettingsPageContainer {
   readonly categoriesSheetId: Observable<number | undefined> = this.store.select(categoriesSheetIdSelector);
   loading: boolean = false;
   state: State = 'check document';
+  sheetDone: boolean = false;
+  categoriesSheetDone: boolean = false;
 
   constructor(
     private readonly router: Router,
@@ -49,18 +51,21 @@ export class SettingsPageContainer {
     }
 
     if (!form.valid) return;
-    const spreadsheetId: string = form.value[this.spreadsheetIdField];
+    const spreadsheetId: string = this.extractSpreadsheetId(form.value[this.spreadsheetIdField]);
     const user = await firstValueFrom(this.security.user$);
     if (!user) {
-      throw 'error getting user';
+      throw new Error('error getting user');
     }
 
     this.loading = true;
 
+    log('load SpreadSheet...');
     const spreadsheet = await this.loadSpreadSheet(spreadsheetId);
+    log('load SpreadSheet done');
 
     spreadsheet.sheets
-      ?.filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
+      ?.filter((sheet) => !sheet.properties?.index)
+      .filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
       .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }))
       .forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
 
@@ -70,15 +75,32 @@ export class SettingsPageContainer {
     const categoriesSheet = await this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet);
     this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
 
-    log('categories sheet format adjust');
-    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
-    log('categories sheet format adjust finish');
-    log('data sheet format adjust');
+    log('data sheet format adjust...');
     await this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id);
+    this.sheetDone = true;
     log('data sheet format adjust finish');
+
+    log('categories sheet format adjust...');
+    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
+    this.categoriesSheetDone = true;
+    log('categories sheet format adjust finish');
 
     this.loading = false;
     this.state = 'finish';
+  }
+
+  private extractSpreadsheetId(resourceUrl: string): string {
+    let spreadsheetId = new RegExp('/spreadsheets/d/([a-zA-Z0-9-_]+)').exec(resourceUrl);
+    if (spreadsheetId && spreadsheetId[1]) {
+      return spreadsheetId[1];
+    }
+
+    spreadsheetId = new RegExp('([a-zA-Z0-9-_]+)').exec(resourceUrl);
+    if (spreadsheetId && spreadsheetId[1]) {
+      return spreadsheetId[1];
+    }
+    log('cannot read spreadsheet id.', spreadsheetId);
+    throw new Error('cannot read spreadsheet id.');
   }
 
   private async loadSpreadSheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
@@ -105,7 +127,7 @@ export class SettingsPageContainer {
     let sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
 
     if (!sheet) {
-      log(`sheet creation [${title}]`);
+      log(`sheet creation [${title}]...`);
       sheet = await this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount);
       log(`sheet created [${sheet.title}]`);
     } else {
