@@ -26,7 +26,7 @@ export class DashboardPageContainer {
   readonly categories$ = this.store.select(categoriesSelector);
   readonly expenses$ = this.store.select(expensesSelector);
 
-  minDate: Date = new Date(new Date().getFullYear(), 0, 0, 0, 0, 0, 0);
+  minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
   maxDate: Date = new Date();
   sheet?: Sheet;
   expense: Expense = { date: new Date() };
