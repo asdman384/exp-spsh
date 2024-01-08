@@ -1,5 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
-import { APP_INITIALIZER, NgModule, isDevMode } from '@angular/core';
+import { HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
+import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -8,10 +9,10 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
-import { HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
 import { AppEffects, metaReducers, reducers } from 'src/@state';
 import { LocalStorageService, SecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 

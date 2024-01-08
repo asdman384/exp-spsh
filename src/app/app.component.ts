@@ -11,6 +11,8 @@ import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
 import { DialogComponent } from 'src/shared/components';
 
+import pak from '../../package.json';
+
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
@@ -23,6 +25,7 @@ export class AppComponent {
   readonly isOnline$ = this.networkStatus.online$;
   readonly title$ = this.store.select(titleSelector);
   readonly spreadsheetId$ = this.store.select(spreadsheetIdSelector);
+  readonly version = pak.version;
 
   constructor(
     private readonly store: Store,
