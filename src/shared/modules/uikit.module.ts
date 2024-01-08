@@ -14,6 +14,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { DialogComponent } from '../components';
 
 @NgModule({
   imports: [
@@ -30,7 +31,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
     MatSelectModule,
     MatTableModule,
     MatToolbarModule,
-    MatTooltipModule
+    MatTooltipModule,
+
+    DialogComponent
   ],
   exports: [
     DragDropModule,

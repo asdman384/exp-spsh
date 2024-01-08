@@ -53,19 +53,16 @@ export class DashboardPageContainer {
 
   onSheetChange(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet!.id }));
+    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(this.expense.date) }));
   }
 
   onDateChange(date: Date): void {
     log('DashboardPageContainer::onDateChange', date);
-
     if (!this.sheet) {
       return;
     }
-    const to = new Date(date);
-    to.setDate(to.getDate() + 1); // add a day
 
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: this.sheet.id, from: date, to }));
+    this.store.dispatch(AppActions.loadExpenses({ sheetId: this.sheet.id, ...this.getInterval(date) }));
 
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
@@ -78,5 +75,18 @@ export class DashboardPageContainer {
 
   updateMaxDate(): void {
     this.maxDate = new Date();
+  }
+
+  private getInterval(from: Date): { from: Date; to?: Date } {
+    const currentMonth = new Date().getMonth();
+    const currentDay = new Date().getDate();
+
+    if (from.getMonth() === currentMonth && from.getDate() === currentDay) {
+      return { from };
+    }
+
+    const to = new Date(from);
+    to.setDate(to.getDate() + 1); // add a day
+    return { from, to };
   }
 }
