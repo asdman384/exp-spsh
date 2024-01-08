@@ -102,7 +102,7 @@ export class SpreadsheetService {
   getSpreadsheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
     return gapi.client.sheets.spreadsheets
       .get({
-        spreadsheetId,
+        spreadsheetId
         // includeGridData: true
       })
       .then((response) => response.result);
@@ -261,7 +261,11 @@ export class SpreadsheetService {
    * @param spreadsheetId
    * @param sheetId
    */
-  loadExpenses(spreadsheetId: string, filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
+  loadExpenses(
+    spreadsheetId: string,
+    filter: { sheetId: number; from?: Date; to?: Date },
+    token: google.accounts.oauth2.TokenResponse
+  ): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
     let gvizQuery = `
       select A, B, C, D 
@@ -272,19 +276,15 @@ export class SpreadsheetService {
       gvizQuery += `and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
-    const request = (token: string) =>
-      this.http.get(
+    return this.http
+      .get(
         `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +
           `/gviz/tq?tq=${encodeURIComponent(gvizQuery)}` +
           `&tqx=responseHandler:myResponseHandler&gid=${filter.sheetId}` +
-          `&access_token=${encodeURIComponent(token)}`,
+          `&access_token=${encodeURIComponent(token.access_token)}`,
         { responseType: 'text' }
-      );
-
-    return this.security.token$.pipe(
-      first(),
-      mergeMap((token) => request(token!.access_token).pipe(map(translateTextToExpense)))
-    );
+      )
+      .pipe(map(translateTextToExpense));
   }
 }
 

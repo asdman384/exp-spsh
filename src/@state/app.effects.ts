@@ -1,16 +1,22 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, catchError, exhaustMap, first, map, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, first, map, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
-import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
+import { LocalStorageService, NetworkStatusService, SecurityService, SpreadsheetService } from 'src/services';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, sheetsSelector, spreadsheetIdSelector } from './app.selectors';
 
 @Injectable()
 export class AppEffects {
+  private readonly whenOnline = <T>(arg: T): Observable<T> =>
+    this.status.online$.pipe(
+      filter(Boolean),
+      map(() => arg)
+    );
+
   readonly saveSpreadsheetId$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -168,16 +174,13 @@ export class AppEffects {
   readonly loadExpenses$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.loadExpenses),
-      tap(log),
-      exhaustMap((action) => {
+      tap<ReturnType<typeof AppActions.loadExpenses>>(log),
+      exhaustMap(this.whenOnline),
+      withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
+      exhaustMap(([action, spreadsheetId, token]) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.status.online$.pipe(
-          first((o) => o),
-          map(() => action)
-        );
+        return this.spreadSheetService.loadExpenses(spreadsheetId!, action, token);
       }),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
-      exhaustMap(([action, spreadsheetId]) => this.spreadSheetService.loadExpenses(spreadsheetId!, action)),
       map((expenses) => AppActions.storeExpenses({ expenses })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
@@ -192,6 +195,7 @@ export class AppEffects {
     private readonly store: Store,
     private readonly actions$: Actions,
     private readonly status: NetworkStatusService,
+    private readonly security: SecurityService,
     private readonly spreadSheetService: SpreadsheetService
   ) {}
 }
