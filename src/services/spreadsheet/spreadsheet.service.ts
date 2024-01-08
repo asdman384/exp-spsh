@@ -276,6 +276,7 @@ export class SpreadsheetService {
       gvizQuery += `and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
+    log('request expenses');
     return this.http
       .get(
         `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +

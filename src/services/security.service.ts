@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 
-import { BehaviorSubject, ReplaySubject, Subject, combineLatest, filter, first } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject, combineLatest, delay, filter, first, switchMap } from 'rxjs';
 
 import { environment } from 'src/environments/environment';
 import { Token, Userinfo } from 'src/shared/models';
@@ -8,9 +8,6 @@ import { Token, Userinfo } from 'src/shared/models';
 import keys from '../../keys.json';
 import { NetworkStatusService } from './network-status.service';
 import { StorageService } from './storage';
-
-declare var apiLoaded: Promise<void>; // see index.html
-declare var gsiLoaded: Promise<void>; // see index.html
 
 const USER = 'user';
 const TOKEN = 'token';
@@ -113,48 +110,42 @@ export class SecurityService {
       });
   }
 
-  private async initSecurityClient(): Promise<void> {
-    await gsiLoaded;
-    const client = google.accounts.oauth2.initTokenClient({
-      client_id: keys.CLIENT_ID,
-      scope: SCOPES,
-      callback: (token: google.accounts.oauth2.TokenResponse) => {
-        if (token.error) {
-          log('SecurityService: token request error', token.error);
-          this.storageService.remove(TOKEN);
-          this.token.error(token.error);
-          return;
-        }
-
-        log(
-          'SecurityService: token request success, expiration:',
-          new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
-        );
-        this.token.next(token);
-        this.storageService.put(TOKEN, new Token(token));
+  private initSecurityClient(): void {
+    const callback = (token: google.accounts.oauth2.TokenResponse) => {
+      if (token.error) {
+        log('SecurityService: token request error', token.error);
+        this.storageService.remove(TOKEN);
+        this.token.error(token.error);
+        return;
       }
-    });
 
+      log(
+        'SecurityService: token request success, expiration:',
+        new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
+      );
+      this.token.next(token);
+      this.storageService.put(TOKEN, new Token(token));
+    };
+
+    const client = google.accounts.oauth2.initTokenClient({ client_id: keys.CLIENT_ID, scope: SCOPES, callback });
     this.securityClient$.next(client);
     log('SecurityService: security client ready');
   }
 
   private initGapiClient(): void {
-    apiLoaded.then(() => {
-      gapi.load('client', () => {
-        this.status.online$.pipe(first((isOnline) => isOnline)).subscribe(() => {
-          log('SecurityService: gapi client loading');
-          Promise.all([
-            gapi.client.load(environment.OAUTH2_DISCOVERY_DOC),
-            gapi.client.init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
-          ])
-            .then(() => {
-              log('SecurityService: gapi client ready');
-              this.zone.run(() => this.gapiReady.next(true));
-            })
-            .catch((error) => this.zone.run(() => this.gapiReady.error(error)));
+    gapi.load('client', () => {
+      const initGapi$ = Promise.all([
+        gapi.client.load(environment.OAUTH2_DISCOVERY_DOC),
+        gapi.client.init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
+      ]);
+
+      this.status.online$
+        .pipe(first((isOnline) => isOnline))
+        .pipe(switchMap(() => initGapi$))
+        .subscribe(() => {
+          log('SecurityService: gapi client ready');
+          this.gapiReady.next(true);
         });
-      });
     });
   }
 }
