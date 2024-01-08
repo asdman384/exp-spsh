@@ -175,7 +175,7 @@ export class AppEffects {
     this.actions$.pipe(
       ofType(AppActions.loadExpenses),
       tap<ReturnType<typeof AppActions.loadExpenses>>(log),
-      exhaustMap(this.whenOnline),
+      switchMap(this.whenOnline),
       withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
       exhaustMap(([action, spreadsheetId, token]) => {
         this.store.dispatch(AppActions.loading({ loading: true }));

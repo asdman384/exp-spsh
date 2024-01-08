@@ -142,9 +142,14 @@ export class SecurityService {
       this.status.online$
         .pipe(first((isOnline) => isOnline))
         .pipe(switchMap(() => initGapi$))
-        .subscribe(() => {
-          log('SecurityService: gapi client ready');
-          this.gapiReady.next(true);
+        .subscribe({
+          next: () => {
+            log('SecurityService: gapi client ready');
+            this.gapiReady.next(true);
+          },
+          error: (e) => {
+            log('SecurityService: gapi client error loading', String(e));
+          }
         });
     });
   }
