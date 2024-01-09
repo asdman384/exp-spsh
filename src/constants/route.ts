@@ -3,5 +3,6 @@ export enum ROUTE {
   setup = 'setup',
   login = 'login',
   settings = 'settings',
-  categories = 'categories'
+  categories = 'categories',
+  stats = 'statistics'
 }

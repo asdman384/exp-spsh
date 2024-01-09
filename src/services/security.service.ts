@@ -70,7 +70,7 @@ export class SecurityService {
             this.user.next(user);
             this.loading.next(false);
           });
-          log('SecurityService: logged user' + (user.name ?? user.given_name));
+          log('SecurityService: logged user ' + (user.name ?? user.given_name));
         });
     });
   }
@@ -145,7 +145,7 @@ export class SecurityService {
         .subscribe({
           next: () => {
             log('SecurityService: gapi client ready');
-            this.gapiReady.next(true);
+            this.zone.run(() => this.gapiReady.next(true));
           },
           error: (e) => {
             log('SecurityService: gapi client error loading', String(e));

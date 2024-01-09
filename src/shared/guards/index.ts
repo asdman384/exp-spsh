@@ -11,15 +11,25 @@ import { NetworkStatusService, SecurityService } from 'src/services';
 export function isLoggedIn(): Observable<boolean | UrlTree> {
   const securityService = inject(SecurityService);
   const router = inject(Router);
-  return securityService.user$.pipe(map((user) => (user ? true : router.createUrlTree([ROUTE.setup]))));
+  return securityService.user$.pipe(
+    map((user) => {
+      if (!user) {
+        log(`isLoggedIn :: user not found ${user}`);
+        return router.createUrlTree([ROUTE.setup]);
+      }
+
+      log(`isLoggedIn :: user found [${user.name}]`);
+      return true;
+    })
+  );
 }
 
 export function isOnlineAndGapiReady(): Observable<boolean | UrlTree> {
-  const securityService = inject(SecurityService);
-  const networkStatusService = inject(NetworkStatusService);
+  const security = inject(SecurityService);
+  const networkStatus = inject(NetworkStatusService);
   const router = inject(Router);
 
-  return combineLatest([networkStatusService.online$, securityService.gapiReady$]).pipe(
+  return combineLatest([networkStatus.online$, security.gapiReady$]).pipe(
     map(([online, ready]) => (online && ready) || router.createUrlTree([]))
   );
 }

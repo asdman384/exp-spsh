@@ -242,7 +242,7 @@ export class SpreadsheetService {
             { userEnteredValue: { stringValue: expense.category } },
             { userEnteredValue: { stringValue: expense.comment } },
             { userEnteredValue: { numberValue: expense.amount } },
-            { userEnteredValue: { numberValue: getDateSerialNumber(expense.date) } }
+            { userEnteredValue: { numberValue: getDateSerialNumber(expense.date!) } }
           ]
         }
       ]
@@ -311,8 +311,7 @@ function translateTextToExpense(text: string): Array<Expense> {
         category: String(row.c[0].v),
         comment: comment ? String(comment) : undefined,
         amount: Number(row.c[2].v),
-        date: eval(`new ${row.c[3].v}`),
-        userId: ''
+        date: eval(`new ${row.c[3].v}`)
       };
     });
   }

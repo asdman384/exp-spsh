@@ -8,7 +8,7 @@ import { UIKitModule } from 'src/shared/modules';
 
 import { isLoggedIn, isOnlineAndGapiReady } from 'src/shared/guards';
 import { components } from './components';
-import { CategoriesPageContainer, DashboardPageContainer, containers } from './containers';
+import { CategoriesPageContainer, DashboardPageContainer, StatisticsContainer, containers } from './containers';
 
 const routes: Routes = [
   {
@@ -19,6 +19,11 @@ const routes: Routes = [
     path: ROUTE.categories,
     canActivate: [isLoggedIn, isOnlineAndGapiReady],
     component: CategoriesPageContainer
+  },
+  {
+    path: ROUTE.stats,
+    canActivate: [isLoggedIn, isOnlineAndGapiReady],
+    component: StatisticsContainer
   }
 ];
 

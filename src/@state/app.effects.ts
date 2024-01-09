@@ -159,7 +159,7 @@ export class AppEffects {
         this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense).pipe(map(() => action))
       ),
       map((action) => {
-        const to = new Date(action.expense.date);
+        const to = new Date(action.expense.date!);
         to.setDate(to.getDate() + 1); // add a day
         return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
       }),

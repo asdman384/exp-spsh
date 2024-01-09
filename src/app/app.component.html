@@ -1,10 +1,15 @@
 <mat-toolbar color="primary">
-  <mat-toolbar-row *ngIf="user$ | async as user">
+  <mat-toolbar-row>
+    @if (user$ | async; as user) {
     <span class="header-title non-selectable">{{ title$ | async }}</span>
 
     <button class="header-menu" mat-icon-button [matMenuTriggerFor]="menu" color="primary">
       <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
     </button>
+    } @else {
+    <span class="header-title non-selectable"> Login </span>
+    <button mat-icon-button (click)="enableDebug()"><mat-icon>memory</mat-icon></button>
+    }
   </mat-toolbar-row>
 </mat-toolbar>
 <div class="progress-container">
@@ -22,6 +27,14 @@
     [disabled]="(isOnline$ | async) === false"
   >
     <mat-icon class="main-menu-icon">category</mat-icon> <span>Categories</span>
+  </button>
+  <button
+    mat-menu-item
+    [routerLink]="[route.dashboard, route.stats]"
+    queryParamsHandling="preserve"
+    [disabled]="(isOnline$ | async) === false"
+  >
+    <mat-icon class="main-menu-icon">query_stats</mat-icon> <span>Statistics</span>
   </button>
   <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
     <mat-icon class="main-menu-icon">settings</mat-icon> <span>Setup</span>
