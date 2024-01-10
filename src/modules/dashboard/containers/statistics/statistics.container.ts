@@ -2,10 +2,10 @@ import { AfterViewInit, Component, ViewChild } from '@angular/core';
 import { NgForm } from '@angular/forms';
 
 import { Store } from '@ngrx/store';
-import { filter, map } from 'rxjs';
+import { BehaviorSubject, filter, map, switchMap } from 'rxjs';
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
-import { TOTAL } from 'src/constants';
+import { BACK, TOTAL } from 'src/constants';
 import { Expense } from 'src/shared/models';
 
 @Component({
@@ -16,12 +16,10 @@ import { Expense } from 'src/shared/models';
 export class StatisticsContainer implements AfterViewInit {
   @ViewChild('form', { static: true, read: NgForm })
   private readonly form!: NgForm;
+  private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
   readonly sheets$ = this.store.select(sheetsSelector);
   readonly sheet$ = this.store.select(currentSheetSelector);
-  readonly expenses$ = this.store.select(expensesSelector).pipe(
-    map((e) => groupBy(e, 'category')),
-    map((e) => sumByAmount(e))
-  );
+  readonly expenses$ = this.aggregator$.pipe(switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))));
   readonly monthModel: number = new Date().getMonth();
   readonly month = 'month';
   readonly sheet = 'sheet';
@@ -45,12 +43,39 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
-    if (event.cellData === TOTAL) {
+    log('expensesTableCellClickHandler', event);
+    if (event.cellData === TOTAL || event.field !== 'category') {
       return;
     }
 
-    log('expensesTableCellClickHandler', event);
+    if (event.cellData === BACK) {
+      this.aggregator$.next(groupByCategory);
+      return;
+    }
+
+    if (typeof event.cellData === 'string') {
+      this.aggregator$.next(filterByCategoryName(event.cellData));
+    }
   }
+}
+
+type AggregatorFn = (data: Array<Expense>) => Array<Expense>;
+
+function filterByCategoryName(categoryName: string): AggregatorFn {
+  return function (data: Array<Expense>): Array<Expense> {
+    const result = data
+      .filter((d) => d.category === categoryName)
+      .sort((a, b) => {
+        if (!a.date || !b.date) return 0;
+        return b.date?.getTime() - a.date?.getTime();
+      });
+    result.push({ category: BACK });
+    return result;
+  };
+}
+
+function groupByCategory(data: Array<Expense>): Array<Expense> {
+  return sumByAmount(groupBy(data, 'category'));
 }
 
 function groupBy<T extends { [key: string]: any }>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {

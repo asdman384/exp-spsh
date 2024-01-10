@@ -6,16 +6,10 @@ declare global {
 
 const search = window.location.href.split('?')[1];
 const urlParams = new URLSearchParams(search);
-const loggerType = 'window'; //urlParams.get('logger');
+const loggerType: string = 'window'; //urlParams.get('logger');
 const loggerOutput: Element | null = document.querySelector('#logger-output');
 const clear = document.querySelector<HTMLSpanElement>('#logger-clear');
 const copy = document.querySelector<HTMLSpanElement>('#logger-copy');
-
-if (loggerType === 'window') {
-  document.querySelector('#logger-wrapper')?.classList.remove('hidden');
-  clear?.addEventListener('click', () => loggerOutput?.replaceChildren());
-  copy?.addEventListener('click', () => copyTextToClipboard(loggerOutput?.textContent || 'loggerOutput not found'));
-}
 
 function getStackTrace(): string {
   var obj = {} as { stack: string };
@@ -70,9 +64,15 @@ function windowLog(...args: any[]): void {
     if (arg instanceof Error) {
       text += String(arg) + '\n' + getStackTrace();
     }
+    text += '\n';
     element.appendChild(document.createTextNode(text));
     loggerOutput?.appendChild(element);
   }
 }
 
-window.log = windowLog; //loggerType === 'console' ? console.log : loggerType === 'window' ? windowLog : () => {};
+if (loggerType === 'window') {
+  document.querySelector('#logger-wrapper')?.classList.remove('hidden');
+  clear?.addEventListener('click', () => loggerOutput?.replaceChildren());
+  copy?.addEventListener('click', () => copyTextToClipboard(loggerOutput?.textContent || 'loggerOutput not found'));
+  window.log = windowLog;
+}

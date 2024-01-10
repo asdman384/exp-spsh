@@ -1,7 +1,8 @@
 import { Component } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
-import { first } from 'rxjs';
+import { filter } from 'rxjs';
 
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
@@ -46,7 +47,10 @@ export class LoginPageContainer {
     private readonly status: NetworkStatusService
   ) {
     this.securityService.user$
-      .pipe(first((user) => !!user))
+      .pipe(
+        filter((user) => !!user),
+        takeUntilDestroyed()
+      )
       .subscribe(() =>
         this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true, queryParamsHandling: 'preserve' })
       );
