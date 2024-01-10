@@ -27,4 +27,7 @@
   </mat-form-field>
 </form>
 
-<expenses-table [dataSource]="(expenses$ | async) || []"></expenses-table>
+<expenses-table
+  [dataSource]="(expenses$ | async) || []"
+  (onCellClick)="expensesTableCellClickHandler($event)"
+></expenses-table>

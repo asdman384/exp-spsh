@@ -36,7 +36,7 @@ export class DashboardPageContainer {
     this.store
       .select(currentSheetSelector)
       .pipe(first())
-    .pipe(tap((sheet) => this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet!.id }))))
+      .pipe(tap((sheet) => this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet!.id }))))
       .subscribe((sheet) => (this.sheet = sheet));
   }
 

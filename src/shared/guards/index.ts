@@ -24,14 +24,18 @@ export function isLoggedIn(): Observable<boolean | UrlTree> {
   );
 }
 
-export function isOnlineAndGapiReady(): Observable<boolean | UrlTree> {
-  const security = inject(SecurityService);
+export function isOnline(): Observable<boolean | UrlTree> {
   const networkStatus = inject(NetworkStatusService);
   const router = inject(Router);
 
-  return combineLatest([networkStatus.online$, security.gapiReady$]).pipe(
-    map(([online, ready]) => (online && ready) || router.createUrlTree([]))
-  );
+  return networkStatus.online$.pipe(map((online) => online || router.createUrlTree([])));
+}
+
+export function isGapiReady(): Observable<boolean | UrlTree> {
+  const security = inject(SecurityService);
+  const router = inject(Router);
+
+  return security.gapiReady$.pipe(map((ready) => ready || router.createUrlTree([])));
 }
 
 export function isSetupReady(): Observable<boolean | UrlTree> {

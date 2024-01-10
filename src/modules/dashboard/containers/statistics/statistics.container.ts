@@ -5,6 +5,7 @@ import { Store } from '@ngrx/store';
 import { filter, map } from 'rxjs';
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
+import { TOTAL } from 'src/constants';
 import { Expense } from 'src/shared/models';
 
 @Component({
@@ -42,6 +43,14 @@ export class StatisticsContainer implements AfterViewInit {
         );
       });
   }
+
+  expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
+    if (event.cellData === TOTAL) {
+      return;
+    }
+
+    log('expensesTableCellClickHandler', event);
+  }
 }
 
 function groupBy<T extends { [key: string]: any }>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {
@@ -64,7 +73,7 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
   }
 
   result.push({
-    category: 'TOTAL',
+    category: TOTAL,
     amount: result.reduce((p, c) => p + Number(c.amount), 0)
   });
 

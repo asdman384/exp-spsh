@@ -1,6 +1,6 @@
 import { Injectable, NgZone } from '@angular/core';
 
-import { BehaviorSubject, ReplaySubject, Subject, combineLatest, delay, filter, first, switchMap } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, Subject, combineLatest, filter, first, forkJoin, switchMap } from 'rxjs';
 
 import { environment } from 'src/environments/environment';
 import { Token, Userinfo } from 'src/shared/models';
@@ -134,8 +134,10 @@ export class SecurityService {
 
   private initGapiClient(): void {
     gapi.load('client', () => {
-      const initGapi$ = Promise.all([
+      const initGapi$ = forkJoin([
+        // https://content.googleapis.com/discovery/v1/apis/oauth2/v2/rest?pp
         gapi.client.load(environment.OAUTH2_DISCOVERY_DOC),
+        // https://content-sheets.googleapis.com/$discovery/rest?version=v4
         gapi.client.init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
       ]);
 

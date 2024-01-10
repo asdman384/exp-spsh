@@ -1,10 +1,10 @@
 {
   "name": "exp-spsh",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
-    "build": "ng build --configuration=production",
+    "build": "ng build --configuration=development",
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
