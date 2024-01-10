@@ -178,7 +178,6 @@ export class AppEffects {
       switchMap(this.whenOnline),
       withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
       exhaustMap(([action, spreadsheetId, token]) => {
-        throw Error('asd');
         this.store.dispatch(AppActions.loading({ loading: true }));
         return this.spreadSheetService.loadExpenses(spreadsheetId!, action, token);
       }),
