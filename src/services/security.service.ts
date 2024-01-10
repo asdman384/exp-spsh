@@ -113,7 +113,7 @@ export class SecurityService {
   private initSecurityClient(): void {
     const callback = (token: google.accounts.oauth2.TokenResponse) => {
       if (token.error) {
-        log('SecurityService: token request error', token.error);
+        log('SecurityService: token request error: ', token.error);
         this.storageService.remove(TOKEN);
         this.token.error(token.error);
         return;
@@ -127,7 +127,18 @@ export class SecurityService {
       this.storageService.put(TOKEN, new Token(token));
     };
 
-    const client = google.accounts.oauth2.initTokenClient({ client_id: keys.CLIENT_ID, scope: SCOPES, callback });
+    const error_callback = (error: google.accounts.oauth2.ClientConfigError) => {
+      log('SecurityService: error', error);
+    };
+
+    const client = google.accounts.oauth2.initTokenClient({
+      client_id: keys.CLIENT_ID,
+      scope: SCOPES,
+      prompt: '',
+      callback,
+      error_callback
+    });
+
     this.securityClient$.next(client);
     log('SecurityService: security client ready');
   }
