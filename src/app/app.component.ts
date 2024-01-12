@@ -9,7 +9,7 @@ import { exhaustMap, filter, first } from 'rxjs';
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
-import { DialogComponent } from 'src/shared/components';
+import { ExpDialogComponent } from 'src/shared/components';
 
 import pak from '../../package.json';
 
@@ -65,7 +65,7 @@ export class AppComponent {
     const data = { title: 'New version is ready', content: 'Update to the latest version?' };
     this.swUpdate.versionUpdates
       .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
-      .pipe(exhaustMap(() => this.dialog.open(DialogComponent, { data }).afterClosed()))
+      .pipe(exhaustMap(() => this.dialog.open(ExpDialogComponent, { data }).afterClosed()))
       .subscribe((result: boolean) => result && location.reload());
   }
 }

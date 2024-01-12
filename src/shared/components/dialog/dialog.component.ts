@@ -17,11 +17,11 @@ import {
   templateUrl: './dialog.component.html',
   styleUrl: './dialog.component.scss'
 })
-export class DialogComponent {
+export class ExpDialogComponent {
   title = this.data?.title;
   content = this.data?.content;
 
-  constructor(public dialogRef: MatDialogRef<DialogComponent>, @Inject(MAT_DIALOG_DATA) private readonly data: any) {}
+  constructor(public dialogRef: MatDialogRef<ExpDialogComponent>, @Inject(MAT_DIALOG_DATA) private readonly data: any) {}
 
   onOK() {
     this.dialogRef.close(true);
