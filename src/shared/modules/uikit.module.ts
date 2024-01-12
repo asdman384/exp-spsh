@@ -12,10 +12,10 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTableModule } from '@angular/material/table';
+import { MatTabsModule } from '@angular/material/tabs';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { DialogComponent } from '../components';
-
 @NgModule({
   imports: [
     DragDropModule,
@@ -30,6 +30,7 @@ import { DialogComponent } from '../components';
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
+    MatTabsModule,
     MatToolbarModule,
     MatTooltipModule,
 
@@ -48,6 +49,7 @@ import { DialogComponent } from '../components';
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTableModule,
+    MatTabsModule,
     MatToolbarModule,
     MatTooltipModule
   ],

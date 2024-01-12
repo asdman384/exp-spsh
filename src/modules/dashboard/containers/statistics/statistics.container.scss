@@ -1,5 +1,17 @@
-.form {
-  display: flex;
-  padding: 16px;
-  gap: 10px;
+.month-selector {
+  ::ng-deep .mdc-tab {
+    width: 50px;
+    min-width: 50px;
+    padding-right: 4px;
+    padding-left: 4px;
+  }
+}
+
+.user-selector {
+  padding: 0 16px;
+}
+
+.user-selector,
+.month-selector {
+  height: 50px;
 }

@@ -1,12 +1,15 @@
 import { AfterViewInit, Component, ViewChild } from '@angular/core';
-import { NgForm } from '@angular/forms';
+import { MatTabGroup } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
-import { BehaviorSubject, filter, map, switchMap } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, switchMap, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
 import { BACK, TOTAL } from 'src/constants';
-import { Expense } from 'src/shared/models';
+import { Expense, Sheet } from 'src/shared/models';
+
+const MONTH_BUTTON_WIDTH = 50;
+const PADDINGS = 76;
 
 @Component({
   selector: 'exp-statistics-container',
@@ -14,32 +17,57 @@ import { Expense } from 'src/shared/models';
   styleUrl: './statistics.container.scss'
 })
 export class StatisticsContainer implements AfterViewInit {
-  @ViewChild('form', { static: true, read: NgForm })
-  private readonly form!: NgForm;
+  @ViewChild('monthSelector', { read: MatTabGroup })
+  private readonly monthSelector!: MatTabGroup;
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
-  readonly sheets$ = this.store.select(sheetsSelector);
-  readonly sheet$ = this.store.select(currentSheetSelector);
-  readonly expenses$ = this.aggregator$.pipe(switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))));
-  readonly monthModel: number = new Date().getMonth();
   readonly month = 'month';
   readonly sheet = 'sheet';
 
-  constructor(private readonly store: Store) {}
+  readonly sheets$ = this.store.select(sheetsSelector);
+  readonly sheet$ = this.store.select(currentSheetSelector);
+
+  readonly monthTabs = new Array(12)
+    .fill(0)
+    .map((v, i) => new Date(2024, i).toLocaleString('default', { month: 'short' }));
+  readonly monthModel: number = new Date().getMonth();
+
+  readonly expenses$ = this.aggregator$.pipe(switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))));
+
+  sheets: Array<Sheet> = [];
+  currentSheetIndex = 0;
+  currentMonthIndex = new Date().getMonth();
+
+  constructor(private readonly store: Store) {
+    combineLatest([this.sheets$, this.sheet$])
+      .pipe(take(1))
+      .subscribe(([sheets, sheet]) => {
+        this.sheets = sheets;
+        this.currentSheetIndex = sheets.indexOf(sheet!);
+        this.formChanged(this.currentSheetIndex, this.currentMonthIndex, sheets);
+      });
+  }
 
   ngAfterViewInit(): void {
-    this.form.form.valueChanges
-      .pipe(filter((x) => x[this.month] !== undefined && x[this.sheet] !== undefined))
-      .subscribe((formValue) => {
-        log('StatisticsContainer::form.valueChanges', formValue);
-        const year = new Date().getFullYear();
-        this.store.dispatch(
-          AppActions.loadExpenses({
-            sheetId: formValue[this.sheet].id,
-            from: new Date(year, formValue[this.month], 1),
-            to: new Date(year, formValue[this.month] + 1, 1)
-          })
-        );
-      });
+    this.scrollToCurrentMonth();
+  }
+
+  formChanged(sheetIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
+    const year = new Date().getFullYear();
+    this.store.dispatch(
+      AppActions.loadExpenses({
+        sheetId: sheets[sheetIndex].id,
+        from: new Date(year, monthIndex, 1),
+        to: new Date(year, monthIndex + 1, 1)
+      })
+    );
+  }
+
+  private scrollToCurrentMonth(): void {
+    let { width }: { width: number } = this.monthSelector._elementRef.nativeElement.getBoundingClientRect();
+    width -= PADDINGS;
+    if (width < this.currentMonthIndex * MONTH_BUTTON_WIDTH) {
+      setTimeout(() => (this.monthSelector._tabHeader.scrollDistance = width));
+    }
   }
 
   expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {

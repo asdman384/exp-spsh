@@ -1,31 +1,25 @@
-<form #form="ngForm" class="form">
-  <mat-form-field appearance="outline">
-    <mat-label>Month</mat-label>
-    <mat-select [name]="month" [ngModel]="monthModel">
-      <mat-option [value]="0">January</mat-option>
-      <mat-option [value]="1">February</mat-option>
-      <mat-option [value]="2">March</mat-option>
-      <mat-option [value]="3">April</mat-option>
-      <mat-option [value]="4">May</mat-option>
-      <mat-option [value]="5">June</mat-option>
-      <mat-option [value]="6">July</mat-option>
-      <mat-option [value]="7">August</mat-option>
-      <mat-option [value]="8">September</mat-option>
-      <mat-option [value]="9">October</mat-option>
-      <mat-option [value]="10">November</mat-option>
-      <mat-option [value]="11">December</mat-option>
-    </mat-select>
-  </mat-form-field>
+<div class="form">
+  <mat-tab-group
+    class="user-selector"
+    [(selectedIndex)]="currentSheetIndex"
+    (selectedIndexChange)="formChanged($event, currentMonthIndex, sheets)"
+  >
+    @for (sheet of sheets; track sheet.id) {
+    <mat-tab [label]="sheet.title.split('_')[1]"></mat-tab>
+    }
+  </mat-tab-group>
 
-  <mat-form-field appearance="outline">
-    <mat-label>User</mat-label>
-    <mat-select [name]="sheet" [ngModel]="sheet$ | async">
-      @for (sheet of sheets$ | async; track sheet.id) {
-      <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
-      }
-    </mat-select>
-  </mat-form-field>
-</form>
+  <mat-tab-group
+    #monthSelector
+    class="month-selector"
+    [(selectedIndex)]="currentMonthIndex"
+    (selectedIndexChange)="formChanged(currentSheetIndex, $event, sheets)"
+  >
+    @for (tab of monthTabs; track tab; let i = $index) {
+    <mat-tab [label]="tab"></mat-tab>
+    }
+  </mat-tab-group>
+</div>
 
 <expenses-table
   [dataSource]="(expenses$ | async) || []"
