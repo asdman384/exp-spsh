@@ -248,9 +248,13 @@ export class SpreadsheetService {
       ]
     };
 
+    log('request add expense');
     const request = gapi.client.sheets.spreadsheets
       .batchUpdate({ spreadsheetId, resource: { requests: [{ insertDimension }, { updateCells }] } })
-      .then((response) => response.result);
+      .then((response) => {
+        log('response', response.result);
+        return response.result;
+      });
 
     return nonZonePromiseToObservable(request, this.zone);
   }

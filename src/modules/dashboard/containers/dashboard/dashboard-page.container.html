@@ -16,7 +16,7 @@
         required
       />
       <div class="date-suffix" matSuffix>
-        {{ expense.date | date:'HH:mm' }}
+        {{ expense.date | date: timeFormat }}
         <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
       </div>
       <mat-datepicker [touchUi]="true" #picker></mat-datepicker>

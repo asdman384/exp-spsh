@@ -12,6 +12,7 @@ import {
   loadingSelector,
   sheetsSelector
 } from 'src/@state';
+import { TIME_FORMAT } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
 
 @Component({
@@ -25,7 +26,8 @@ export class DashboardPageContainer {
   readonly sheets$ = this.store.select(sheetsSelector);
   readonly categories$ = this.store.select(categoriesSelector);
   readonly expenses$ = this.store.select(expensesSelector);
-
+  readonly timeFormat = TIME_FORMAT;
+  
   minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
   maxDate: Date = new Date();
   sheet?: Sheet;

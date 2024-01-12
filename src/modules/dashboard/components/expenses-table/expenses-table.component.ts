@@ -7,6 +7,7 @@ import {
   Output,
   SimpleChanges
 } from '@angular/core';
+import { DATE_FORMAT } from 'src/constants';
 import { Expense } from 'src/shared/models';
 
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment'];
@@ -17,6 +18,7 @@ const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comme
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExpensesTableComponent implements OnChanges {
+  readonly dateFormat = DATE_FORMAT;
   columns = DEFAULT_COLS;
 
   @Input()
