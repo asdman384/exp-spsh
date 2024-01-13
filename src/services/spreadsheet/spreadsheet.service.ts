@@ -1,11 +1,13 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable, NgZone } from '@angular/core';
-import { Observable, first, map, mergeMap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { nonZonePromiseToObservable } from 'src/shared/helpers';
 import { Category, Expense } from 'src/shared/models';
 import { SecurityService } from '../security.service';
+
+import keys from '../../../keys.json';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
@@ -226,7 +228,8 @@ export class SpreadsheetService {
   addExpense(
     spreadsheetId: string,
     sheetId: number,
-    expense: Expense
+    expense: Expense,
+    token: google.accounts.oauth2.TokenResponse
   ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
@@ -249,14 +252,11 @@ export class SpreadsheetService {
     };
 
     log('request add expense');
-    const request = gapi.client.sheets.spreadsheets
-      .batchUpdate({ spreadsheetId, resource: { requests: [{ insertDimension }, { updateCells }] } })
-      .then((response) => {
-        log('response', response.result);
-        return response.result;
-      });
-
-    return nonZonePromiseToObservable(request, this.zone);
+    return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate?alt=json&key=${keys.API_KEY}`,
+      { requests: [{ insertDimension }, { updateCells }] },
+      { headers: new HttpHeaders().set('Authorization', `Bearer ${token.access_token}`) }
+    );
   }
 
   /**

@@ -40,10 +40,6 @@ export class AppComponent {
       user && this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
     });
     this.subscribeForUpdates();
-
-    // combineLatest([networkStatus.online$, securityService.gapiReady$])
-    //   .pipe(filter(([a, b]) => a && b))
-    //   .subscribe(() => router.navigate([ROUTE.dashboard, ROUTE.stats], { queryParams: { logger: 'window' } }));
   }
 
   enableDebug(): void {

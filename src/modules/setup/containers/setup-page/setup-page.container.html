@@ -21,13 +21,13 @@
     <mat-icon matSuffix>help_outline</mat-icon>
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
+  <mat-form-field appearance="outline" class="readonly">
     <mat-label>Data Sheet id</mat-label>
     <input [name]="sheetField" matInput [ngModel]="(sheet$ | async)?.id" readonly />
     <mat-icon [class]="sheetDone ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
   </mat-form-field>
 
-  <mat-form-field appearance="outline">
+  <mat-form-field appearance="outline" class="readonly">
     <mat-label>Categories Sheet id</mat-label>
     <input [name]="categoriesSheetIdField" matInput [ngModel]="categoriesSheetId | async" readonly />
     <mat-icon [class]="categoriesSheetDone ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>

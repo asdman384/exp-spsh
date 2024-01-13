@@ -154,9 +154,9 @@ export class AppEffects {
       ofType(AppActions.addExpense),
       tap<ReturnType<typeof AppActions.addExpense>>(log),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
-      exhaustMap(([action, spreadsheetId]) =>
-        this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense).pipe(map(() => action))
+      withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
+      exhaustMap(([action, spreadsheetId, token]) =>
+        this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense, token).pipe(map(() => action))
       ),
       map((action) => {
         const to = new Date(action.expense.date!);
