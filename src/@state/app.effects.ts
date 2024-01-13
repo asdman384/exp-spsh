@@ -17,6 +17,15 @@ export class AppEffects {
       map(() => arg)
     );
 
+  readonly tokenUpdate$ = createEffect(
+    () =>
+      this.security.token$.pipe(
+        tap((t) => log('got fresh token')),
+        tap((t) => this.spreadSheetService.setToken(t))
+      ),
+    { dispatch: false }
+  );
+
   readonly saveSpreadsheetId$ = createEffect(
     () =>
       this.actions$.pipe(
@@ -154,9 +163,9 @@ export class AppEffects {
       ofType(AppActions.addExpense),
       tap<ReturnType<typeof AppActions.addExpense>>(log),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
-      exhaustMap(([action, spreadsheetId, token]) =>
-        this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense, token).pipe(map(() => action))
+      withLatestFrom(this.store.select(spreadsheetIdSelector)),
+      exhaustMap(([action, spreadsheetId]) =>
+        this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense).pipe(map(() => action))
       ),
       map((action) => {
         const to = new Date(action.expense.date!);
@@ -176,10 +185,10 @@ export class AppEffects {
       ofType(AppActions.loadExpenses),
       tap<ReturnType<typeof AppActions.loadExpenses>>(log),
       switchMap(this.whenOnline),
-      withLatestFrom(this.store.select(spreadsheetIdSelector), this.security.token$),
-      exhaustMap(([action, spreadsheetId, token]) => {
+      withLatestFrom(this.store.select(spreadsheetIdSelector)),
+      exhaustMap(([action, spreadsheetId]) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.loadExpenses(spreadsheetId!, action, token);
+        return this.spreadSheetService.loadExpenses(spreadsheetId!, action);
       }),
       map((expenses) => AppActions.storeExpenses({ expenses })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),

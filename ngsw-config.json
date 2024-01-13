@@ -23,5 +23,20 @@
         "files": ["/assets/**", "/*.(svg|cur|jpg|jpeg|png|apng|webp|avif|gif|otf|ttf|woff|woff2)"]
       }
     }
+  ],
+  "dataGroups": [
+    {
+      "name": "googleapis",
+      "urls": [
+        "https://content-sheets.googleapis.com/*",
+        "https://content.googleapis.com/*",
+        "https://docs.google.com/a/google.com/spreadsheets/*"
+      ],
+      "cacheConfig": {
+        "maxSize": 0,
+        "maxAge": "0u",
+        "strategy": "freshness"
+      }
+    }
   ]
 }

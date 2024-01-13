@@ -31,13 +31,6 @@ export function isOnline(): Observable<boolean | UrlTree> {
   return networkStatus.online$.pipe(map((online) => online || router.createUrlTree([])));
 }
 
-export function isGapiReady(): Observable<boolean | UrlTree> {
-  const security = inject(SecurityService);
-  const router = inject(Router);
-
-  return security.gapiReady$.pipe(map((ready) => ready || router.createUrlTree([])));
-}
-
 export function isSetupReady(): Observable<boolean | UrlTree> {
   const store = inject(Store);
   const router = inject(Router);

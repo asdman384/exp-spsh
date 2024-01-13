@@ -1,8 +1,8 @@
-import { Injectable, NgZone } from '@angular/core';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { Injectable } from '@angular/core';
 
-import { BehaviorSubject, ReplaySubject, first, forkJoin, switchMap } from 'rxjs';
+import { BehaviorSubject, ReplaySubject, first, switchMap } from 'rxjs';
 
-import { environment } from 'src/environments/environment';
 import { Token, Userinfo } from 'src/shared/models';
 
 import keys from '../../keys.json';
@@ -20,16 +20,14 @@ export class SecurityService {
 
   private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get<Userinfo>(USER));
   private readonly token = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
-  private readonly gapiReady = new BehaviorSubject<boolean>(false);
 
   readonly user$ = this.user.asObservable();
   readonly token$ = this.token.asObservable();
-  readonly gapiReady$ = this.gapiReady.asObservable();
 
   constructor(
     private readonly storageService: StorageService,
     private readonly status: NetworkStatusService,
-    private readonly zone: NgZone
+    private readonly http: HttpClient
   ) {
     this.securityClient = this.createSecurityClient();
   }
@@ -38,10 +36,6 @@ export class SecurityService {
    * https://developers.google.com/sheets/api/quickstart/js?hl=ru
    */
   init(): void {
-    gapi.load('client', () => {
-      this.initGapiClient();
-      this.token$.subscribe((t) => gapi.client.setToken(t));
-    });
     this.refreshToken();
   }
 
@@ -51,15 +45,16 @@ export class SecurityService {
     log('SecurityService: no token, no user, ask for consent ');
     this.securityClient.requestAccessToken({});
 
-    this.token.pipe(first((t) => !!t)).subscribe(() => {
-      gapi.client.oauth2.userinfo
-        .get()
-        .then((resp) => new Userinfo(resp.result))
-        .then((user) => {
-          this.storageService.put(USER, user);
-          this.zone.run(() => this.user.next(user));
-          log('SecurityService: logged user ' + (user.name ?? user.given_name));
-        });
+    const userRequest = (t: google.accounts.oauth2.TokenResponse) =>
+      this.http.get<gapi.client.oauth2.Userinfo>('https://content.googleapis.com/oauth2/v2/userinfo', {
+        headers: new HttpHeaders().set('Authorization', `Bearer ${t.access_token}`)
+      });
+
+    this.token.pipe(first(), switchMap(userRequest)).subscribe((resp) => {
+      const user = new Userinfo(resp);
+      this.storageService.put(USER, user);
+      this.user.next(user);
+      log('SecurityService: logged user ' + user.name);
     });
   }
 
@@ -81,6 +76,11 @@ export class SecurityService {
     if (token && Date.now() < token.expiration) {
       this.token.next(token.googleToken);
       log('SecurityService: token still valid, no refresh, expiration:', new Date(token.expiration).toString());
+      return;
+    }
+
+    if (!user) {
+      log('SecurityService: no User, cannot refresh token');
       return;
     }
 
@@ -119,27 +119,5 @@ export class SecurityService {
       callback,
       error_callback
     });
-  }
-
-  private initGapiClient(): void {
-    const initGapi$ = forkJoin([
-      // https://content.googleapis.com/discovery/v1/apis/oauth2/v2/rest?pp
-      gapi.client.load(environment.OAUTH2_DISCOVERY_DOC),
-      // https://content-sheets.googleapis.com/$discovery/rest?version=v4
-      gapi.client.init({ apiKey: keys.API_KEY, discoveryDocs: [environment.SHEETS_DISCOVERY_DOC] })
-    ]);
-
-    this.status.online$
-      .pipe(first((isOnline) => isOnline))
-      .pipe(switchMap(() => initGapi$))
-      .subscribe({
-        next: () => {
-          log('SecurityService: gapi client ready');
-          this.zone.run(() => this.gapiReady.next(true));
-        },
-        error: (e) => {
-          log('SecurityService: gapi client error loading', e);
-        }
-      });
   }
 }

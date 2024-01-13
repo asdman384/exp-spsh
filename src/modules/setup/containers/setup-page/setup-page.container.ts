@@ -77,12 +77,14 @@ export class SettingsPageContainer {
     this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
 
     log('data sheet format adjust...');
-    await this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id);
+    await firstValueFrom(this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id));
     this.sheetDone = true;
     log('data sheet format adjust finish');
 
     log('categories sheet format adjust...');
-    await this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
+    await firstValueFrom(
+      this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id)
+    );
     this.categoriesSheetDone = true;
     log('categories sheet format adjust finish');
 
@@ -105,7 +107,7 @@ export class SettingsPageContainer {
   }
 
   private async loadSpreadSheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
-    const spreadsheet = await this.spreadsheetService.getSpreadsheet(spreadsheetId);
+    const spreadsheet = await firstValueFrom(this.spreadsheetService.getSpreadsheet(spreadsheetId));
     if (spreadsheet.spreadsheetId === undefined) {
       throw 'error getting spreadsheet';
     }
@@ -129,7 +131,7 @@ export class SettingsPageContainer {
 
     if (!sheet) {
       log(`sheet creation [${title}]...`);
-      sheet = await this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount);
+      sheet = await firstValueFrom(this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount));
       log(`sheet created [${sheet.title}]`);
     } else {
       log(`sheet exists [${sheet.title}]`);
