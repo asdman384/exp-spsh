@@ -42,7 +42,11 @@ export class ExpensesTableComponent implements OnChanges {
     this.onCellClick.emit({ field, cellData, rowData });
   }
 
-  truncate(value: string): string {
+  truncate(value: string | undefined): string {
+    if (value === undefined || value === null) {
+      return '';
+    }
+
     const result = value.split(/[ \n]/g).splice(0, 5);
     if (result.length === 5) {
       result[4] = result[4].substring(0, result[4].length - 3) + '...';
