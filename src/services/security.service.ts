@@ -20,7 +20,7 @@ export class SecurityService {
   private readonly securityClient: google.accounts.oauth2.TokenClient;
 
   private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get<Userinfo>(USER));
-  private token = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
+  private token = new ReplaySubject<google.accounts.oauth2.TokenResponse>(1);
 
   readonly user$ = this.user.asObservable();
 
