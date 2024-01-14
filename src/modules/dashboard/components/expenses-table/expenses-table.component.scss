@@ -1,0 +1,18 @@
+:host {
+  display: block;
+  width: 100%;
+}
+
+.exp-table {
+  width: 100%;
+}
+
+.mat-column-category {
+  line-height: 18px;
+}
+
+.mat-column-date:not(.mat-mdc-header-cell),
+.mat-column-comment:not(.mat-mdc-header-cell) {
+  font-size: 12px;
+  line-height: 18px;
+}

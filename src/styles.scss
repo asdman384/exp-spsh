@@ -61,3 +61,23 @@ body {
 .non-selectable {
   user-select: none;
 }
+
+/* MATERIAL */
+
+html {
+  --mat-table-row-item-container-height: 40px !important;
+}
+
+.mdc-data-table__cell,
+.mdc-data-table__header-cell {
+  padding: 0 8px !important;
+
+  &:first-child {
+    padding-left: 16px !important;
+  }
+
+  &:last-child {
+    padding-right: 16px !important;
+  }
+}
+/* MATERIAL */
