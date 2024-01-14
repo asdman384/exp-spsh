@@ -13,10 +13,6 @@ export class SpreadsheetService {
 
   constructor(private readonly http: HttpClient) {}
 
-  setToken(token: google.accounts.oauth2.TokenResponse): void {
-    this.token = token;
-  }
-
   /**
    * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/update
    * @param spreadsheetId
@@ -28,13 +24,10 @@ export class SpreadsheetService {
     categories: Array<Category>
   ): Observable<gapi.client.sheets.UpdateValuesResponse> {
     const range = encodeURIComponent(`${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`);
-
-    log('request update Categories');
     return this.http.put<gapi.client.sheets.UpdateValuesResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?` +
-        `valueInputOption=RAW&alt=json&key=${keys.API_KEY}`,
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
       { values: categories.map((c) => [c.name, c.id]) } as gapi.client.sheets.ValueRange,
-      { headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`) }
+      { params: new HttpParams({ fromObject: { valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY } }) }
     );
   }
 
@@ -46,12 +39,14 @@ export class SpreadsheetService {
    */
   addCategory(spreadsheetId: string, { name, id }: Category): Observable<gapi.client.sheets.AppendValuesResponse> {
     const range = encodeURIComponent(`${CATEGORIES_SHEET_TITLE}!A1:B1`);
-    log('request add Category');
     return this.http.post<gapi.client.sheets.AppendValuesResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append?` +
-        `valueInputOption=RAW&insertDataOption=INSERT_ROWS&alt=json&key=${keys.API_KEY}`,
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append`,
       { values: [[name, id]] } as gapi.client.sheets.ValueRange,
-      { headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`) }
+      {
+        params: new HttpParams({
+          fromObject: { insertDataOption: 'INSERT_ROWS', valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY }
+        })
+      }
     );
   }
 
@@ -71,11 +66,10 @@ export class SpreadsheetService {
       range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
     };
 
-    log('request delete Category');
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate?alt=json&key=${keys.API_KEY}`,
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
       { requests: [{ deleteDimension }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
   }
 
@@ -87,11 +81,10 @@ export class SpreadsheetService {
   getAllCategories(spreadsheetId: string): Observable<Array<Category>> {
     const range = encodeURIComponent(CATEGORIES_SHEET_TITLE + `!A:B`);
 
-    log('request add get All Categories');
     return this.http
       .get<gapi.client.sheets.ValueRange>(
-        `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?valueRenderOption=UNFORMATTED_VALUE&key=${keys.API_KEY}`,
-        { headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`) }
+        `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
+        { params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } }) }
       )
       .pipe(map((result) => result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []));
   }
@@ -105,10 +98,7 @@ export class SpreadsheetService {
   getSpreadsheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
     return this.http.get<gapi.client.sheets.Spreadsheet>(
       `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
-      {
-        headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`),
-        params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } })
-      }
+      { params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } }) }
     );
   }
 
@@ -125,15 +115,11 @@ export class SpreadsheetService {
       properties: { title, gridProperties: { rowCount: 1, columnCount } }
     };
 
-    log('request add Sheet');
     return this.http
       .post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
         `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
         { requests: [{ addSheet }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-        {
-          headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`),
-          params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } })
-        }
+        { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
       )
       .pipe(map((result) => result.replies![0].addSheet!.properties!));
   }
@@ -187,7 +173,6 @@ export class SpreadsheetService {
       fields: 'pixelSize'
     };
 
-    log('request set Data Sheet Formats');
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
       {
@@ -198,10 +183,7 @@ export class SpreadsheetService {
           { updateDimensionProperties }
         ]
       } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      {
-        headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`),
-        params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } })
-      }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
   }
 
@@ -227,14 +209,10 @@ export class SpreadsheetService {
       fields: 'dataValidation.condition'
     };
 
-    log('request set Categories Sheet Formats');
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
       { requests: [{ repeatCell }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      {
-        headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`),
-        params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } })
-      }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
   }
 
@@ -269,11 +247,10 @@ export class SpreadsheetService {
       ]
     };
 
-    log('request add expense');
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate?alt=json&key=${keys.API_KEY}`,
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
       { requests: [{ insertDimension }, { updateCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { headers: new HttpHeaders().set('Authorization', `Bearer ${this.token?.access_token}`) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
   }
 
@@ -285,25 +262,35 @@ export class SpreadsheetService {
    */
   loadExpenses(spreadsheetId: string, filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
-    let gvizQuery = `
+    let tq = `
       select A, B, C, D 
       where D >= date '${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}'
     `.trim();
 
     if (filter.to) {
-      gvizQuery += `and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
+      tq += ` and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
-    log('request expenses');
+    function responseHandler(data: ExpensesDTO): Array<Expense> {
+      return data.table.rows.map<Expense>((row) => {
+        const comment = row.c[1]?.v;
+        return {
+          category: String(row.c[0].v),
+          comment: comment ? String(comment) : undefined,
+          amount: Number(row.c[2].v),
+          date: eval(`new ${row.c[3].v}`)
+        };
+      });
+    }
+
     return this.http
-      .get(
-        `https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}` +
-          `/gviz/tq?tq=${encodeURIComponent(gvizQuery)}` +
-          `&tqx=responseHandler:myResponseHandler&gid=${filter.sheetId}` +
-          `&access_token=${encodeURIComponent(this.token?.access_token || '')}`,
-        { responseType: 'text' }
-      )
-      .pipe(map(translateTextToExpense));
+      .get(`https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}/gviz/tq`, {
+        responseType: 'text',
+        params: new HttpParams({
+          fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }
+        })
+      })
+      .pipe(map((response) => eval(response)));
   }
 }
 
@@ -319,22 +306,6 @@ export class SpreadsheetService {
  */
 function getDateSerialNumber(date: Date): number {
   return 25569.0 + (date.getTime() - date.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24);
-}
-
-function translateTextToExpense(text: string): Array<Expense> {
-  function myResponseHandler(data: ExpensesDTO): Array<Expense> {
-    return data.table.rows.map<Expense>((row) => {
-      const comment = row.c[1]?.v;
-      return {
-        category: String(row.c[0].v),
-        comment: comment ? String(comment) : undefined,
-        amount: Number(row.c[2].v),
-        date: eval(`new ${row.c[3].v}`)
-      };
-    });
-  }
-
-  return eval(text);
 }
 
 interface ExpensesDTO {

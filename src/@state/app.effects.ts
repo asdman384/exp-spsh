@@ -17,15 +17,6 @@ export class AppEffects {
       map(() => arg)
     );
 
-  readonly tokenUpdate$ = createEffect(
-    () =>
-      this.security.token$.pipe(
-        tap((t) => log('got fresh token')),
-        tap((t) => this.spreadSheetService.setToken(t))
-      ),
-    { dispatch: false }
-  );
-
   readonly saveSpreadsheetId$ = createEffect(
     () =>
       this.actions$.pipe(

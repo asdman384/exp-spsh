@@ -1,5 +1,5 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
-import { HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
 import { APP_INITIALIZER, NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -10,6 +10,7 @@ import { StoreModule } from '@ngrx/store';
 import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
 import { AppEffects, metaReducers, reducers } from 'src/@state';
+import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { LocalStorageService, SecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
 
@@ -53,6 +54,7 @@ if (loggerType) {
     ...debug
   ],
   providers: [
+    { provide: HTTP_INTERCEPTORS, useClass: ExpAuthInterceptor, multi: true },
     { provide: LocationStrategy, useClass: HashLocationStrategy },
     SecurityService,
     { provide: StorageService, useClass: LocalStorageService },

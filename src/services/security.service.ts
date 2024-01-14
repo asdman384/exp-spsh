@@ -1,7 +1,7 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 
-import { BehaviorSubject, ReplaySubject, first, switchMap } from 'rxjs';
+import { BehaviorSubject, Observable, ReplaySubject, first, skip, switchMap } from 'rxjs';
 
 import { Token, Userinfo } from 'src/shared/models';
 
@@ -16,13 +16,13 @@ const SCOPES = 'https://www.googleapis.com/auth/spreadsheets https://www.googlea
 
 @Injectable({ providedIn: 'root' })
 export class SecurityService {
+  private isTokenSet: boolean = false;
   private readonly securityClient: google.accounts.oauth2.TokenClient;
 
   private readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get<Userinfo>(USER));
-  private readonly token = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
+  private token = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
 
   readonly user$ = this.user.asObservable();
-  readonly token$ = this.token.asObservable();
 
   constructor(
     private readonly storageService: StorageService,
@@ -36,25 +36,26 @@ export class SecurityService {
    * https://developers.google.com/sheets/api/quickstart/js?hl=ru
    */
   init(): void {
-    this.refreshToken();
+    // this.refreshToken();
   }
 
   login(): void {
     // Prompt the user to select a Google Account and ask for consent to share their data
     // when establishing a new session.
-    log('SecurityService: no token, no user, ask for consent ');
+    log('Security: no token, no user, ask for consent ');
     this.securityClient.requestAccessToken({});
 
     const userRequest = (t: google.accounts.oauth2.TokenResponse) =>
-      this.http.get<gapi.client.oauth2.Userinfo>('https://content.googleapis.com/oauth2/v2/userinfo', {
-        headers: new HttpHeaders().set('Authorization', `Bearer ${t.access_token}`)
-      });
+      this.http.get<gapi.client.oauth2.Userinfo>(
+        'https://content.googleapis.com/oauth2/v2/userinfo'
+        //  , {        headers: new HttpHeaders().set('Authorization', `Bearer ${t.access_token}`)      }
+      );
 
     this.token.pipe(first(), switchMap(userRequest)).subscribe((resp) => {
       const user = new Userinfo(resp);
       this.storageService.put(USER, user);
       this.user.next(user);
-      log('SecurityService: logged user ' + user.name);
+      log('Security: logged user ' + user.name);
     });
   }
 
@@ -63,53 +64,57 @@ export class SecurityService {
     if (token) {
       google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
     }
-    gapi.client.setToken(null);
-    this.user.complete();
+    this.user.next(undefined);
     this.token.complete();
+    this.token = new ReplaySubject<google.accounts.oauth2.TokenResponse>();
+    this.isTokenSet = false;
+
     this.storageService.clear();
   }
 
-  private refreshToken(): void {
+  refreshToken(): Observable<google.accounts.oauth2.TokenResponse> {
     const user = this.storageService.get<Userinfo>(USER);
     const token = this.storageService.get<Token>(TOKEN);
 
     if (token && Date.now() < token.expiration) {
       this.token.next(token.googleToken);
-      log('SecurityService: token still valid, no refresh, expiration:', new Date(token.expiration).toString());
-      return;
+      this.isTokenSet = true;
+      log('Security: token is valid, expiration: ' + new Date(token.expiration).toString());
+      return this.token.asObservable();
     }
 
     if (!user) {
-      log('SecurityService: no User, cannot refresh token');
-      return;
+      log('Security: no User, cannot refresh token');
+      return this.token.asObservable();
     }
 
-    log('SecurityService: refresh token without consent');
+    log('Security: request new token without consent');
     this.status.online$.pipe(first((online) => online)).subscribe(() => {
       // Skip display of account chooser and consent dialog for an existing expired session.
-      this.securityClient.requestAccessToken({ prompt: 'none', login_hint: user?.id });
+      this.securityClient.requestAccessToken({ prompt: 'none', login_hint: user.id });
     });
+
+    if (this.isTokenSet) {
+      return this.token.asObservable().pipe(skip(1));
+    }
+
+    return this.token.asObservable();
   }
 
   private createSecurityClient(): google.accounts.oauth2.TokenClient {
     const callback = (token: google.accounts.oauth2.TokenResponse) => {
       if (token.error) {
-        log('SecurityService: token request error: ', token.error);
+        log('Security: token response error: ', token.error);
         this.storageService.remove(TOKEN);
         this.token.error(token.error);
         return;
       }
 
-      log(
-        'SecurityService: token request success, expiration:',
-        new Date(Date.now() + Number(token.expires_in) * 1000 - 60_000).toString()
-      );
+      const tokenObj = new Token(token);
       this.token.next(token);
-      this.storageService.put(TOKEN, new Token(token));
-    };
-
-    const error_callback = (error: google.accounts.oauth2.ClientConfigError) => {
-      log('SecurityService: error', error);
+      this.isTokenSet = true;
+      this.storageService.put(TOKEN, tokenObj);
+      log('Security: token response success, expiration: ' + new Date(tokenObj.expiration).toString());
     };
 
     return google.accounts.oauth2.initTokenClient({
@@ -117,7 +122,7 @@ export class SecurityService {
       scope: SCOPES,
       prompt: '',
       callback,
-      error_callback
+      error_callback: (error: google.accounts.oauth2.ClientConfigError) => log('Security: token request error: ', error)
     });
   }
 }
