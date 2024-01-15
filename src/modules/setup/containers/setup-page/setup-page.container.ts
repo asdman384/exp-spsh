@@ -77,6 +77,7 @@ export class SettingsPageContainer {
   }
 
   private storeDataSheets(spreadsheet: gapi.client.sheets.Spreadsheet): void {
+    this.spreadsheetService.setSpreadsheetId(spreadsheet.spreadsheetId!);
     const dataSheets = spreadsheet.sheets
       ?.filter((sheet) => !sheet.properties?.hidden)
       .filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
@@ -91,7 +92,7 @@ export class SettingsPageContainer {
         this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
         this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));
         log('data sheet format adjust...');
-        return this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id);
+        return this.spreadsheetService.setDataSheetFormats(dataSheet.id);
       }),
       tap(() => {
         log('data sheet format adjust finish');
@@ -105,7 +106,7 @@ export class SettingsPageContainer {
       switchMap((categoriesSheet) => {
         this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
         log('categories sheet format adjust...');
-        return this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
+        return this.spreadsheetService.setCategoriesSheetFormats(categoriesSheet.id);
       }),
       tap(() => {
         log('categories sheet format adjust finish');
@@ -157,7 +158,7 @@ export class SettingsPageContainer {
     }
 
     log(`sheet creation [${title}]...`);
-    return this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount).pipe(
+    return this.spreadsheetService.addSheet(title, columnCount).pipe(
       tap((sheet) => log(`sheet created [${sheet.title}]`)),
       map((sheet) => ({ id: sheet.sheetId!, title: sheet.title! }))
     );

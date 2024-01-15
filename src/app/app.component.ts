@@ -8,7 +8,7 @@ import { exhaustMap, filter, first } from 'rxjs';
 
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
-import { NetworkStatusService, SecurityService } from 'src/services';
+import { NetworkStatusService, SecurityService, SpreadsheetService } from 'src/services';
 import { ExpDialogComponent } from 'src/shared/components';
 
 import pak from '../../package.json';
@@ -32,12 +32,16 @@ export class AppComponent {
     private readonly router: Router,
     private readonly activeRoute: ActivatedRoute,
     private readonly securityService: SecurityService,
+    private readonly spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
     private readonly dialog: MatDialog,
     private readonly swUpdate: SwUpdate
   ) {
     this.securityService.user$.pipe(first()).subscribe((user) => {
       user && this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
+    });
+    this.spreadsheetId$.pipe(first()).subscribe((spreadsheetId) => {
+      spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
     });
     this.subscribeForUpdates();
   }

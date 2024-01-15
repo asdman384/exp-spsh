@@ -9,9 +9,16 @@ import keys from '../../../keys.json';
 
 @Injectable({ providedIn: 'root' })
 export class SpreadsheetService {
-  token?: google.accounts.oauth2.TokenResponse;
+  private spreadsheetId: string = '';
+  private get apiUrl(): string {
+    return `https://content-sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`;
+  }
 
   constructor(private readonly http: HttpClient) {}
+
+  setSpreadsheetId(spreadsheetId: string): void {
+    this.spreadsheetId = spreadsheetId;
+  }
 
   /**
    * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/update
@@ -19,13 +26,10 @@ export class SpreadsheetService {
    * @param categories
    * @returns
    */
-  updateCategories(
-    spreadsheetId: string,
-    categories: Array<Category>
-  ): Observable<gapi.client.sheets.UpdateValuesResponse> {
+  updateCategories(categories: Array<Category>): Observable<gapi.client.sheets.UpdateValuesResponse> {
     const range = encodeURIComponent(`${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`);
     return this.http.put<gapi.client.sheets.UpdateValuesResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
+      `${this.apiUrl}/values/${range}`,
       { values: categories.map((c) => [c.name, c.id]) } as gapi.client.sheets.ValueRange,
       { params: new HttpParams({ fromObject: { valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY } }) }
     );
@@ -37,10 +41,10 @@ export class SpreadsheetService {
    * @param category Category
    * @returns
    */
-  addCategory(spreadsheetId: string, { name, id }: Category): Observable<gapi.client.sheets.AppendValuesResponse> {
+  addCategory({ name, id }: Category): Observable<gapi.client.sheets.AppendValuesResponse> {
     const range = encodeURIComponent(`${CATEGORIES_SHEET_TITLE}!A1:B1`);
     return this.http.post<gapi.client.sheets.AppendValuesResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}:append`,
+      `${this.apiUrl}/values/${range}:append`,
       { values: [[name, id]] } as gapi.client.sheets.ValueRange,
       {
         params: new HttpParams({
@@ -57,17 +61,13 @@ export class SpreadsheetService {
    * @param index
    * @returns
    */
-  deleteCategory(
-    spreadsheetId: string,
-    sheetId: number,
-    index: number
-  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  deleteCategory(sheetId: number, index: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const deleteDimension: gapi.client.sheets.DeleteDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      `${this.apiUrl}:batchUpdate`,
       { requests: [{ deleteDimension }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
       { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
@@ -82,10 +82,9 @@ export class SpreadsheetService {
     const range = encodeURIComponent(CATEGORIES_SHEET_TITLE + `!A:B`);
 
     return this.http
-      .get<gapi.client.sheets.ValueRange>(
-        `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}`,
-        { params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } }) }
-      )
+      .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
+        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } })
+      })
       .pipe(map((result) => result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []));
   }
 
@@ -96,10 +95,9 @@ export class SpreadsheetService {
    * @returns gapi.client.sheets.Spreadsheet
    */
   getSpreadsheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
-    return this.http.get<gapi.client.sheets.Spreadsheet>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
-      { params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } }) }
-    );
+    return this.http.get<gapi.client.sheets.Spreadsheet>(`${this.apiUrl}`, {
+      params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } })
+    });
   }
 
   /**
@@ -110,14 +108,14 @@ export class SpreadsheetService {
    * @param columnCount
    * @returns
    */
-  addSheet(title: string, spreadsheetId: string, columnCount: number): Observable<gapi.client.sheets.SheetProperties> {
+  addSheet(title: string, columnCount: number): Observable<gapi.client.sheets.SheetProperties> {
     const addSheet: gapi.client.sheets.AddSheetRequest = {
       properties: { title, gridProperties: { rowCount: 1, columnCount } }
     };
 
     return this.http
       .post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-        `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+        `${this.apiUrl}:batchUpdate`,
         { requests: [{ addSheet }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
         { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
       )
@@ -131,10 +129,7 @@ export class SpreadsheetService {
    * @param sheetId
    * @returns
    */
-  setDataSheetFormats(
-    spreadsheetId: string,
-    sheetId: number
-  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  setDataSheetFormats(sheetId: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const dateCellValidation: gapi.client.sheets.RepeatCellRequest = {
       range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 3, endColumnIndex: 4 },
       cell: {
@@ -174,7 +169,7 @@ export class SpreadsheetService {
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      `${this.apiUrl}:batchUpdate`,
       {
         requests: [
           { repeatCell: dateCellValidation },
@@ -194,10 +189,7 @@ export class SpreadsheetService {
    * @param sheetId
    * @returns
    */
-  setCategoriesSheetFormats(
-    spreadsheetId: string,
-    sheetId: number
-  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  setCategoriesSheetFormats(sheetId: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const repeatCell: gapi.client.sheets.RepeatCellRequest = {
       range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 1, endColumnIndex: 2 },
       cell: {
@@ -210,7 +202,7 @@ export class SpreadsheetService {
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      `${this.apiUrl}:batchUpdate`,
       { requests: [{ repeatCell }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
       { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
@@ -222,11 +214,7 @@ export class SpreadsheetService {
    * @param spreadsheetId The ID of the spreadsheet to update.
    * @param sheetId The ID of the sheet(tab) to update
    */
-  addExpense(
-    spreadsheetId: string,
-    sheetId: number,
-    expense: Expense
-  ): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  addExpense(sheetId: number, expense: Expense): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
       inheritFromBefore: false
@@ -248,7 +236,7 @@ export class SpreadsheetService {
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+      `${this.apiUrl}:batchUpdate`,
       { requests: [{ insertDimension }, { updateCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
       { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
@@ -260,7 +248,7 @@ export class SpreadsheetService {
    * @param spreadsheetId
    * @param sheetId
    */
-  loadExpenses(spreadsheetId: string, filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
+  loadExpenses(filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
     let tq = `
       select A, B, C, D 
@@ -284,7 +272,7 @@ export class SpreadsheetService {
     }
 
     return this.http
-      .get(`https://docs.google.com/a/google.com/spreadsheets/d/${spreadsheetId}/gviz/tq`, {
+      .get(`https://docs.google.com/a/google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq`, {
         responseType: 'text',
         params: new HttpParams({
           fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }

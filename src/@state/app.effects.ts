@@ -1,11 +1,11 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, Observable, catchError, exhaustMap, filter, first, map, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, map, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
-import { LocalStorageService, NetworkStatusService, SecurityService, SpreadsheetService } from 'src/services';
+import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, sheetsSelector, spreadsheetIdSelector } from './app.selectors';
 
@@ -64,7 +64,7 @@ export class AppEffects {
   readonly loadCategories$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.loadCategories),
-      tap(log),
+      tap<ReturnType<typeof AppActions.loadCategories>>(log),
       withLatestFrom(this.store.select(spreadsheetIdSelector)),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
       exhaustMap(([action, id]) => this.spreadSheetService.getAllCategories(id!)),
@@ -81,12 +81,11 @@ export class AppEffects {
   readonly addCategory$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.addCategory),
-      tap(log),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      exhaustMap(([{ newCategory }, id]) =>
-        this.spreadSheetService.addCategory(id!, newCategory).pipe(map(() => newCategory))
-      ),
+      tap<ReturnType<typeof AppActions.addCategory>>(log),
+      exhaustMap(({ newCategory }) => {
+        this.store.dispatch(AppActions.loading({ loading: true }));
+        return this.spreadSheetService.addCategory(newCategory).pipe(map(() => newCategory));
+      }),
       withLatestFrom(this.store.select(categoriesSelector)),
       map(([newCategory, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
@@ -101,13 +100,9 @@ export class AppEffects {
   readonly deleteCategory$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.deleteCategory),
-      tap(log),
-      withLatestFrom(
-        this.store.select(spreadsheetIdSelector),
-        this.store.select(categoriesSheetIdSelector),
-        this.store.select(categoriesSelector)
-      ),
-      exhaustMap(([action, spreadsheetId, sheetId, categories]) => {
+      tap<ReturnType<typeof AppActions.deleteCategory>>(log),
+      withLatestFrom(this.store.select(categoriesSheetIdSelector), this.store.select(categoriesSelector)),
+      exhaustMap(([action, sheetId, categories]) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
         const index = categories.findIndex((c) => c.name === action.category.name);
         if (!~index) {
@@ -115,7 +110,7 @@ export class AppEffects {
         }
         const newCategories = [...categories];
         newCategories.splice(index, 1);
-        return this.spreadSheetService.deleteCategory(spreadsheetId!, sheetId!, index).pipe(map(() => newCategories));
+        return this.spreadSheetService.deleteCategory(sheetId!, index).pipe(map(() => newCategories));
       }),
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
@@ -131,13 +126,13 @@ export class AppEffects {
   readonly updateCategoryPosition$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.updateCategoryPosition),
-      tap(log),
-      withLatestFrom(this.store.select(spreadsheetIdSelector), this.store.select(categoriesSelector)),
-      exhaustMap(([action, id, categoriesBackUp]) => {
+      tap<ReturnType<typeof AppActions.updateCategoryPosition>>(log),
+      withLatestFrom(this.store.select(categoriesSelector)),
+      exhaustMap(([action, categoriesBackUp]) => {
         this.categoriesBackUp = categoriesBackUp;
         this.store.dispatch(AppActions.loading({ loading: true }));
         this.store.dispatch(AppActions.storeCategories({ categories: action.categories }));
-        return this.spreadSheetService.updateCategories(id!, action.categories);
+        return this.spreadSheetService.updateCategories(action.categories);
       }),
       map(() => AppActions.loading({ loading: false })),
       catchError((e) => {
@@ -153,11 +148,10 @@ export class AppEffects {
     this.actions$.pipe(
       ofType(AppActions.addExpense),
       tap<ReturnType<typeof AppActions.addExpense>>(log),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
-      exhaustMap(([action, spreadsheetId]) =>
-        this.spreadSheetService.addExpense(spreadsheetId!, action.sheetId, action.expense).pipe(map(() => action))
-      ),
+      exhaustMap((action) => {
+        this.store.dispatch(AppActions.loading({ loading: true }));
+        return this.spreadSheetService.addExpense(action.sheetId, action.expense).pipe(map(() => action));
+      }),
       map((action) => {
         const to = new Date(action.expense.date!);
         to.setDate(to.getDate() + 1); // add a day
@@ -176,10 +170,9 @@ export class AppEffects {
       ofType(AppActions.loadExpenses),
       tap<ReturnType<typeof AppActions.loadExpenses>>(log),
       switchMap(this.whenOnline),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
-      exhaustMap(([action, spreadsheetId]) => {
+      exhaustMap((action) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.loadExpenses(spreadsheetId!, action);
+        return this.spreadSheetService.loadExpenses(action);
       }),
       map((expenses) => AppActions.storeExpenses({ expenses })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
@@ -195,7 +188,6 @@ export class AppEffects {
     private readonly store: Store,
     private readonly actions$: Actions,
     private readonly status: NetworkStatusService,
-    private readonly security: SecurityService,
     private readonly spreadSheetService: SpreadsheetService
   ) {}
 }
