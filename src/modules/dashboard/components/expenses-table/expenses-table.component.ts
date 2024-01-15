@@ -38,7 +38,6 @@ export class ExpensesTableComponent implements OnChanges {
   }
 
   cellClickHandler(field: keyof Expense, cellData: unknown, rowData: Expense): void {
-    log('ExpensesTableComponent::cellClick', field, rowData);
     this.onCellClick.emit({ field, cellData, rowData });
   }
 

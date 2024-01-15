@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
 import { NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
+
 import { Store } from '@ngrx/store';
-import { Observable, firstValueFrom } from 'rxjs';
+import { Observable, forkJoin, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
 import {
@@ -14,7 +15,7 @@ import {
   SPREADSHEET_ID
 } from 'src/constants';
 import { SecurityService, SpreadsheetService } from 'src/services';
-import { Sheet } from 'src/shared/models';
+import { Sheet, Userinfo } from 'src/shared/models';
 
 type State = 'check document' | 'finish';
 
@@ -44,7 +45,7 @@ export class SettingsPageContainer {
     this.store.dispatch(AppActions.setTitle({ title: 'Settings' }));
   }
 
-  async checkSetup(form: NgForm, state: State): Promise<void> {
+  checkSetup(form: NgForm, state: State): void {
     if (state === 'finish') {
       this.finishSetup();
       return;
@@ -52,44 +53,65 @@ export class SettingsPageContainer {
 
     if (!form.valid) return;
     const spreadsheetId: string = this.extractSpreadsheetId(form.value[this.spreadsheetIdField]);
-    const user = await firstValueFrom(this.security.user$);
-    if (!user) {
-      throw new Error('error getting user');
-    }
 
     this.loading = true;
-
     log('load SpreadSheet...');
-    const spreadsheet = await this.loadSpreadSheet(spreadsheetId);
-    log('load SpreadSheet done, sheets:', spreadsheet.sheets);
 
+    this.loadSpreadSheet(spreadsheetId)
+      .pipe(
+        tap((spreadsheet) => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
+        tap((spreadsheet) => this.storeDataSheets(spreadsheet)),
+        withLatestFrom(this.security.user$),
+        tap(([spreadsheet, user]) => {
+          if (!user) throw new Error('error getting user');
+        }),
+        switchMap(([spreadsheet, user]) =>
+          forkJoin([this.createDataSheet(spreadsheet, user!), this.createCategoriesSheet(spreadsheet)])
+        )
+      )
+      .subscribe(() => {
+        this.loading = false;
+        this.state = 'finish';
+        this.store.dispatch(AppActions.storeCategories({ categories: [] }));
+      });
+  }
+
+  private storeDataSheets(spreadsheet: gapi.client.sheets.Spreadsheet): void {
     const dataSheets = spreadsheet.sheets
       ?.filter((sheet) => !sheet.properties?.hidden)
       .filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
       .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }));
     log('filtered dataSheets', dataSheets);
     dataSheets?.forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
+  }
 
-    const dataSheet = await this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 4, spreadsheet);
-    this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
-    this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));
-    const categoriesSheet = await this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet);
-    this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
-
-    log('data sheet format adjust...');
-    await firstValueFrom(this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id));
-    this.sheetDone = true;
-    log('data sheet format adjust finish');
-
-    log('categories sheet format adjust...');
-    await firstValueFrom(
-      this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id)
+  private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo): Observable<any> {
+    return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 4, spreadsheet).pipe(
+      switchMap((dataSheet) => {
+        this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
+        this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));
+        log('data sheet format adjust...');
+        return this.spreadsheetService.setDataSheetFormats(spreadsheet.spreadsheetId!, dataSheet.id);
+      }),
+      tap(() => {
+        log('data sheet format adjust finish');
+        this.sheetDone = true;
+      })
     );
-    this.categoriesSheetDone = true;
-    log('categories sheet format adjust finish');
+  }
 
-    this.loading = false;
-    this.state = 'finish';
+  private createCategoriesSheet(spreadsheet: gapi.client.sheets.Spreadsheet): Observable<any> {
+    return this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet).pipe(
+      switchMap((categoriesSheet) => {
+        this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
+        log('categories sheet format adjust...');
+        return this.spreadsheetService.setCategoriesSheetFormats(spreadsheet.spreadsheetId!, categoriesSheet.id);
+      }),
+      tap(() => {
+        log('categories sheet format adjust finish');
+        this.categoriesSheetDone = true;
+      })
+    );
   }
 
   private extractSpreadsheetId(resourceUrl: string): string {
@@ -106,41 +128,38 @@ export class SettingsPageContainer {
     throw new Error('cannot read spreadsheet id.');
   }
 
-  private async loadSpreadSheet(spreadsheetId: string): Promise<gapi.client.sheets.Spreadsheet> {
-    const spreadsheet = await firstValueFrom(this.spreadsheetService.getSpreadsheet(spreadsheetId));
-    if (spreadsheet.spreadsheetId === undefined) {
-      throw 'error getting spreadsheet';
-    }
-
-    log('loaded spreadsheet ' + spreadsheet.spreadsheetId);
-    this.store.dispatch(AppActions.spreadsheetId({ spreadsheetId: spreadsheet.spreadsheetId }));
-
-    return spreadsheet;
+  private loadSpreadSheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
+    return this.spreadsheetService.getSpreadsheet(spreadsheetId).pipe(
+      tap(({ spreadsheetId }) => {
+        if (spreadsheetId === undefined) {
+          throw Error('error getting spreadsheet');
+        }
+        log('loaded spreadsheet ' + spreadsheetId);
+        this.store.dispatch(AppActions.spreadsheetId({ spreadsheetId }));
+      })
+    );
   }
 
   private finishSetup(): void {
     this.router.navigate([ROUTE.dashboard], { replaceUrl: true, queryParamsHandling: 'preserve' });
   }
 
-  private async createSheet(
+  private createSheet(
     title: string,
     columnCount: number,
     spreadsheet: gapi.client.sheets.Spreadsheet
-  ): Promise<Sheet> {
+  ): Observable<Sheet> {
     let sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
 
-    if (!sheet) {
-      log(`sheet creation [${title}]...`);
-      sheet = await firstValueFrom(this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount));
-      log(`sheet created [${sheet.title}]`);
-    } else {
+    if (sheet) {
       log(`sheet exists [${sheet.title}]`);
+      return of({ id: sheet.sheetId!, title: sheet.title! });
     }
 
-    if (sheet === undefined) {
-      throw `error getting ${title} sheet`;
-    }
-
-    return { id: sheet.sheetId!, title: sheet.title! };
+    log(`sheet creation [${title}]...`);
+    return this.spreadsheetService.addSheet(title, spreadsheet.spreadsheetId!, columnCount).pipe(
+      tap((sheet) => log(`sheet created [${sheet.title}]`)),
+      map((sheet) => ({ id: sheet.sheetId!, title: sheet.title! }))
+    );
   }
 }
