@@ -1,5 +1,6 @@
 import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgModule } from '@angular/core';
+import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DATE_FORMATS,
@@ -25,6 +26,7 @@ import { ExpDialogComponent } from '../components';
 @NgModule({
   imports: [
     DragDropModule,
+    MatBadgeModule,
     MatButtonModule,
     MatNativeDateModule,
     MatDatepickerModule,
@@ -44,6 +46,7 @@ import { ExpDialogComponent } from '../components';
   ],
   exports: [
     DragDropModule,
+    MatBadgeModule,
     MatButtonModule,
     MatNativeDateModule,
     MatDatepickerModule,

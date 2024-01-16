@@ -3,7 +3,16 @@
     @if (user$ | async; as user) {
     <span class="header-title non-selectable">{{ title$ | async }}</span>
 
-    <button class="header-menu" mat-icon-button [matMenuTriggerFor]="menu" color="primary">
+    <button
+      mat-icon-button
+      class="header-menu"
+      color="primary"
+      [matBadge]="(hasUpdates$ | async) ? '!' : null"
+      matBadgeColor="warn"
+      matBadgeSize="small"
+      matBadgePosition="below after"
+      [matMenuTriggerFor]="menu"
+    >
       <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
     </button>
     } @else {
@@ -52,6 +61,14 @@
       Open Spreadsheet
     </a>
   </button>
+
+  @if (hasUpdates$ | async) {
+  <button mat-menu-item (click)="update()">
+    <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn">system_update</mat-icon>
+    <span>Update</span>
+  </button>
+  }
+
   <button mat-menu-item (click)="logout()" [disabled]="(isOnline$ | async) === false">
     <mat-icon class="main-menu-icon">logout</mat-icon> <span>Logout</span>
   </button>

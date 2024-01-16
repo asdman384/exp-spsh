@@ -5,6 +5,11 @@
 
 .header-menu {
   padding: 2px;
+
+  ::ng-deep .mat-badge-content.mat-badge-active {
+    right: 0px;
+    bottom: 0px;
+  }
 }
 
 .progress-container {

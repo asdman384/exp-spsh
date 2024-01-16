@@ -1,15 +1,13 @@
 import { Component } from '@angular/core';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, Router } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 import { Store } from '@ngrx/store';
-import { exhaustMap, filter, first } from 'rxjs';
+import { first, map } from 'rxjs';
 
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService, SpreadsheetService } from 'src/services';
-import { ExpDialogComponent } from 'src/shared/components';
 
 import pak from '../../package.json';
 
@@ -25,6 +23,9 @@ export class AppComponent {
   readonly isOnline$ = this.networkStatus.online$;
   readonly title$ = this.store.select(titleSelector);
   readonly spreadsheetId$ = this.store.select(spreadsheetIdSelector);
+  readonly hasUpdates$ = this.swUpdate.versionUpdates.pipe(
+    map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
+  );
   readonly version = pak.version;
 
   constructor(
@@ -34,7 +35,6 @@ export class AppComponent {
     private readonly securityService: SecurityService,
     private readonly spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
-    private readonly dialog: MatDialog,
     private readonly swUpdate: SwUpdate
   ) {
     this.securityService.user$.pipe(first()).subscribe((user) => {
@@ -42,8 +42,8 @@ export class AppComponent {
     });
     this.spreadsheetId$.pipe(first()).subscribe((spreadsheetId) => {
       spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
+      
     });
-    this.subscribeForUpdates();
   }
 
   enableDebug(): void {
@@ -61,11 +61,7 @@ export class AppComponent {
     this.router.navigate([ROUTE.setup]);
   }
 
-  private subscribeForUpdates(): void {
-    const data = { title: 'New version is ready', content: 'Update to the latest version?' };
-    this.swUpdate.versionUpdates
-      .pipe(filter((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'))
-      .pipe(exhaustMap(() => this.dialog.open(ExpDialogComponent, { data }).afterClosed()))
-      .subscribe((result: boolean) => result && location.reload());
+  update(): void {
+    location.reload();
   }
 }

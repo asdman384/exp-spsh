@@ -259,6 +259,7 @@ export class SpreadsheetService {
       tq += ` and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
+    // need to define `responseHandler` function right there to be available at the following `eval`'s scope
     function responseHandler(data: ExpensesDTO): Array<Expense> {
       return data.table.rows.map<Expense>((row) => {
         const comment = row.c[1]?.v;
@@ -266,7 +267,7 @@ export class SpreadsheetService {
           category: String(row.c[0].v),
           comment: comment ? String(comment) : undefined,
           amount: Number(row.c[2].v),
-          date: eval(`new ${row.c[3].v}`)
+          date: secureParseDate(row.c[3].v as string)
         };
       });
     }
@@ -309,4 +310,17 @@ interface ExpensesDTO {
       c: Array<{ v: string | number; f?: string }>;
     }>;
   };
+}
+
+/**
+ * @param value string date representation example: Date(2024,0,16,12,14,23)
+ */
+function secureParseDate(value: string): Date {
+  const regex = /^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/;
+  const isMatch = regex.test(value);
+  if (isMatch) {
+    return eval(`new ${value}`);
+  }
+
+  throw Error('should provide a valid date');
 }
