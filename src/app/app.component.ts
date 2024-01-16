@@ -33,7 +33,7 @@ export class AppComponent {
     private readonly router: Router,
     private readonly activeRoute: ActivatedRoute,
     private readonly securityService: SecurityService,
-    private readonly spreadsheetService: SpreadsheetService,
+    spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
     private readonly swUpdate: SwUpdate
   ) {
@@ -42,7 +42,6 @@ export class AppComponent {
     });
     this.spreadsheetId$.pipe(first()).subscribe((spreadsheetId) => {
       spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
-      
     });
   }
 
