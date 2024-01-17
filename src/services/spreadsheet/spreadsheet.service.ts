@@ -95,9 +95,12 @@ export class SpreadsheetService {
    * @returns gapi.client.sheets.Spreadsheet
    */
   getSpreadsheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
-    return this.http.get<gapi.client.sheets.Spreadsheet>(`${this.apiUrl}`, {
-      params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } })
-    });
+    return this.http.get<gapi.client.sheets.Spreadsheet>(
+      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
+      {
+        params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } })
+      }
+    );
   }
 
   /**

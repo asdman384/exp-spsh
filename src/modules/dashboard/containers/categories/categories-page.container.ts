@@ -24,7 +24,7 @@ export class CategoriesPageContainer {
 
   constructor(private readonly store: Store) {
     this.store.dispatch(AppActions.loadCategories());
-    this.store.dispatch(AppActions.setTitle({ title: 'Categories' }));
+    this.store.dispatch(AppActions.setTitle({ title: 'Spending categories', icon: 'category' }));
   }
 
   addCategory(name: string, control: NgModel): void {

@@ -27,14 +27,14 @@ export class DashboardPageContainer {
   readonly categories$ = this.store.select(categoriesSelector);
   readonly expenses$ = this.store.select(expensesSelector);
   readonly timeFormat = TIME_FORMAT;
-  
+
   minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
   maxDate: Date = new Date();
   sheet?: Sheet;
   expense: Expense = { date: new Date() };
 
   constructor(private readonly store: Store) {
-    this.store.dispatch(AppActions.setTitle({ title: 'Dashboard' }));
+    this.store.dispatch(AppActions.setTitle({ title: 'Dashboard', icon: 'dashboard' }));
     this.store
       .select(currentSheetSelector)
       .pipe(first())

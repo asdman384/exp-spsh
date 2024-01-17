@@ -7,7 +7,7 @@ const selectAppFeature = createFeatureSelector<AppState>('app');
 
 // general
 export const loadingSelector = createSelector(selectAppFeature, (state: AppState) => state.loading);
-export const titleSelector = createSelector(selectAppFeature, (state: AppState) => state.title);
+export const titleSelector = createSelector(selectAppFeature, ({ title, icon }: AppState) => ({ title, icon }));
 export const spreadsheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.spreadsheetId);
 
 // sheets

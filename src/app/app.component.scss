@@ -18,6 +18,9 @@
 
 .header-title {
   flex-grow: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .avatar {

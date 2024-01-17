@@ -42,7 +42,7 @@ export class SettingsPageContainer {
     private readonly spreadsheetService: SpreadsheetService,
     private readonly store: Store
   ) {
-    this.store.dispatch(AppActions.setTitle({ title: 'Settings' }));
+    this.store.dispatch(AppActions.setTitle({ title: 'Settings', icon: 'settings' }));
   }
 
   checkSetup(form: NgForm, state: State): void {

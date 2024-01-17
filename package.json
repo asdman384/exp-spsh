@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",

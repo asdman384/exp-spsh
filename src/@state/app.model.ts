@@ -7,6 +7,7 @@ export interface SheetsState extends EntityState<Sheet> {
 export interface AppState {
   loading: boolean;
   title: string;
+  icon?: string;
   spreadsheetId: string | undefined;
   dataSheets: SheetsState;
   categoriesSheetId: number | undefined;

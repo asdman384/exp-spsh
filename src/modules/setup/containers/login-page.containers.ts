@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { Store } from '@ngrx/store';
 
 import { filter } from 'rxjs';
 
+import { AppActions } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, SecurityService } from 'src/services';
 
@@ -17,7 +19,7 @@ import { NetworkStatusService, SecurityService } from 'src/services';
     </div>
     <div class="info">
       <button mat-flat-button color="primary" [disabled]="(isOnline$ | async) === false" (click)="login()">
-        Login
+        Google Sign In
       </button>
     </div>
   `,
@@ -43,9 +45,11 @@ export class LoginPageContainer {
 
   constructor(
     private readonly router: Router,
+    private readonly store: Store,
     private readonly securityService: SecurityService,
     private readonly status: NetworkStatusService
   ) {
+    this.store.dispatch(AppActions.setTitle({ title: 'Login', icon: 'login' }));
     this.securityService.user$
       .pipe(
         filter((user) => !!user),

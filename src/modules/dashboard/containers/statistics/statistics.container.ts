@@ -38,6 +38,7 @@ export class StatisticsContainer implements AfterViewInit {
   currentMonthIndex = new Date().getMonth();
 
   constructor(private readonly store: Store) {
+    this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
     combineLatest([this.sheets$, this.sheet$])
       .pipe(take(1))
       .subscribe(([sheets, sheet]) => {

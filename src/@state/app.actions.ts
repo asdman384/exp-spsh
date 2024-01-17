@@ -6,7 +6,7 @@ export const AppActions = createActionGroup({
   events: {
     // general
     loading: props<{ loading: boolean }>(),
-    setTitle: props<{ title: string }>(),
+    setTitle: props<{ title: string; icon?: string }>(),
 
     // setup
     spreadsheetId: props<{ spreadsheetId: string | undefined }>(),

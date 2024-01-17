@@ -21,7 +21,7 @@ export class AppComponent {
   readonly user$ = this.securityService.user$;
   readonly loading$ = this.store.select(loadingSelector);
   readonly isOnline$ = this.networkStatus.online$;
-  readonly title$ = this.store.select(titleSelector);
+  readonly headline$ = this.store.select(titleSelector);
   readonly spreadsheetId$ = this.store.select(spreadsheetIdSelector);
   readonly hasUpdates$ = this.swUpdate.versionUpdates.pipe(
     map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')

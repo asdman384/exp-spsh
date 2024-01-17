@@ -1,8 +1,10 @@
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-    @if (user$ | async; as user) {
-    <span class="header-title non-selectable">{{ title$ | async }}</span>
-
+    @if (headline$ | async; as headline){
+    <span class="header-title non-selectable">
+      <mat-icon>{{ headline.icon }}</mat-icon> {{ headline.title }}
+    </span>
+    } @if (user$ | async; as user) {
     <button
       mat-icon-button
       class="header-menu"
@@ -16,7 +18,6 @@
       <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
     </button>
     } @else {
-    <span class="header-title non-selectable"> Login </span>
     <button mat-icon-button (click)="enableDebug()"><mat-icon>memory</mat-icon></button>
     }
   </mat-toolbar-row>

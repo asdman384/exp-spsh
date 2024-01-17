@@ -14,6 +14,7 @@ export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ 
 export const initialState: AppState = {
   loading: false,
   title: '',
+  icon: undefined,
   spreadsheetId: LocalStorageService.get<string>(SPREADSHEET_ID) ?? undefined,
   dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }),
   categoriesSheetId: LocalStorageService.get<number>(CATEGORIES_SHEET_ID) ?? undefined,
@@ -31,7 +32,7 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
   app: createReducer(
     initialState,
     on(AppActions.loading, (state, { loading }) => ({ ...state, loading })),
-    on(AppActions.setTitle, (state, { title }) => ({ ...state, title })),
+    on(AppActions.setTitle, (state, { title, icon }) => ({ ...state, title, icon })),
     on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
     on(AppActions.upsertDataSheet, (state, { dataSheet }) => ({
       ...state,
