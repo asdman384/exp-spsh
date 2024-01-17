@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Router } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 import { Store } from '@ngrx/store';
@@ -31,7 +31,6 @@ export class AppComponent {
   constructor(
     private readonly store: Store,
     private readonly router: Router,
-    private readonly activeRoute: ActivatedRoute,
     private readonly securityService: SecurityService,
     spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
@@ -43,16 +42,6 @@ export class AppComponent {
     this.spreadsheetId$.pipe(first()).subscribe((spreadsheetId) => {
       spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
     });
-  }
-
-  enableDebug(): void {
-    const enabled = this.activeRoute.snapshot.queryParams['logger'];
-    this.router
-      .navigate([], {
-        queryParams: { logger: enabled ? undefined : 'window' },
-        replaceUrl: true
-      })
-      .then(() => location.reload());
   }
 
   logout(): void {

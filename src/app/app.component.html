@@ -17,8 +17,6 @@
     >
       <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
     </button>
-    } @else {
-    <button mat-icon-button (click)="enableDebug()"><mat-icon>memory</mat-icon></button>
     }
   </mat-toolbar-row>
 </mat-toolbar>
@@ -30,6 +28,7 @@
   <button mat-menu-item [routerLink]="[route.dashboard]" queryParamsHandling="preserve" [replaceUrl]="true">
     <mat-icon class="main-menu-icon">dashboard</mat-icon> <span>Dashboard</span>
   </button>
+
   <button
     mat-menu-item
     [routerLink]="[route.dashboard, route.categories]"
@@ -38,6 +37,7 @@
   >
     <mat-icon class="main-menu-icon">category</mat-icon> <span>Categories</span>
   </button>
+
   <button
     mat-menu-item
     [routerLink]="[route.dashboard, route.stats]"
@@ -46,12 +46,11 @@
   >
     <mat-icon class="main-menu-icon">query_stats</mat-icon> <span>Statistics</span>
   </button>
+
   <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
     <mat-icon class="main-menu-icon">settings</mat-icon> <span>Setup</span>
   </button>
-  <button mat-menu-item (click)="enableDebug()">
-    <mat-icon class="main-menu-icon">memory</mat-icon> <span>Debug</span>
-  </button>
+
   <button mat-menu-item>
     <mat-icon class="main-menu-icon">open_in_new</mat-icon>
     <a
