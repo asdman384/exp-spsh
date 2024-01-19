@@ -17,7 +17,7 @@
       />
       <div class="date-suffix" matSuffix>
         {{ expense.date | date: timeFormat }}
-        <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker-toggle [for]="picker" (click)="updateMaxDate()"></mat-datepicker-toggle>
       </div>
       <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
     </mat-form-field>
