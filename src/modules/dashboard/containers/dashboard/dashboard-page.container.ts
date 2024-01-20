@@ -29,7 +29,6 @@ export class DashboardPageContainer {
   readonly timeFormat = TIME_FORMAT;
 
   minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
-  maxDate: Date = new Date();
   sheet?: Sheet;
   expense: Expense = { date: new Date() };
 
@@ -73,10 +72,6 @@ export class DashboardPageContainer {
 
   loadCategories(): void {
     this.store.dispatch(AppActions.loadCategories());
-  }
-
-  updateMaxDate(): void {
-    this.maxDate = new Date();
   }
 
   private getInterval(from: Date): { from: Date; to?: Date } {

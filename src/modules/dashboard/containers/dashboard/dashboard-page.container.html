@@ -9,15 +9,14 @@
         [(ngModel)]="expense.date"
         [matDatepicker]="picker"
         [min]="minDate"
-        [max]="maxDate"
-        (click)="updateMaxDate(); picker.open()"
+        (click)=" picker.open()"
         (dateChange)="onDateChange($event.value)"
         readonly
         required
       />
       <div class="date-suffix" matSuffix>
         {{ expense.date | date: timeFormat }}
-        <mat-datepicker-toggle [for]="picker" (click)="updateMaxDate()"></mat-datepicker-toggle>
+        <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
       </div>
       <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
     </mat-form-field>

@@ -64,7 +64,9 @@
 
   @if (hasUpdates$ | async) {
   <button mat-menu-item (click)="update()">
-    <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn">system_update</mat-icon>
+    <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false">
+      system_update
+    </mat-icon>
     <span>Update</span>
   </button>
   }
