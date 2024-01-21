@@ -5,7 +5,8 @@ import {
   Input,
   OnChanges,
   Output,
-  SimpleChanges
+  SimpleChanges,
+  numberAttribute
 } from '@angular/core';
 import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
 import { Expense } from 'src/shared/models';

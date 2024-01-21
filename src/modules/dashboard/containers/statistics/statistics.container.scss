@@ -15,3 +15,11 @@
 .month-selector {
   height: 50px;
 }
+
+.summary-table {
+  view-transition-name: summary-table;
+}
+
+.summary-table-reverse {
+  view-transition-name: summary-table-reverse;
+}

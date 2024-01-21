@@ -22,6 +22,7 @@
 </div>
 
 <expenses-table
+  [class]="tableReversed ? 'summary-table-reverse' : 'summary-table'"
   [dataSource]="(expenses$ | async) || []"
   (onCellClick)="expensesTableCellClickHandler($event)"
 ></expenses-table>

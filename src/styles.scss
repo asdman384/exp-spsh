@@ -87,3 +87,42 @@ html {
   }
 }
 /* MATERIAL */
+
+/* Custom transition */
+@keyframes slide-out {
+  to {
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-out-reverse {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@keyframes slide-in-reverse {
+  from {
+    transform: translateX(-100%);
+  }
+}
+
+html::view-transition-new(summary-table) {
+  animation-name: slide-in;
+}
+html::view-transition-old(summary-table) {
+  animation-name: slide-out;
+}
+
+html::view-transition-new(summary-table-reverse) {
+  animation-name: slide-in-reverse;
+}
+html::view-transition-old(summary-table-reverse) {
+  animation-name: slide-out-reverse;
+}

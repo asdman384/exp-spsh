@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes } from '@angular/router';
+import { RouterModule, Routes, withViewTransitions } from '@angular/router';
 import { ROUTE } from 'src/constants';
 import { isLoggedIn, isSetupReady } from 'src/shared/guards';
 
@@ -21,6 +21,13 @@ const routes: Routes = [
 ];
 
 @NgModule({
+  providers: [
+    ...withViewTransitions({
+      onViewTransitionCreated: (event) => {
+        console.log('onViewTransitionCreated', event);
+      }
+    }).ɵproviders
+  ],
   imports: [RouterModule.forRoot(routes, { enableViewTransitions: true })],
   exports: [RouterModule]
 })

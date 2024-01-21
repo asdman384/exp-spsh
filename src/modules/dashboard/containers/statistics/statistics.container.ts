@@ -1,8 +1,8 @@
-import { AfterViewInit, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
-import { BehaviorSubject, combineLatest, map, switchMap, take } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
 import { BACK, TOTAL } from 'src/constants';
@@ -31,13 +31,17 @@ export class StatisticsContainer implements AfterViewInit {
     .map((v, i) => new Date(2024, i).toLocaleString('default', { month: 'short' }));
   readonly monthModel: number = new Date().getMonth();
 
-  readonly expenses$ = this.aggregator$.pipe(switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))));
+  readonly expenses$ = this.aggregator$.pipe(
+    switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))),
+    mergeMap(this.startViewTransition.bind(this))
+  );
 
   sheets: Array<Sheet> = [];
   currentSheetIndex = 0;
   currentMonthIndex = new Date().getMonth();
+  tableReversed: boolean = false;
 
-  constructor(private readonly store: Store) {
+  constructor(private readonly cd: ChangeDetectorRef, private readonly store: Store) {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
     combineLatest([this.sheets$, this.sheet$])
       .pipe(take(1))
@@ -63,14 +67,6 @@ export class StatisticsContainer implements AfterViewInit {
     );
   }
 
-  private scrollToCurrentMonth(): void {
-    let { width }: { width: number } = this.monthSelector._elementRef.nativeElement.getBoundingClientRect();
-    width -= PADDINGS;
-    if (width < this.currentMonthIndex * MONTH_BUTTON_WIDTH) {
-      setTimeout(() => (this.monthSelector._tabHeader.scrollDistance = width));
-    }
-  }
-
   expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
     log('expensesTableCellClickHandler', event);
     if (event.cellData === TOTAL || event.field !== 'category') {
@@ -78,12 +74,34 @@ export class StatisticsContainer implements AfterViewInit {
     }
 
     if (event.cellData === BACK) {
+      this.tableReversed = true;
+      this.cd.detectChanges();
       this.aggregator$.next(groupByCategory);
       return;
     }
 
     if (typeof event.cellData === 'string') {
+      this.tableReversed = false;
+      this.cd.detectChanges();
       this.aggregator$.next(filterByCategoryName(event.cellData));
+    }
+  }
+
+  private startViewTransition(data: Array<Expense>): Observable<Array<Expense>> {
+    return new Observable((subscriber) => {
+      transitionHelper(() => {
+        subscriber.next(data);
+        subscriber.complete();
+        this.cd.detectChanges();
+      });
+    });
+  }
+
+  private scrollToCurrentMonth(): void {
+    let { width }: { width: number } = this.monthSelector._elementRef.nativeElement.getBoundingClientRect();
+    width -= PADDINGS;
+    if (width < this.currentMonthIndex * MONTH_BUTTON_WIDTH) {
+      setTimeout(() => (this.monthSelector._tabHeader.scrollDistance = width));
     }
   }
 }
@@ -132,4 +150,14 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
   });
 
   return result;
+}
+
+function transitionHelper(updateDOM = () => {}) {
+  if (!(document as any).startViewTransition) {
+    updateDOM();
+    console.warn('View transitions unsupported');
+    return;
+  }
+
+  (document as any).startViewTransition(updateDOM);
 }
