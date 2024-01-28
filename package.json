@@ -1,11 +1,11 @@
 {
   "name": "exp-spsh",
-  "version": "0.2.9",
+  "version": "0.2.10",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
     "build": "ng build --configuration=production",
-    "watch": "ng build --watch --configuration development",
+    "watch": "ng build --watch --configuration=development",
     "test": "ng test",
     "postinstall": "node scripts/service-worker-ios-workaround.js"
   },

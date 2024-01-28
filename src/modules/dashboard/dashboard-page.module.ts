@@ -23,6 +23,12 @@ const routes: Routes = [
   {
     path: ROUTE.stats,
     canActivate: [isLoggedIn, isOnline],
+    canDeactivate: [
+      (component: StatisticsContainer) => {
+        component.tableAnimation('none');
+        return true;
+      }
+    ],
     component: StatisticsContainer
   }
 ];

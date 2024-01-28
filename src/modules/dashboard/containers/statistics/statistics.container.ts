@@ -1,4 +1,4 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, ViewChild } from '@angular/core';
 import { MatTabGroup } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
@@ -17,37 +17,34 @@ const PADDINGS = 76;
   styleUrl: './statistics.container.scss'
 })
 export class StatisticsContainer implements AfterViewInit {
+  @ViewChild('summaryTable', { read: ElementRef })
+  private readonly summaryTable!: ElementRef<HTMLElement>;
   @ViewChild('monthSelector', { read: MatTabGroup })
   private readonly monthSelector!: MatTabGroup;
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
-  readonly month = 'month';
-  readonly sheet = 'sheet';
 
-  readonly sheets$ = this.store.select(sheetsSelector);
-  readonly sheet$ = this.store.select(currentSheetSelector);
-
-  readonly monthTabs = new Array(12)
+  // [Jan Feb ... Dec]
+  protected readonly monthTabs = new Array(12)
     .fill(0)
-    .map((v, i) => new Date(2024, i).toLocaleString('default', { month: 'short' }));
-  readonly monthModel: number = new Date().getMonth();
+    .map((v, i) => new Date(0, i).toLocaleString('default', { month: 'short' }));
 
-  readonly expenses$ = this.aggregator$.pipe(
+  protected readonly expenses$ = this.aggregator$.pipe(
     switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))),
     mergeMap(this.startViewTransition.bind(this))
   );
 
-  sheets: Array<Sheet> = [];
-  currentSheetIndex = 0;
-  currentMonthIndex = new Date().getMonth();
-  tableReversed: boolean = false;
+  protected sheets: Array<Sheet> = [];
+  protected currentSheetIndex = 0;
+  protected currentMonthIndex = new Date().getMonth();
+  protected tableReversed: boolean = false;
 
   constructor(private readonly cd: ChangeDetectorRef, private readonly store: Store) {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
-    combineLatest([this.sheets$, this.sheet$])
+    combineLatest([this.store.select(sheetsSelector), this.store.select(currentSheetSelector)])
       .pipe(take(1))
-      .subscribe(([sheets, sheet]) => {
+      .subscribe(([sheets, currentSheet]) => {
         this.sheets = sheets;
-        this.currentSheetIndex = sheets.indexOf(sheet!);
+        this.currentSheetIndex = sheets.indexOf(currentSheet!);
         this.formChanged(this.currentSheetIndex, this.currentMonthIndex, sheets);
       });
   }
@@ -56,7 +53,14 @@ export class StatisticsContainer implements AfterViewInit {
     this.scrollToCurrentMonth();
   }
 
-  formChanged(sheetIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
+  public tableAnimation(direction: 'reverse' | 'straight' | 'none'): void {
+    this.summaryTable?.nativeElement.classList.remove('summary-table-reverse', 'summary-table-straight');
+    if (direction === 'none') return;
+    this.summaryTable?.nativeElement.classList.add(`summary-table-${direction}`);
+  }
+
+  protected formChanged(sheetIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
+    this.tableAnimation('none');
     const year = new Date().getFullYear();
     this.store.dispatch(
       AppActions.loadExpenses({
@@ -67,22 +71,19 @@ export class StatisticsContainer implements AfterViewInit {
     );
   }
 
-  expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
-    log('expensesTableCellClickHandler', event);
+  protected expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
     if (event.cellData === TOTAL || event.field !== 'category') {
       return;
     }
 
     if (event.cellData === BACK) {
-      this.tableReversed = true;
-      this.cd.detectChanges();
+      this.tableAnimation('reverse');
       this.aggregator$.next(groupByCategory);
       return;
     }
 
     if (typeof event.cellData === 'string') {
-      this.tableReversed = false;
-      this.cd.detectChanges();
+      this.tableAnimation('straight');
       this.aggregator$.next(filterByCategoryName(event.cellData));
     }
   }
@@ -152,7 +153,7 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
   return result;
 }
 
-function transitionHelper(updateDOM = () => {}) {
+function transitionHelper(updateDOM = () => {}): void {
   if (!(document as any).startViewTransition) {
     updateDOM();
     console.warn('View transitions unsupported');

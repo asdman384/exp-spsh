@@ -1,5 +1,5 @@
-import { NgModule } from '@angular/core';
-import { RouterModule, Routes, withViewTransitions } from '@angular/router';
+import { NgModule, importProvidersFrom } from '@angular/core';
+import { RouterModule, Routes, provideRouter, withViewTransitions } from '@angular/router';
 import { ROUTE } from 'src/constants';
 import { isLoggedIn, isSetupReady } from 'src/shared/guards';
 
@@ -22,8 +22,11 @@ const routes: Routes = [
 
 @NgModule({
   providers: [
-    ...withViewTransitions({
+    withViewTransitions({
       onViewTransitionCreated: (event) => {
+        // playing around with view transitions
+        // https://blog.angular.io/check-out-angulars-support-for-the-view-transitions-api-3937376cfc19
+        // https://developer.chrome.com/docs/web-platform/view-transitions/
         console.log('onViewTransitionCreated', event);
       }
     }).ɵproviders
