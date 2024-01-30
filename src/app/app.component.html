@@ -1,27 +1,25 @@
+@if (pageState$ | async; as page) {
 <mat-toolbar color="primary">
   <mat-toolbar-row>
-    @if (headline$ | async; as headline){
     <span class="header-title non-selectable">
-      <mat-icon>{{ headline.icon }}</mat-icon> {{ headline.title }}
+      <mat-icon>{{ page.headline.icon }}</mat-icon> {{ page.headline.title }}
     </span>
-    } @if (user$ | async; as user) {
     <button
       mat-icon-button
       class="header-menu"
       color="primary"
-      [matBadge]="(hasUpdates$ | async) ? '!' : null"
+      [matBadge]="page.hasUpdates ? '!' : null"
       matBadgeColor="warn"
       matBadgeSize="small"
       matBadgePosition="below after"
       [matMenuTriggerFor]="menu"
     >
-      <img [ngClass]="{ online: isOnline$ | async }" class="avatar" width="38" height="38" [src]="user.picture" />
+      <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user?.picture" />
     </button>
-    }
   </mat-toolbar-row>
 </mat-toolbar>
 <div class="progress-container">
-  <mat-progress-bar *ngIf="loading$ | async" mode="indeterminate"></mat-progress-bar>
+  <mat-progress-bar *ngIf="page.loading" mode="indeterminate"></mat-progress-bar>
 </div>
 
 <mat-menu #menu="matMenu">
@@ -33,7 +31,7 @@
     mat-menu-item
     [routerLink]="[route.dashboard, route.categories]"
     queryParamsHandling="preserve"
-    [disabled]="(isOnline$ | async) === false"
+    [disabled]="!page.online"
   >
     <mat-icon class="main-menu-icon">category</mat-icon> <span>Categories</span>
   </button>
@@ -42,7 +40,7 @@
     mat-menu-item
     [routerLink]="[route.dashboard, route.stats]"
     queryParamsHandling="preserve"
-    [disabled]="(isOnline$ | async) === false"
+    [disabled]="!page.online"
   >
     <mat-icon class="main-menu-icon">query_stats</mat-icon> <span>Statistics</span>
   </button>
@@ -54,7 +52,7 @@
   <button mat-menu-item>
     <mat-icon class="main-menu-icon">open_in_new</mat-icon>
     <a
-      [href]="'https://docs.google.com/spreadsheets/d/' + (spreadsheetId$ | async) + '/edit'"
+      [href]="'https://docs.google.com/spreadsheets/d/' + page.spreadsheetId + '/edit'"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -62,7 +60,7 @@
     </a>
   </button>
 
-  @if (hasUpdates$ | async) {
+  @if (page.hasUpdates) {
   <button mat-menu-item (click)="update()">
     <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false">
       system_update
@@ -71,7 +69,7 @@
   </button>
   }
 
-  <button mat-menu-item (click)="logout()" [disabled]="(isOnline$ | async) === false">
+  <button mat-menu-item (click)="logout()" [disabled]="!page.online">
     <mat-icon class="main-menu-icon">logout</mat-icon> <span>Logout</span>
   </button>
 
@@ -81,3 +79,4 @@
 <div class="content">
   <router-outlet></router-outlet>
 </div>
+}

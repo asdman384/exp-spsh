@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 import { Store } from '@ngrx/store';
-import { first, map } from 'rxjs';
+import { combineLatest, first, map, startWith } from 'rxjs';
 
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
@@ -17,15 +17,19 @@ import pak from '../../package.json';
   styleUrls: ['./app.component.scss']
 })
 export class AppComponent {
+  protected readonly pageState$ = combineLatest({
+    user: this.securityService.user$,
+    online: this.networkStatus.online$,
+    loading: this.store.select(loadingSelector),
+    headline: this.store.select(titleSelector),
+    spreadsheetId: this.store.select(spreadsheetIdSelector),
+    hasUpdates: this.swUpdate.versionUpdates.pipe(
+      map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
+      startWith(false)
+    )
+  });
+
   readonly route = ROUTE;
-  readonly user$ = this.securityService.user$;
-  readonly loading$ = this.store.select(loadingSelector);
-  readonly isOnline$ = this.networkStatus.online$;
-  readonly headline$ = this.store.select(titleSelector);
-  readonly spreadsheetId$ = this.store.select(spreadsheetIdSelector);
-  readonly hasUpdates$ = this.swUpdate.versionUpdates.pipe(
-    map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY')
-  );
   readonly version = pak.version;
 
   constructor(
@@ -36,12 +40,15 @@ export class AppComponent {
     private readonly networkStatus: NetworkStatusService,
     private readonly swUpdate: SwUpdate
   ) {
-    this.securityService.user$.pipe(first()).subscribe((user) => {
+    securityService.user$.pipe(first()).subscribe((user) => {
       user && this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
     });
-    this.spreadsheetId$.pipe(first()).subscribe((spreadsheetId) => {
-      spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
-    });
+    store
+      .select(spreadsheetIdSelector)
+      .pipe(first())
+      .subscribe((spreadsheetId) => {
+        spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
+      });
   }
 
   logout(): void {
