@@ -65,6 +65,7 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
     }
 
     const refreshToken = this.storageService.get<RefreshToken>(REFRESH_TOKEN);
+    this.storageService.remove(REDIRECT_TOKEN);
     if (!refreshToken) {
       log('RedirectSecurityService: token is expired, no refresh token, do redirect');
       return this.requestCode();
