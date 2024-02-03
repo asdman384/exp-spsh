@@ -7,7 +7,7 @@ import { combineLatest, first, map, startWith } from 'rxjs';
 
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
-import { NetworkStatusService, SecurityService, SpreadsheetService } from 'src/services';
+import { NetworkStatusService, AbstractSecurityService, SpreadsheetService } from 'src/services';
 
 import pak from '../../package.json';
 
@@ -35,7 +35,7 @@ export class AppComponent {
   constructor(
     private readonly store: Store,
     private readonly router: Router,
-    private readonly securityService: SecurityService,
+    private readonly securityService: AbstractSecurityService,
     spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
     private readonly swUpdate: SwUpdate

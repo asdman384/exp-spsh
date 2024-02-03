@@ -14,7 +14,7 @@ import {
   ROUTE,
   SPREADSHEET_ID
 } from 'src/constants';
-import { SecurityService, SpreadsheetService } from 'src/services';
+import { AbstractSecurityService, SpreadsheetService } from 'src/services';
 import { Sheet, Userinfo } from 'src/shared/models';
 
 type State = 'check document' | 'finish';
@@ -38,7 +38,7 @@ export class SettingsPageContainer {
 
   constructor(
     private readonly router: Router,
-    private readonly security: SecurityService,
+    private readonly security: AbstractSecurityService,
     private readonly spreadsheetService: SpreadsheetService,
     private readonly store: Store
   ) {
@@ -142,7 +142,11 @@ export class SettingsPageContainer {
   }
 
   private finishSetup(): void {
-    this.router.navigate([ROUTE.dashboard], { replaceUrl: true, queryParamsHandling: 'preserve' });
+    this.router.navigate([ROUTE.dashboard], {
+      replaceUrl: true,
+      queryParams: { state: null, code: null, scope: null },
+      queryParamsHandling: 'merge'
+    });
   }
 
   private createSheet(

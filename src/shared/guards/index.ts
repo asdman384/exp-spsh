@@ -6,10 +6,10 @@ import { Observable, combineLatest, map } from 'rxjs';
 import { categoriesSheetIdSelector, spreadsheetIdSelector } from 'src/@state';
 
 import { ROUTE } from 'src/constants';
-import { NetworkStatusService, SecurityService } from 'src/services';
+import { NetworkStatusService, AbstractSecurityService } from 'src/services';
 
 export function isLoggedIn(): Observable<boolean | UrlTree> {
-  const securityService = inject(SecurityService);
+  const securityService = inject(AbstractSecurityService);
   const router = inject(Router);
   return securityService.user$.pipe(
     map((user) => {

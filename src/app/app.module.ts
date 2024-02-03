@@ -1,6 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { HTTP_INTERCEPTORS, HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
-import { APP_INITIALIZER, NgModule } from '@angular/core';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -11,7 +11,7 @@ import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
 import { AppEffects, metaReducers, reducers } from 'src/@state';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
-import { LocalStorageService, SecurityService, StorageService } from 'src/services';
+import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 import { AppRoutingModule } from './app-routing.module';
@@ -54,18 +54,10 @@ if (loggerType) {
     ...debug
   ],
   providers: [
+    { provide: AbstractSecurityService, useClass: RedirectSecurityService },
     { provide: HTTP_INTERCEPTORS, useClass: ExpAuthInterceptor, multi: true },
     { provide: LocationStrategy, useClass: HashLocationStrategy },
-    SecurityService,
-    { provide: StorageService, useClass: LocalStorageService },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: (securityService: SecurityService) => {
-        return () => securityService.init();
-      },
-      deps: [SecurityService],
-      multi: true
-    }
+    { provide: StorageService, useClass: LocalStorageService }
   ],
   bootstrap: [AppComponent]
 })

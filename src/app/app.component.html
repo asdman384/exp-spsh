@@ -4,6 +4,7 @@
     <span class="header-title non-selectable">
       <mat-icon>{{ page.headline.icon }}</mat-icon> {{ page.headline.title }}
     </span>
+    @if (page.user) {
     <button
       mat-icon-button
       class="header-menu"
@@ -14,8 +15,9 @@
       matBadgePosition="below after"
       [matMenuTriggerFor]="menu"
     >
-      <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user?.picture" />
+      <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user.picture" />
     </button>
+    }
   </mat-toolbar-row>
 </mat-toolbar>
 <div class="progress-container">
@@ -49,6 +51,7 @@
     <mat-icon class="main-menu-icon">settings</mat-icon> <span>Setup</span>
   </button>
 
+  @if (page.spreadsheetId) {
   <button mat-menu-item>
     <mat-icon class="main-menu-icon">open_in_new</mat-icon>
     <a
@@ -59,8 +62,7 @@
       Open Spreadsheet
     </a>
   </button>
-
-  @if (page.hasUpdates) {
+  } @if (page.hasUpdates) {
   <button mat-menu-item (click)="update()">
     <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false">
       system_update

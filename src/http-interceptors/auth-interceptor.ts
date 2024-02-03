@@ -3,13 +3,17 @@ import { HttpInterceptor, HttpHandler, HttpRequest, HttpEvent } from '@angular/c
 
 import { Observable, exhaustMap, take, tap } from 'rxjs';
 
-import { SecurityService } from 'src/services';
+import { AbstractSecurityService } from 'src/services';
 
 @Injectable()
 export class ExpAuthInterceptor implements HttpInterceptor {
-  constructor(private security: SecurityService) {}
+  constructor(private security: AbstractSecurityService) {}
 
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    if (req.url.includes('oauth2.googleapis.com/token')) {
+      return next.handle(req);
+    }
+
     // send cloned request with header to the next handler.
     return this.security.refreshToken().pipe(
       take(1),
@@ -19,6 +23,6 @@ export class ExpAuthInterceptor implements HttpInterceptor {
   }
 }
 
-function setToken(req: HttpRequest<any>, token: google.accounts.oauth2.TokenResponse): HttpRequest<any> {
+function setToken(req: HttpRequest<any>, token: { access_token: string }): HttpRequest<any> {
   return req.clone({ setHeaders: { Authorization: `Bearer ${token.access_token}` } });
 }
