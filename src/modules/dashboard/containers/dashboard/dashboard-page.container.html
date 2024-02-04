@@ -70,4 +70,10 @@
   </button>
 </form>
 
-<expenses-table [dataSource]="(expenses$ | async) || []" [showDateCol]="false"></expenses-table>
+<expenses-table
+  [dataSource]="(expenses$ | async) || []"
+  [showDateCol]="false"
+  [dragDisabled]="false"
+  (onDeleteRow)="handleDeleteExpense($event)"
+>
+</expenses-table>

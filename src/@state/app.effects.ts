@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, Observable, catchError, exhaustMap, filter, map, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
 import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
+import { isExpenseEqual } from 'src/shared/helpers';
 import { AppActions } from './app.actions';
-import { categoriesSelector, categoriesSheetIdSelector, sheetsSelector, spreadsheetIdSelector } from './app.selectors';
+import { categoriesSelector, categoriesSheetIdSelector, expensesSelector, sheetsSelector } from './app.selectors';
 
 @Injectable()
 export class AppEffects {
@@ -65,9 +66,8 @@ export class AppEffects {
     this.actions$.pipe(
       ofType(AppActions.loadCategories),
       tap<ReturnType<typeof AppActions.loadCategories>>(log),
-      withLatestFrom(this.store.select(spreadsheetIdSelector)),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      exhaustMap(([action, id]) => this.spreadSheetService.getAllCategories(id!)),
+      exhaustMap(() => this.spreadSheetService.getAllCategories()),
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
       catchError((e) => {
@@ -110,7 +110,7 @@ export class AppEffects {
         }
         const newCategories = [...categories];
         newCategories.splice(index, 1);
-        return this.spreadSheetService.deleteCategory(sheetId!, index).pipe(map(() => newCategories));
+        return this.spreadSheetService.deleteSheetRow(sheetId!, index).pipe(map(() => newCategories));
       }),
       map((categories) => AppActions.storeCategories({ categories })),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
@@ -156,6 +156,43 @@ export class AppEffects {
         const to = new Date(action.expense.date!);
         to.setDate(to.getDate() + 1); // add a day
         return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
+      }),
+      catchError((e) => {
+        log(e);
+        this.store.dispatch(AppActions.loading({ loading: false }));
+        return EMPTY;
+      })
+    )
+  );
+
+  readonly deleteExpense$ = createEffect(() =>
+    this.actions$.pipe(
+      ofType(AppActions.deleteExpense),
+      tap<ReturnType<typeof AppActions.deleteExpense>>(log),
+      exhaustMap((action) => {
+        this.store.dispatch(AppActions.loading({ loading: true }));
+        return this.spreadSheetService
+          .loadLastExpenses(action.sheet.title, 100)
+          .pipe(map((expenses) => ({ action, expenses })));
+      }),
+      withLatestFrom(this.store.select(expensesSelector)),
+      exhaustMap(([{ action, expenses }, oldExpenses]) => {
+        const i = expenses.findIndex((e) => isExpenseEqual(e, action.expense));
+        if (!~i) {
+          return of([...oldExpenses]);
+        }
+        return this.spreadSheetService.deleteSheetRow(action.sheet.id, i).pipe(
+          map(() => {
+            const i = oldExpenses.findIndex((e) => isExpenseEqual(e, action.expense));
+            const newExpenses = [...oldExpenses];
+            newExpenses.splice(i, 1);
+            return newExpenses;
+          })
+        );
+      }),
+      map((expenses) => {
+        this.store.dispatch(AppActions.loading({ loading: false }));
+        return AppActions.storeExpenses({ expenses });
       }),
       catchError((e) => {
         log(e);

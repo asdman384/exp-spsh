@@ -22,15 +22,15 @@ import { Expense, Sheet } from 'src/shared/models';
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DashboardPageContainer {
-  readonly loading$ = this.store.select(loadingSelector);
-  readonly sheets$ = this.store.select(sheetsSelector);
-  readonly categories$ = this.store.select(categoriesSelector);
-  readonly expenses$ = this.store.select(expensesSelector);
-  readonly timeFormat = TIME_FORMAT;
+  protected readonly loading$ = this.store.select(loadingSelector);
+  protected readonly sheets$ = this.store.select(sheetsSelector);
+  protected readonly categories$ = this.store.select(categoriesSelector);
+  protected readonly expenses$ = this.store.select(expensesSelector);
+  protected readonly timeFormat = TIME_FORMAT;
 
-  minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
-  sheet?: Sheet;
-  expense: Expense = { date: new Date() };
+  protected minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
+  protected sheet?: Sheet;
+  protected expense: Expense = { date: new Date() };
 
   constructor(private readonly store: Store) {
     this.store.dispatch(AppActions.setTitle({ title: 'Dashboard', icon: 'dashboard' }));
@@ -41,7 +41,7 @@ export class DashboardPageContainer {
       .subscribe((sheet) => (this.sheet = sheet));
   }
 
-  onSubmit(form: NgForm): void {
+  protected onSubmit(form: NgForm): void {
     if (!form.valid) {
       return;
     }
@@ -52,12 +52,12 @@ export class DashboardPageContainer {
     form.resetForm({ date, sheet, amount: undefined, category: undefined, comment: undefined });
   }
 
-  onSheetChange(sheet: Sheet): void {
+  protected onSheetChange(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
     this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(this.expense.date!) }));
   }
 
-  onDateChange(date: Date): void {
+  protected onDateChange(date: Date): void {
     log('DashboardPageContainer::onDateChange', date);
     if (!this.sheet) {
       return;
@@ -70,8 +70,16 @@ export class DashboardPageContainer {
     this.expense.date = currentTime;
   }
 
-  loadCategories(): void {
+  protected loadCategories(): void {
     this.store.dispatch(AppActions.loadCategories());
+  }
+
+  protected handleDeleteExpense(expense: Expense): void {
+    if (!this.sheet) {
+      return;
+    }
+
+    this.store.dispatch(AppActions.deleteExpense({ expense, sheet: this.sheet }));
   }
 
   private getInterval(from: Date): { from: Date; to?: Date } {

@@ -22,5 +22,21 @@
   </ng-container>
 
   <tr class="non-selectable" mat-header-row *matHeaderRowDef="columns"></tr>
-  <tr mat-row *matRowDef="let row; columns: columns"></tr>
+  <tr
+    mat-row
+    *matRowDef="let row; columns: columns"
+    cdkDrag
+    cdkDragLockAxis="x"
+    [cdkDragDisabled]="dragDisabled"
+    [cdkDragData]="row"
+    (cdkDragMoved)="cdkDragMoved($event)"
+    (cdkDragEnded)="cdkDragEnded($event)"
+    (cdkDragStarted)="cdkDragStarted($event)"
+  ></tr>
 </table>
+
+@if (dragging) {
+<div [style.top.px]="dragPlaceholderY" class="cdk-drag__drag-placeholder">
+  @if (isDelete) { <mat-icon>delete</mat-icon> Delete }
+</div>
+}

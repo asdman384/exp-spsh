@@ -61,7 +61,7 @@ export class SpreadsheetService {
    * @param index
    * @returns
    */
-  deleteCategory(sheetId: number, index: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
+  deleteSheetRow(sheetId: number, index: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const deleteDimension: gapi.client.sheets.DeleteDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
     };
@@ -78,7 +78,7 @@ export class SpreadsheetService {
    * @param spreadsheetId
    * @returns Array<Category>
    */
-  getAllCategories(spreadsheetId: string): Observable<Array<Category>> {
+  getAllCategories(): Observable<Array<Category>> {
     const range = encodeURIComponent(CATEGORIES_SHEET_TITLE + `!A:B`);
 
     return this.http
@@ -232,7 +232,7 @@ export class SpreadsheetService {
             { userEnteredValue: { stringValue: expense.category } },
             { userEnteredValue: { stringValue: expense.comment } },
             { userEnteredValue: { numberValue: expense.amount } },
-            { userEnteredValue: { numberValue: getDateSerialNumber(expense.date!) } }
+            { userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } }
           ]
         }
       ]
@@ -243,6 +243,31 @@ export class SpreadsheetService {
       { requests: [{ insertDimension }, { updateCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
       { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
     );
+  }
+
+  /**
+   * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/get
+   * @param sheetName
+   * @param take
+   */
+  loadLastExpenses(sheetName: string, take: number = 1): Observable<Array<Expense>> {
+    const range = encodeURIComponent(sheetName + `!A1:D${take}`);
+
+    return this.http
+      .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
+        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } })
+      })
+      .pipe(
+        map(
+          (result) =>
+            result.values?.map<Expense>(([category, comment, amount, date]) => ({
+              category,
+              comment: comment ? String(comment) : undefined,
+              amount,
+              date: getDateFromSerialNumber(date)
+            })) ?? []
+        )
+      );
   }
 
   /**
@@ -296,8 +321,13 @@ export class SpreadsheetService {
  * @param date
  * @returns SERIAL_NUMBER
  */
-function getDateSerialNumber(date: Date): number {
+function getSerialNumberFromDate(date: Date): number {
   return 25569.0 + (date.getTime() - date.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24);
+}
+
+function getDateFromSerialNumber(date: number): Date {
+  const time = (date + 0.0000000001 - 25569.0) * 1000 * 60 * 60 * 24 + new Date().getTimezoneOffset() * 60 * 1000;
+  return new Date(time);
 }
 
 interface ExpensesDTO {
