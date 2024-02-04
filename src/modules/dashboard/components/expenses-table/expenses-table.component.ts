@@ -73,10 +73,10 @@ export class ExpensesTableComponent implements OnChanges {
   protected cdkDragEnded(event: CdkDragEnd<Expense>): void {
     setTimeout(() => (this.dragging = false), 250);
     this.isDelete = false;
-    event.source.setFreeDragPosition({ x: window.outerWidth, y: 0 });
 
     if (event.distance.x > DELETE_THRESHOLD) {
       this.lastDeletedDragRow = event.source;
+      event.source.setFreeDragPosition({ x: window.outerWidth, y: 0 });
       this.onDeleteRow.emit(event.source.data);
     }
   }
