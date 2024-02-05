@@ -14,13 +14,22 @@ import { Expense } from 'src/shared/models';
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment'];
 const DELETE_THRESHOLD = 100;
 
+class Podiya {
+  random: number = 0;
+  enabled: boolean = false;
+
+  setRandom(max: number, min = 0): void {
+    this.random = Math.floor(Math.random() * (max + 1 - min) + min);
+  }
+}
+
 @Component({
   selector: 'expenses-table',
   templateUrl: './expenses-table.component.html',
   styleUrl: './expenses-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExpensesTableComponent implements OnChanges {
+export class ExpensesTableComponent extends Podiya implements OnChanges {
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected columns = DEFAULT_COLS;
@@ -54,6 +63,8 @@ export class ExpensesTableComponent implements OnChanges {
       if (this.lastDeletedDragRow?._dragRef['_rootElement']) {
         this.lastDeletedDragRow.reset();
       }
+
+      this.setRandom(changes['dataSource'].currentValue.length);
     }
   }
 
@@ -65,9 +76,11 @@ export class ExpensesTableComponent implements OnChanges {
     this.isDelete = event.distance.x > DELETE_THRESHOLD;
   }
 
-  protected cdkDragStarted(event: CdkDragStart): void {
+  protected cdkDragStarted(event: CdkDragStart<Expense>): void {
     this.dragPlaceholderY = event.source.element.nativeElement.offsetTop;
     this.dragging = true;
+
+    this.enabled = this.dataSource.indexOf(event.source.data) === this.random;
   }
 
   protected cdkDragEnded(event: CdkDragEnd<Expense>): void {
@@ -78,20 +91,9 @@ export class ExpensesTableComponent implements OnChanges {
       this.lastDeletedDragRow = event.source;
       event.source.setFreeDragPosition({ x: window.outerWidth, y: 0 });
       this.onDeleteRow.emit(event.source.data);
+    } else {
+      event.source.reset();
     }
-  }
-
-  protected truncate(value: string | undefined): string {
-    if (value === undefined || value === null) {
-      return '';
-    }
-
-    const result = value.split(/[ \n]/g).splice(0, 5);
-    if (result.length === 5) {
-      result[4] = result[4].substring(0, result[4].length - 3) + '...';
-    }
-
-    return result.join(' ');
   }
 
   private isColHidden(field: keyof Expense): boolean {

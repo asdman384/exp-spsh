@@ -27,6 +27,7 @@ body {
   position: fixed;
   bottom: 0;
   transition: bottom cubic-bezier(0.21, -0.02, 0.8, 0) 0.3s;
+  z-index: 2;
 
   .logger-toggle,
   .logger-copy,
