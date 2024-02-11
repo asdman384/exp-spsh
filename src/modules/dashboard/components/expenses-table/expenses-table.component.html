@@ -39,8 +39,6 @@
 
 @if (dragging) {
 <div [style.top.px]="dragPlaceholderY" class="cdk-drag__drag-placeholder">
-  @if (isDelete) { <mat-icon>delete</mat-icon> Delete } @if (enabled) {
-  <div class="heart" style="margin: 0px 40px 0 auto"></div>
-  }
+  @if (isDelete) { <mat-icon>delete</mat-icon> Delete }
 </div>
 }

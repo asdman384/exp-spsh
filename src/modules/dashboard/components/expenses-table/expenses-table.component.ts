@@ -14,22 +14,13 @@ import { Expense } from 'src/shared/models';
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment'];
 const DELETE_THRESHOLD = 100;
 
-class Podiya {
-  random: number = 0;
-  enabled: boolean = false;
-
-  setRandom(max: number, min = 0): void {
-    this.random = Math.floor(Math.random() * (max + 1 - min) + min);
-  }
-}
-
 @Component({
   selector: 'expenses-table',
   templateUrl: './expenses-table.component.html',
   styleUrl: './expenses-table.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class ExpensesTableComponent extends Podiya implements OnChanges {
+export class ExpensesTableComponent implements OnChanges {
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected columns = DEFAULT_COLS;
@@ -63,8 +54,6 @@ export class ExpensesTableComponent extends Podiya implements OnChanges {
       if (this.lastDeletedDragRow?._dragRef['_rootElement']) {
         this.lastDeletedDragRow.reset();
       }
-
-      this.setRandom(changes['dataSource'].currentValue.length);
     }
   }
 
@@ -79,8 +68,6 @@ export class ExpensesTableComponent extends Podiya implements OnChanges {
   protected cdkDragStarted(event: CdkDragStart<Expense>): void {
     this.dragPlaceholderY = event.source.element.nativeElement.offsetTop;
     this.dragging = true;
-
-    this.enabled = this.dataSource.indexOf(event.source.data) === this.random;
   }
 
   protected cdkDragEnded(event: CdkDragEnd<Expense>): void {

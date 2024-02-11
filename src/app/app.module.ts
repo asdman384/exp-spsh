@@ -14,6 +14,7 @@ import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { UIKitModule } from 'src/shared/modules/uikit.module';
 
+import { SnowComponent } from 'src/fun';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 
@@ -51,7 +52,9 @@ if (loggerType) {
     UIKitModule,
     StoreModule.forRoot(reducers, { metaReducers }),
     EffectsModule.forRoot(AppEffects),
-    ...debug
+    ...debug,
+    // fun stuff
+    SnowComponent
   ],
   providers: [
     { provide: AbstractSecurityService, useClass: RedirectSecurityService },
