@@ -37,6 +37,9 @@ export class StatisticsContainer implements AfterViewInit {
   protected currentSheetIndex = 0;
   protected currentMonthIndex = new Date().getMonth();
   protected tableReversed: boolean = false;
+  protected selectable = true;
+  protected selectedCategory?: string;
+  protected total = 0;
 
   constructor(private readonly cd: ChangeDetectorRef, private readonly store: Store) {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
@@ -76,16 +79,24 @@ export class StatisticsContainer implements AfterViewInit {
       return;
     }
 
-    if (event.cellData === BACK) {
-      this.tableAnimation('reverse');
-      this.aggregator$.next(groupByCategory);
-      return;
-    }
-
     if (typeof event.cellData === 'string') {
+      this.selectable = false;
       this.tableAnimation('straight');
-      this.aggregator$.next(filterByCategoryName(event.cellData));
+      this.selectedCategory = event.cellData;
+      this.aggregator$.next(filterByCategoryName(this.selectedCategory));
     }
+  }
+
+  protected onSelection(data: ReadonlyArray<Expense>): void {
+    this.total = data.reduce((p, c) => p + Number(c.amount), 0);
+    this.cd.detectChanges();
+  }
+
+  protected unCategory(): void {
+    this.selectedCategory = undefined;
+    this.selectable = true;
+    this.tableAnimation('reverse');
+    this.aggregator$.next(groupByCategory);
   }
 
   private startViewTransition(data: Array<Expense>): Observable<Array<Expense>> {
@@ -111,13 +122,14 @@ type AggregatorFn = (data: Array<Expense>) => Array<Expense>;
 
 function filterByCategoryName(categoryName: string): AggregatorFn {
   return function (data: Array<Expense>): Array<Expense> {
-    const result = data
+    const result: Array<Expense> = data
       .filter((d) => d.category === categoryName)
       .sort((a, b) => {
         if (!a.date || !b.date) return 0;
         return b.date?.getTime() - a.date?.getTime();
-      });
-    result.push({ category: BACK });
+      })
+      .map((r) => ({ amount: r.amount, comment: r.comment, date: r.date }));
+
     return result;
   };
 }
@@ -144,11 +156,6 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
       amount: xs[field].reduce((p, c) => p + Number(c.amount), 0)
     });
   }
-
-  result.push({
-    category: TOTAL,
-    amount: result.reduce((p, c) => p + Number(c.amount), 0)
-  });
 
   return result;
 }

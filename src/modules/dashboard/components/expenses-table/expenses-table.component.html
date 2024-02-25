@@ -1,4 +1,29 @@
 <table mat-table class="exp-table" [dataSource]="dataSource">
+  <!-- Checkbox col. -->
+  <ng-container matColumnDef="select">
+    <th mat-header-cell *matHeaderCellDef>
+      <mat-checkbox
+        color="primary"
+        (change)="toggleAllRows()"
+        [checked]="selection.hasValue() && isAllSelected()"
+        [indeterminate]="selection.hasValue() && !isAllSelected()"
+      >
+      </mat-checkbox>
+    </th>
+    <td mat-cell *matCellDef="let row">
+      @if (row.category!=='TOTAL') {
+      <mat-checkbox
+        color="primary"
+        (click)="$event.stopPropagation()"
+        (change)="toggleRow(row)"
+        [checked]="selection.isSelected(row)"
+      >
+      </mat-checkbox>
+      }
+    </td>
+  </ng-container>
+
+  <!-- Date col. -->
   <ng-container matColumnDef="date">
     <th mat-header-cell *matHeaderCellDef>Date</th>
     <td mat-cell *matCellDef="let row" matTooltip="{{ row.date | date : 'EEEE HH:mm:ss' }}" matTooltipPosition="above">
@@ -6,16 +31,19 @@
     </td>
   </ng-container>
 
+  <!-- Amount col. -->
   <ng-container matColumnDef="amount">
     <th mat-header-cell *matHeaderCellDef>Amount</th>
     <td mat-cell *matCellDef="let row" matTooltip="{{ row.date | date : dateTimeFormat }}">{{ row.amount }}</td>
   </ng-container>
 
+  <!-- Category col. -->
   <ng-container matColumnDef="category">
     <th mat-header-cell *matHeaderCellDef>Category</th>
     <td mat-cell *matCellDef="let row" (click)="cellClickHandler('category', row.category, row)">{{ row.category }}</td>
   </ng-container>
 
+  <!-- Comment col. -->
   <ng-container matColumnDef="comment">
     <th mat-header-cell *matHeaderCellDef>Comment</th>
     <td mat-cell *matCellDef="let row" [matTooltip]="row.comment">
@@ -29,7 +57,7 @@
     *matRowDef="let row; columns: columns"
     cdkDrag
     cdkDragLockAxis="x"
-    [cdkDragDisabled]="dragDisabled"
+    [cdkDragDisabled]="!draggable"
     [cdkDragData]="row"
     (cdkDragMoved)="cdkDragMoved($event)"
     (cdkDragEnded)="cdkDragEnded($event)"

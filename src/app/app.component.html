@@ -28,7 +28,7 @@
 
 <mat-menu #menu="matMenu">
   <button mat-menu-item [routerLink]="[route.dashboard]" queryParamsHandling="preserve" [replaceUrl]="true">
-    <mat-icon class="main-menu-icon">dashboard</mat-icon> <span>Dashboard</span>
+    <mat-icon>dashboard</mat-icon> <span>Dashboard</span>
   </button>
 
   <button
@@ -37,7 +37,7 @@
     queryParamsHandling="preserve"
     [disabled]="!page.online"
   >
-    <mat-icon class="main-menu-icon">category</mat-icon> <span>Categories</span>
+    <mat-icon>category</mat-icon> <span>Categories</span>
   </button>
 
   <button
@@ -46,16 +46,16 @@
     queryParamsHandling="preserve"
     [disabled]="!page.online"
   >
-    <mat-icon class="main-menu-icon">query_stats</mat-icon> <span>Statistics</span>
+    <mat-icon>query_stats</mat-icon> <span>Statistics</span>
   </button>
 
   <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
-    <mat-icon class="main-menu-icon">settings</mat-icon> <span>Setup</span>
+    <mat-icon>settings</mat-icon> <span>Setup</span>
   </button>
 
   @if (page.spreadsheetId) {
   <button mat-menu-item>
-    <mat-icon class="main-menu-icon">open_in_new</mat-icon>
+    <mat-icon>open_in_new</mat-icon>
     <a
       [href]="'https://docs.google.com/spreadsheets/d/' + page.spreadsheetId + '/edit'"
       target="_blank"
@@ -66,15 +66,13 @@
   </button>
   } @if (page.hasUpdates) {
   <button mat-menu-item (click)="update()">
-    <mat-icon class="main-menu-icon" matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false">
-      system_update
-    </mat-icon>
+    <mat-icon matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false"> system_update </mat-icon>
     <span>Update</span>
   </button>
   }
 
   <button mat-menu-item (click)="logout()" [disabled]="!page.online">
-    <mat-icon class="main-menu-icon">logout</mat-icon> <span>Logout</span>
+    <mat-icon>logout</mat-icon> <span>Logout</span>
   </button>
 
   <div mat-menu-item disabled style="justify-content: end">version: {{ version }}</div>

@@ -15,6 +15,10 @@ body {
   font-family: Roboto, 'Helvetica Neue', sans-serif;
 }
 
+.mat-icon:not(.mat-icon-no-color) {
+  color: #636363 !important;
+}
+
 .logger-wrapper {
   &.hidden {
     bottom: -55%;

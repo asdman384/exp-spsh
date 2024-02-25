@@ -1,13 +1,17 @@
+import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart } from '@angular/cdk/drag-drop';
 import {
   ChangeDetectionStrategy,
+  ChangeDetectorRef,
   Component,
   EventEmitter,
   Input,
   OnChanges,
   Output,
-  SimpleChanges
+  SimpleChanges,
+  inject
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
 import { Expense } from 'src/shared/models';
 
@@ -21,9 +25,13 @@ const DELETE_THRESHOLD = 100;
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ExpensesTableComponent implements OnChanges {
+  private readonly cdRef = inject(ChangeDetectorRef);
+
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
-  protected columns = DEFAULT_COLS;
+  protected readonly selection = new SelectionModel<Expense>(true, []);
+
+  protected columns: Array<keyof Expense | 'select'> = DEFAULT_COLS;
   protected dragPlaceholderY: number = 0;
   protected dragging: boolean = false;
   protected isDelete: boolean = false;
@@ -36,7 +44,19 @@ export class ExpensesTableComponent implements OnChanges {
   dataSource: ReadonlyArray<Expense> = [];
 
   @Input()
-  dragDisabled: boolean = true;
+  draggable: boolean = false;
+
+  @Input()
+  selectable: boolean = false;
+
+  @Input()
+  set selected(value: ReadonlyArray<Expense>) {
+    this.selection.clear();
+    this.selection.select(...value);
+  }
+  get selected(): ReadonlyArray<Expense> {
+    return this.selection.selected;
+  }
 
   @Output()
   readonly onDeleteRow = new EventEmitter<Expense>();
@@ -44,13 +64,17 @@ export class ExpensesTableComponent implements OnChanges {
   @Output()
   readonly onCellClick = new EventEmitter<{ field: keyof Expense; cellData: unknown; rowData: Expense }>();
 
+  @Output()
+  readonly onSelection = new EventEmitter<ReadonlyArray<Expense>>(true);
+
+  constructor() {
+    this.selection.changed.pipe(takeUntilDestroyed()).subscribe(() => this.onSelection.emit(this.selection.selected));
+  }
+
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['dataSource'].currentValue) {
       const exps = changes['dataSource'].currentValue as ReadonlyArray<Expense>;
-      if (!exps[0]) {
-        return;
-      }
-      this.columns = DEFAULT_COLS.filter((field) => this.hasData(exps, field) && !this.isColHidden(field));
+      this.defineCols(exps);
       if (this.lastDeletedDragRow?._dragRef['_rootElement']) {
         this.lastDeletedDragRow.reset();
       }
@@ -83,11 +107,41 @@ export class ExpensesTableComponent implements OnChanges {
     }
   }
 
+  protected toggleAllRows(): void {
+    if (this.isAllSelected()) {
+      this.selection.clear();
+    } else {
+      this.selection.select(...this.dataSource);
+    }
+    this.cdRef.detectChanges();
+  }
+
+  protected toggleRow(row: Expense): void {
+    this.selection.toggle(row);
+    this.cdRef.detectChanges();
+  }
+
+  protected isAllSelected(): boolean {
+    return this.selection.selected.length === this.dataSource.length;
+  }
+
+  private defineCols(exps?: ReadonlyArray<Expense>): void {
+    const cols: ExpensesTableComponent['columns'] = [];
+    if (this.selectable) {
+      cols.push('select');
+    }
+    cols.push(...DEFAULT_COLS.filter((field) => this.hasData(exps, field) && !this.isColHidden(field)));
+    this.columns = cols;
+  }
+
   private isColHidden(field: keyof Expense): boolean {
     return field === 'date' && !this.showDateCol;
   }
 
-  private hasData(exps: ReadonlyArray<Expense>, field: keyof Expense): boolean {
+  private hasData(exps: ReadonlyArray<Expense> | undefined, field: keyof Expense): boolean {
+    if (!exps || exps.length === 0) {
+      return false;
+    }
     return exps.some((e) => e[field] !== undefined);
   }
 }

@@ -73,7 +73,7 @@
 <expenses-table
   [dataSource]="(expenses$ | async) || []"
   [showDateCol]="false"
-  [dragDisabled]="false"
+  [draggable]="true"
   (onDeleteRow)="handleDeleteExpense($event)"
 >
 </expenses-table>

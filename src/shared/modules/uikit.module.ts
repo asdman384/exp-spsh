@@ -2,6 +2,7 @@ import { DragDropModule } from '@angular/cdk/drag-drop';
 import { NgModule } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import {
   MAT_DATE_FORMATS,
   MAT_DATE_LOCALE,
@@ -28,6 +29,7 @@ import { ExpDialogComponent } from '../components';
     DragDropModule,
     MatBadgeModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatNativeDateModule,
     MatDatepickerModule,
     MatFormFieldModule,
@@ -48,6 +50,7 @@ import { ExpDialogComponent } from '../components';
     DragDropModule,
     MatBadgeModule,
     MatButtonModule,
+    MatCheckboxModule,
     MatNativeDateModule,
     MatDatepickerModule,
     MatFormFieldModule,

@@ -21,8 +21,23 @@
   </mat-tab-group>
 </div>
 
+@if ((expenses$ | async) || []; as expenses) {
 <expenses-table
   #summaryTable
-  [dataSource]="(expenses$ | async) || []"
+  [selected]="expenses"
+  [selectable]="selectable"
+  [dataSource]="expenses"
   (onCellClick)="expensesTableCellClickHandler($event)"
+  (onSelection)="onSelection($event)"
 ></expenses-table>
+}
+
+<div class="statistics-summary">
+  <div class="button-container">
+    @if (selectedCategory) {
+    <button mat-icon-button (click)="unCategory()"><mat-icon>undo</mat-icon></button>
+    }
+  </div>
+  <div style="font-weight: 500">{{ selectedCategory ?? 'Total' }}</div>
+  <div style="font-weight: 500">{{ total }}</div>
+</div>
