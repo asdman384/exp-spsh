@@ -1,5 +1,5 @@
-import { NgModule, importProvidersFrom } from '@angular/core';
-import { RouterModule, Routes, provideRouter, withViewTransitions } from '@angular/router';
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes, withViewTransitions } from '@angular/router';
 import { ROUTE } from 'src/constants';
 import { isLoggedIn, isSetupReady } from 'src/shared/guards';
 

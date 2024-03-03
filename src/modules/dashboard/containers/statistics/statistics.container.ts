@@ -5,7 +5,7 @@ import { Store } from '@ngrx/store';
 import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
-import { BACK, TOTAL } from 'src/constants';
+import { TOTAL } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
 
 const MONTH_BUTTON_WIDTH = 50;
@@ -28,6 +28,11 @@ export class StatisticsContainer implements AfterViewInit {
     .fill(0)
     .map((v, i) => new Date(0, i).toLocaleString('default', { month: 'short' }));
 
+  // [2024, 2023 ... 2019]
+  protected readonly yearsTabs = new Array(new Date().getFullYear() - 2018)
+    .fill(0)
+    .map((v, i) => new Date().getFullYear() - i);
+
   protected readonly expenses$ = this.aggregator$.pipe(
     switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))),
     mergeMap(this.startViewTransition.bind(this))
@@ -35,6 +40,7 @@ export class StatisticsContainer implements AfterViewInit {
 
   protected sheets: Array<Sheet> = [];
   protected currentSheetIndex = 0;
+  protected currentYearIndex = 0;
   protected currentMonthIndex = new Date().getMonth();
   protected tableReversed: boolean = false;
   protected selectable = true;
@@ -48,7 +54,7 @@ export class StatisticsContainer implements AfterViewInit {
       .subscribe(([sheets, currentSheet]) => {
         this.sheets = sheets;
         this.currentSheetIndex = sheets.indexOf(currentSheet!);
-        this.formChanged(this.currentSheetIndex, this.currentMonthIndex, sheets);
+        this.formChanged(this.currentSheetIndex, this.currentYearIndex, this.currentMonthIndex, sheets);
       });
   }
 
@@ -62,9 +68,9 @@ export class StatisticsContainer implements AfterViewInit {
     this.summaryTable?.nativeElement.classList.add(`summary-table-${direction}`);
   }
 
-  protected formChanged(sheetIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
+  protected formChanged(sheetIndex: number, yearIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
     this.tableAnimation('none');
-    const year = new Date().getFullYear();
+    const year = this.yearsTabs[yearIndex];
     this.store.dispatch(
       AppActions.loadExpenses({
         sheetId: sheets[sheetIndex].id,

@@ -1,19 +1,18 @@
-.month-selector {
-  ::ng-deep .mdc-tab {
-    width: 50px;
-    min-width: 50px;
-    padding-right: 4px;
-    padding-left: 4px;
-  }
-}
-
-.user-selector {
-  padding: 0 16px;
-}
-
-.user-selector,
-.month-selector {
+.carousel-selector {
   height: 50px;
+
+  &-user {
+    padding: 0 16px;
+  }
+
+  &-month {
+    ::ng-deep .mdc-tab {
+      width: 50px;
+      min-width: 50px;
+      padding-right: 4px;
+      padding-left: 4px;
+    }
+  }
 }
 
 .summary-table-straight {

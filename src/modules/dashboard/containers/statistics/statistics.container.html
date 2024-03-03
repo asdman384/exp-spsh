@@ -1,23 +1,32 @@
 <div class="form">
+  <!-- USER -->
   <mat-tab-group
-    class="user-selector"
+    class="carousel-selector carousel-selector-user"
     [(selectedIndex)]="currentSheetIndex"
-    (selectedIndexChange)="formChanged($event, currentMonthIndex, sheets)"
+    (selectedIndexChange)="formChanged($event, currentYearIndex, currentMonthIndex, sheets)"
   >
     @for (sheet of sheets; track sheet.id) {
     <mat-tab [label]="sheet.title.split('_')[1]"></mat-tab>
     }
   </mat-tab-group>
 
+  <!-- YEAR -->
+  <mat-tab-group
+    class="carousel-selector"
+    [(selectedIndex)]="currentYearIndex"
+    (selectedIndexChange)="formChanged(currentSheetIndex, $event, currentMonthIndex, sheets)"
+  >
+    @for (tab of yearsTabs; track tab) { <mat-tab [label]="tab.toString()"></mat-tab> }
+  </mat-tab-group>
+
+  <!-- MONTH -->
   <mat-tab-group
     #monthSelector
-    class="month-selector"
+    class="carousel-selector carousel-selector-month"
     [(selectedIndex)]="currentMonthIndex"
-    (selectedIndexChange)="formChanged(currentSheetIndex, $event, sheets)"
+    (selectedIndexChange)="formChanged(currentSheetIndex, currentYearIndex, $event, sheets)"
   >
-    @for (tab of monthTabs; track tab; let i = $index) {
-    <mat-tab [label]="tab"></mat-tab>
-    }
+    @for (tab of monthTabs; track tab; let i = $index) { <mat-tab [label]="tab"></mat-tab> }
   </mat-tab-group>
 </div>
 

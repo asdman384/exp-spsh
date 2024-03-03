@@ -1,4 +1,4 @@
-import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map } from 'rxjs';
 
@@ -308,6 +308,33 @@ export class SpreadsheetService {
         })
       })
       .pipe(map((response) => eval(response)));
+  }
+
+  /**
+   * @deprecated
+   * @param sheetId
+   * @param expense
+   * @returns
+   */
+  append(sheetId: number, expense: Array<Expense>) {
+    const appendCells: gapi.client.sheets.AppendCellsRequest = {
+      fields: 'userEnteredValue',
+      sheetId,
+      rows: expense.map((e) => ({
+        values: [
+          { userEnteredValue: { stringValue: e.category } },
+          { userEnteredValue: { stringValue: e.comment } },
+          { userEnteredValue: { numberValue: e.amount } },
+          { userEnteredValue: { numberValue: getSerialNumberFromDate(e.date!) } }
+        ]
+      }))
+    };
+
+    return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
+      `${this.apiUrl}:batchUpdate`,
+      { requests: [{ appendCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+    );
   }
 }
 
