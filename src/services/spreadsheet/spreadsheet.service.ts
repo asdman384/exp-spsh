@@ -1,6 +1,6 @@
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, tap } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { Category, Expense } from 'src/shared/models';
@@ -307,7 +307,7 @@ export class SpreadsheetService {
           fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }
         })
       })
-      .pipe(map((response) => window.eval(response)));
+      .pipe(map((response) => eval(response)));
   }
 
   /**
@@ -379,7 +379,7 @@ function secureParseDate(value: string): Date {
   const regex = /^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/;
   const isMatch = regex.test(value);
   if (isMatch) {
-    return window.eval(`new ${value}`);
+    return (0, eval)(`new ${value}`);
   }
 
   throw Error('should provide a valid date');
