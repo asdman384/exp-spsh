@@ -1,5 +1,5 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
-import { HTTP_INTERCEPTORS, HttpClientJsonpModule, HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withJsonpSupport } from '@angular/common/http';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
@@ -37,11 +37,10 @@ if (loggerType) {
 
 @NgModule({
   declarations: [AppComponent],
+  bootstrap: [AppComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-    HttpClientModule,
-    HttpClientJsonpModule,
     AppRoutingModule,
     ServiceWorkerModule.register('ngsw-worker.js', {
       enabled: true, // !isDevMode(),
@@ -60,8 +59,8 @@ if (loggerType) {
     { provide: AbstractSecurityService, useClass: RedirectSecurityService },
     { provide: HTTP_INTERCEPTORS, useClass: ExpAuthInterceptor, multi: true },
     { provide: LocationStrategy, useClass: HashLocationStrategy },
-    { provide: StorageService, useClass: LocalStorageService }
-  ],
-  bootstrap: [AppComponent]
+    { provide: StorageService, useClass: LocalStorageService },
+    provideHttpClient(withInterceptorsFromDi(), withJsonpSupport())
+  ]
 })
 export class AppModule {}
