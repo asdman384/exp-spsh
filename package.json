@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
@@ -22,10 +22,10 @@
     "@angular/platform-browser-dynamic": "^18.0.3",
     "@angular/router": "^18.0.3",
     "@angular/service-worker": "^18.0.3",
-    "@ngrx/effects": "^17.1.0",
-    "@ngrx/entity": "^17.1.0",
-    "@ngrx/store": "^17.1.0",
-    "@ngrx/store-devtools": "^17.1.0",
+    "@ngrx/effects": "18.0.0-rc.1",
+    "@ngrx/entity": "18.0.0-rc.1",
+    "@ngrx/store": "18.0.0-rc.1",
+    "@ngrx/store-devtools": "18.0.0-rc.1",
     "rxjs": "~7.8.1",
     "tslib": "^2.6.2",
     "zone.js": "~0.14.3"

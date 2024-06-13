@@ -19,7 +19,8 @@
           "options": {
             "baseHref": "",
             "outputPath": {
-              "base": "dist/exp-spsh"
+              "base": "dist/exp-spsh",
+              "browser": ""
             },
             "index": "src/index.html",
             "polyfills": ["zone.js"],
@@ -31,9 +32,7 @@
             "serviceWorker": "ngsw-config.json",
             "browser": "src/main.ts",
             "stylePreprocessorOptions": {
-              "includePaths": [
-                "."
-              ]
+              "includePaths": ["."]
             }
           },
           "configurations": {

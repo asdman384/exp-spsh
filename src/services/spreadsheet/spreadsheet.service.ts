@@ -307,7 +307,7 @@ export class SpreadsheetService {
           fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }
         })
       })
-      .pipe(map((response) => eval(response)));
+      .pipe(map((response) => window.eval(response)));
   }
 
   /**
@@ -379,7 +379,7 @@ function secureParseDate(value: string): Date {
   const regex = /^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/;
   const isMatch = regex.test(value);
   if (isMatch) {
-    return eval(`new ${value}`);
+    return window.eval(`new ${value}`);
   }
 
   throw Error('should provide a valid date');
