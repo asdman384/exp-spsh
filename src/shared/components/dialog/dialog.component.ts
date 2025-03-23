@@ -11,11 +11,10 @@ import {
 } from '@angular/material/dialog';
 
 @Component({
-  selector: 'exp-dialog',
-  standalone: true,
-  imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose],
-  templateUrl: './dialog.component.html',
-  styleUrl: './dialog.component.scss'
+    selector: 'exp-dialog',
+    imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose],
+    templateUrl: './dialog.component.html',
+    styleUrl: './dialog.component.scss'
 })
 export class ExpDialogComponent {
   title = this.data?.title;

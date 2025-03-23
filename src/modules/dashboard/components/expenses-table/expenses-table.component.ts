@@ -19,10 +19,11 @@ const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comme
 const DELETE_THRESHOLD = 100;
 
 @Component({
-  selector: 'expenses-table',
-  templateUrl: './expenses-table.component.html',
-  styleUrl: './expenses-table.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'expenses-table',
+    templateUrl: './expenses-table.component.html',
+    styleUrl: './expenses-table.component.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class ExpensesTableComponent implements OnChanges {
   private readonly cdRef = inject(ChangeDetectorRef);

@@ -12,9 +12,10 @@ const DELETE_THRESHOLD = 150;
 const MOVE_THRESHOLD = 23;
 
 @Component({
-  selector: 'categories-page',
-  templateUrl: './categories-page.container.html',
-  styleUrl: './categories-page.container.scss'
+    selector: 'categories-page',
+    templateUrl: './categories-page.container.html',
+    styleUrl: './categories-page.container.scss',
+    standalone: false
 })
 export class CategoriesPageContainer {
   readonly loading$ = this.store.select(loadingSelector);

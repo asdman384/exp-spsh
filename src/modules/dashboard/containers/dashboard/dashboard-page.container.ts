@@ -16,10 +16,11 @@ import { TIME_FORMAT } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
 
 @Component({
-  selector: 'dashboard-page',
-  templateUrl: './dashboard-page.container.html',
-  styleUrl: './dashboard-page.container.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush
+    selector: 'dashboard-page',
+    templateUrl: './dashboard-page.container.html',
+    styleUrl: './dashboard-page.container.scss',
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DashboardPageContainer {
   protected readonly loading$ = this.store.select(loadingSelector);

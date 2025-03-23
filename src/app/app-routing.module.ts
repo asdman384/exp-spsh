@@ -1,5 +1,5 @@
 import { NgModule } from '@angular/core';
-import { RouterModule, Routes, withViewTransitions } from '@angular/router';
+import { provideRouter, RouterModule, Routes, withViewTransitions } from '@angular/router';
 import { ROUTE } from 'src/constants';
 import { isLoggedIn, isSetupReady } from 'src/shared/guards';
 
@@ -29,9 +29,9 @@ const routes: Routes = [
         // https://developer.chrome.com/docs/web-platform/view-transitions/
         console.log('onViewTransitionCreated', event);
       }
-    }).ɵproviders
+    }).ɵproviders,
+    provideRouter(routes, withViewTransitions())
   ],
-  imports: [RouterModule.forRoot(routes, { enableViewTransitions: true })],
   exports: [RouterModule]
 })
 export class AppRoutingModule {}

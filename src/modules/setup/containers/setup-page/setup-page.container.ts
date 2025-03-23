@@ -20,9 +20,10 @@ import { Sheet, Userinfo } from 'src/shared/models';
 type State = 'check document' | 'finish';
 
 @Component({
-  selector: 'setup-page',
-  templateUrl: './setup-page.container.html',
-  styleUrl: './setup-page.container.scss'
+    selector: 'setup-page',
+    templateUrl: './setup-page.container.html',
+    styleUrl: './setup-page.container.scss',
+    standalone: false
 })
 export class SettingsPageContainer {
   readonly spreadsheetIdField = SPREADSHEET_ID;

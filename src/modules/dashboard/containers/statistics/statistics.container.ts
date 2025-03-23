@@ -12,9 +12,10 @@ const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
 
 @Component({
-  selector: 'exp-statistics-container',
-  templateUrl: './statistics.container.html',
-  styleUrl: './statistics.container.scss'
+    selector: 'exp-statistics-container',
+    templateUrl: './statistics.container.html',
+    styleUrl: './statistics.container.scss',
+    standalone: false
 })
 export class StatisticsContainer implements AfterViewInit {
   @ViewChild('summaryTable', { read: ElementRef })

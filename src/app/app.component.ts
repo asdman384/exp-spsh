@@ -12,9 +12,10 @@ import { NetworkStatusService, AbstractSecurityService, SpreadsheetService } fro
 import pak from '../../package.json';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.scss']
+    selector: 'app-root',
+    templateUrl: './app.component.html',
+    styleUrls: ['./app.component.scss'],
+    standalone: false
 })
 export class AppComponent {
   protected readonly pageState$ = combineLatest({

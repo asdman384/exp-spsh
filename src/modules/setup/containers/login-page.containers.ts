@@ -10,8 +10,8 @@ import { ROUTE } from 'src/constants';
 import { NetworkStatusService, AbstractSecurityService } from 'src/services';
 
 @Component({
-  selector: 'login-page',
-  template: `
+    selector: 'login-page',
+    template: `
     <div class="info" *ngIf="(isOnline$ | async) === false">
       <h2>No network connection</h2>
       <p>Connect to the internet to proceed with setup.</p>
@@ -23,8 +23,8 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
       </button>
     </div>
   `,
-  styles: [
-    `
+    styles: [
+        `
       .info {
         display: flex;
         flex-direction: column;
@@ -38,7 +38,8 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
         font-size: 36px;
       }
     `
-  ]
+    ],
+    standalone: false
 })
 export class LoginPageContainer implements OnInit {
   readonly isOnline$ = this.status.online$;
