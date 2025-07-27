@@ -8,7 +8,7 @@ describe('ExpensesTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ExpensesTableComponent]
+      declarations: [ExpensesTableComponent]
     })
     .compileComponents();
     

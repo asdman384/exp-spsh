@@ -2,14 +2,16 @@
 
 expenses app
 
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+Set-ExecutionPolicy Restricted
 
 ## 1 Build
 - fill in keys.json
-- Run `ng build` to build the project. The build artifacts will be stored in the `dist/` directory.
+- Run `npx npm run watch` to build the project. The build artifacts will be stored in the `dist/` directory.
 
 
 ## 2 Development server
-Run `npm run serve` for a dev server. Navigate to `http://localhost:4200/`. The application will not automatically reload if you change any of the source files.
+Run `npx npm run serve` for a dev server. Navigate to `http://localhost:4200/exp-spsh/`. The application will not automatically reload if you change any of the source files.
 
 
 ## Running unit tests

@@ -6,5 +6,5 @@
     "types": ["gapi", "gapi.client.oauth2-v2", "gapi.client.sheets-v4", "google.accounts", "node"]
   },
   "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts"]
+  "include": ["src/**/*.d.ts", "src/logger.ts"]
 }
