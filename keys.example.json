@@ -1,0 +1,5 @@
+{
+  "CLIENT_ID": "your-google-client-id-here.apps.googleusercontent.com",
+  "API_KEY": "your-google-api-key-here",
+  "CLIENT_SECRET": "your-google-client-secret-here"
+}
