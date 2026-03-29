@@ -1,12 +1,13 @@
 {
   "name": "exp-spsh",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
     "build": "ng build --configuration=production",
     "watch": "ng build --watch --configuration=development",
-    "test": "ng test",
+    "test": "ng test --browsers=ChromeHeadless --watch=false",
+    "test:headed": "ng test --browsers=Chrome --watch=true",
     "postinstall": "node scripts/service-worker-ios-workaround.js"
   },
   "private": true,

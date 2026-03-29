@@ -3,6 +3,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CategoriesPageContainer } from './categories-page.container';
 import { Store } from '@ngrx/store';
 import { FormsModule } from '@angular/forms';
+import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 
 describe('SettingsPageContainer', () => {
@@ -11,7 +12,7 @@ describe('SettingsPageContainer', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormsModule],
+      imports: [FormsModule, UIKitModule], // Import necessary modules
       declarations: [CategoriesPageContainer],
       providers: [
         { provide: Store, useValue: { select: jasmine.createSpy('select'), dispatch: jasmine.createSpy('dispatch') } } // Provide a mock Store with select and dispatch

@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ExpensesTableComponent } from './expenses-table.component';
+import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 describe('ExpensesTableComponent', () => {
   let component: ExpensesTableComponent;
@@ -8,6 +9,7 @@ describe('ExpensesTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
+      imports: [UIKitModule], // Import necessary modules
       declarations: [ExpensesTableComponent]
     })
     .compileComponents();

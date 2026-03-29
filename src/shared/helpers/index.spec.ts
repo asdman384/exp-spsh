@@ -25,6 +25,20 @@ describe('isExpenseEqual', () => {
     expect(isExpenseEqual(expense1, expense2)).toBeFalsy();
   });
 
+  it('should return false when time differs by minutes', () => {
+    const expense1: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2023-01-01T10:00:00') };
+    const expense2: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2023-01-01T10:01:00') };
+
+    expect(isExpenseEqual(expense1, expense2)).toBeFalsy();
+  });
+
+  it('should return false when years differ', () => {
+    const expense1: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2023-01-01') };
+    const expense2: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2024-01-01') };
+
+    expect(isExpenseEqual(expense1, expense2)).toBeFalsy();
+  });
+
   it('should handle undefined dates', () => {
     const expense1: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: undefined };
     const expense2: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: undefined };
