@@ -13,67 +13,69 @@
         (dateChange)="onDateChange($event.value)"
         readonly
         required
-      />
-      <div class="date-suffix" matSuffix>
-        {{ expense.date | date: timeFormat }}
-        <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
-      </div>
-      <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
+        />
+        <div class="date-suffix" matSuffix>
+          {{ expense.date | date: timeFormat }}
+          <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
+        </div>
+        <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
+      </mat-form-field>
+
+      <!-- USER -->
+      <mat-form-field appearance="outline">
+        <mat-label>User</mat-label>
+        <mat-select name="sheet" [(ngModel)]="sheet" (valueChange)="onSheetChange($event)" required>
+          @for (sheet of sheets$ | async; track sheet.id) {
+            <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <div class="form-row">
+      <!-- AMOUNT -->
+      <mat-form-field appearance="outline" class="input-amount">
+        <mat-label>Amount</mat-label>
+        <input name="amount" type="number" matInput [(ngModel)]="expense.amount" required autocomplete="off" />
+      </mat-form-field>
+
+      <!-- CATEGORY -->
+      <mat-form-field appearance="outline" class="input-category">
+        <mat-label>Category</mat-label>
+        <mat-select name="category" [(ngModel)]="expense.category" required>
+          @for (category of categories$ | async; track category.name) {
+            <mat-option [value]="category.name"> {{ category.name }} </mat-option>
+            }@empty {
+            <mat-option [value]="undefined" (click)="loadCategories()"> Click to Load </mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <!-- COMMENT -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Comment</mat-label>
+      <textarea matInput name="comment" [(ngModel)]="expense.comment" cdkTextareaAutosize></textarea>
+      @if (expense.comment) {
+        <mat-icon matSuffix (click)="expense.comment=''" aria-label="Clear">close</mat-icon>
+      }
     </mat-form-field>
 
-    <!-- USER -->
-    <mat-form-field appearance="outline">
-      <mat-label>User</mat-label>
-      <mat-select name="sheet" [(ngModel)]="sheet" (valueChange)="onSheetChange($event)" required>
-        @for (sheet of sheets$ | async; track sheet.id) {
-        <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </div>
+    <button
+      mat-stroked-button
+      color="primary"
+      class="submit-button"
+      type="submit"
+      [disabled]="!form.valid || (loading$ | async)"
+      >
+      Add Expense
+    </button>
+  </form>
 
-  <div class="form-row">
-    <!-- AMOUNT -->
-    <mat-form-field appearance="outline" class="input-amount">
-      <mat-label>Amount</mat-label>
-      <input name="amount" type="number" matInput [(ngModel)]="expense.amount" required autocomplete="off" />
-    </mat-form-field>
-
-    <!-- CATEGORY -->
-    <mat-form-field appearance="outline" class="input-category">
-      <mat-label>Category</mat-label>
-      <mat-select name="category" [(ngModel)]="expense.category" required>
-        @for (category of categories$ | async; track category.name) {
-        <mat-option [value]="category.name"> {{ category.name }} </mat-option>
-        }@empty {
-        <mat-option [value]="undefined" (click)="loadCategories()"> Click to Load </mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-  </div>
-
-  <!-- COMMENT -->
-  <mat-form-field appearance="outline" class="full-width">
-    <mat-label>Comment</mat-label>
-    <textarea matInput name="comment" [(ngModel)]="expense.comment" cdkTextareaAutosize></textarea>
-    <mat-icon matSuffix *ngIf="expense.comment" (click)="expense.comment=''" aria-label="Clear">close</mat-icon>
-  </mat-form-field>
-
-  <button
-    mat-stroked-button
-    color="primary"
-    class="submit-button"
-    type="submit"
-    [disabled]="!form.valid || (loading$ | async)"
-  >
-    Add Expense
-  </button>
-</form>
-
-<expenses-table
-  [dataSource]="(expenses$ | async) || []"
-  [showDateCol]="false"
-  [draggable]="true"
-  (onDeleteRow)="handleDeleteExpense($event)"
->
-</expenses-table>
+  <expenses-table
+    [dataSource]="(expenses$ | async) || []"
+    [showDateCol]="false"
+    [draggable]="true"
+    (onDeleteRow)="handleDeleteExpense($event)"
+    >
+  </expenses-table>

@@ -4,7 +4,6 @@ import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
   MatDialogActions,
-  MatDialogClose,
   MatDialogContent,
   MatDialogRef,
   MatDialogTitle
@@ -12,7 +11,7 @@ import {
 
 @Component({
     selector: 'exp-dialog',
-    imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions, MatDialogClose],
+    imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './dialog.component.html',
     styleUrl: './dialog.component.scss'
 })

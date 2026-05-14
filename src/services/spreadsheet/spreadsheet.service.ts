@@ -307,7 +307,7 @@ export class SpreadsheetService {
           fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }
         })
       })
-      .pipe(map((response) => eval(response)));
+      .pipe(map((response) => (0, eval)(response)));
   }
 
   /**

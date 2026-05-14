@@ -1,84 +1,86 @@
 <app-snow></app-snow>
 
 @if (pageState$ | async; as page) {
-<mat-toolbar color="primary">
-  <mat-toolbar-row>
-    <span class="header-title non-selectable">
-      <mat-icon>{{ page.headline.icon }}</mat-icon> {{ page.headline.title }}
-    </span>
-    @if (page.user) {
-    <button
-      mat-icon-button
-      class="header-menu"
-      color="primary"
-      [matBadge]="page.hasUpdates ? '!' : null"
-      matBadgeColor="warn"
-      matBadgeSize="small"
-      matBadgePosition="below after"
-      [matMenuTriggerFor]="menu"
-    >
-      <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user.picture" />
-    </button>
+  <mat-toolbar color="primary">
+    <mat-toolbar-row>
+      <span class="header-title non-selectable">
+        <mat-icon>{{ page.headline.icon }}</mat-icon> {{ page.headline.title }}
+      </span>
+      @if (page.user) {
+        <button
+          mat-icon-button
+          class="header-menu"
+          color="primary"
+          [matBadge]="page.hasUpdates ? '!' : null"
+          matBadgeColor="warn"
+          matBadgeSize="small"
+          matBadgePosition="below after"
+          [matMenuTriggerFor]="menu"
+          >
+          <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user.picture" />
+        </button>
+      }
+    </mat-toolbar-row>
+  </mat-toolbar>
+  <div class="progress-container">
+    @if (page.loading) {
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
     }
-  </mat-toolbar-row>
-</mat-toolbar>
-<div class="progress-container">
-  <mat-progress-bar *ngIf="page.loading" mode="indeterminate"></mat-progress-bar>
-</div>
+  </div>
 
-<mat-menu #menu="matMenu">
-  <button mat-menu-item [routerLink]="[route.dashboard]" queryParamsHandling="preserve" [replaceUrl]="true">
-    <mat-icon>dashboard</mat-icon> <span>Dashboard</span>
-  </button>
+  <mat-menu #menu="matMenu">
+    <button mat-menu-item [routerLink]="[route.dashboard]" queryParamsHandling="preserve" [replaceUrl]="true">
+      <mat-icon>dashboard</mat-icon> <span>Dashboard</span>
+    </button>
 
-  <button
-    mat-menu-item
-    [routerLink]="[route.dashboard, route.categories]"
-    queryParamsHandling="preserve"
-    [disabled]="!page.online"
-  >
-    <mat-icon>category</mat-icon> <span>Categories</span>
-  </button>
+    <button
+      mat-menu-item
+      [routerLink]="[route.dashboard, route.categories]"
+      queryParamsHandling="preserve"
+      [disabled]="!page.online"
+      >
+      <mat-icon>category</mat-icon> <span>Categories</span>
+    </button>
 
-  <button
-    mat-menu-item
-    [routerLink]="[route.dashboard, route.stats]"
-    queryParamsHandling="preserve"
-    [disabled]="!page.online"
-  >
-    <mat-icon>query_stats</mat-icon> <span>Statistics</span>
-  </button>
+    <button
+      mat-menu-item
+      [routerLink]="[route.dashboard, route.stats]"
+      queryParamsHandling="preserve"
+      [disabled]="!page.online"
+      >
+      <mat-icon>query_stats</mat-icon> <span>Statistics</span>
+    </button>
 
-  <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
-    <mat-icon>settings</mat-icon> <span>Setup</span>
-  </button>
+    <button mat-menu-item [routerLink]="[route.setup, route.settings]" queryParamsHandling="preserve" [replaceUrl]="true">
+      <mat-icon>settings</mat-icon> <span>Setup</span>
+    </button>
 
-  @if (page.spreadsheetId) {
-  <button mat-menu-item>
-    <mat-icon>open_in_new</mat-icon>
-    <a
-      [href]="'https://docs.google.com/spreadsheets/d/' + page.spreadsheetId + '/edit'"
-      target="_blank"
-      rel="noopener noreferrer"
-    >
-      Open Spreadsheet
-    </a>
-  </button>
-  } @if (page.hasUpdates) {
-  <button mat-menu-item (click)="update()">
-    <mat-icon matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false"> system_update </mat-icon>
-    <span>Update</span>
-  </button>
-  }
+    @if (page.spreadsheetId) {
+      <button mat-menu-item>
+        <mat-icon>open_in_new</mat-icon>
+        <a
+          [href]="'https://docs.google.com/spreadsheets/d/' + page.spreadsheetId + '/edit'"
+          target="_blank"
+          rel="noopener noreferrer"
+          >
+          Open Spreadsheet
+        </a>
+      </button>
+      } @if (page.hasUpdates) {
+      <button mat-menu-item (click)="update()">
+        <mat-icon matBadge="!" matBadgeSize="small" matBadgeColor="warn" aria-hidden="false"> system_update </mat-icon>
+        <span>Update</span>
+      </button>
+    }
 
-  <button mat-menu-item (click)="logout()" [disabled]="!page.online">
-    <mat-icon>logout</mat-icon> <span>Logout</span>
-  </button>
+    <button mat-menu-item (click)="logout()" [disabled]="!page.online">
+      <mat-icon>logout</mat-icon> <span>Logout</span>
+    </button>
 
-  <div mat-menu-item disabled style="justify-content: end">version: {{ version }}</div>
-</mat-menu>
+    <div mat-menu-item disabled style="justify-content: end">version: {{ version }}</div>
+  </mat-menu>
 
-<div class="content">
-  <router-outlet></router-outlet>
-</div>
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
 }

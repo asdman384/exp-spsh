@@ -12,17 +12,19 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
 @Component({
     selector: 'login-page',
     template: `
-    <div class="info" *ngIf="(isOnline$ | async) === false">
-      <h2>No network connection</h2>
-      <p>Connect to the internet to proceed with setup.</p>
-      <mat-icon>wifi_off</mat-icon>
-    </div>
+    @if ((isOnline$ | async) === false) {
+      <div class="info">
+        <h2>No network connection</h2>
+        <p>Connect to the internet to proceed with setup.</p>
+        <mat-icon>wifi_off</mat-icon>
+      </div>
+    }
     <div class="info">
       <button mat-flat-button color="primary" [disabled]="(isOnline$ | async) === false" (click)="login()">
         Google Sign In
       </button>
     </div>
-  `,
+    `,
     styles: [
         `
       .info {
