@@ -1,3 +1,6 @@
+/// <reference types="gapi" />
+/// <reference types="gapi.client.sheets-v4" />
+
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable, map, tap } from 'rxjs';
@@ -287,27 +290,32 @@ export class SpreadsheetService {
       tq += ` and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
-    // need to define `responseHandler` function right there to be available at the following `eval`'s scope
-    function responseHandler(data: ExpensesDTO): Array<Expense> {
-      return data.table.rows.map<Expense>((row) => {
-        const comment = row.c[1]?.v;
-        return {
-          category: String(row.c[0].v),
-          comment: comment ? String(comment) : undefined,
-          amount: Number(row.c[2].v),
-          date: secureParseDate(row.c[3].v as string)
-        };
-      });
-    }
-
     return this.http
       .get(`https://docs.google.com/a/google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq`, {
         responseType: 'text',
         params: new HttpParams({
-          fromObject: { tq, tqx: `responseHandler:${responseHandler.name}`, gid: filter.sheetId }
+          fromObject: { tq, gid: filter.sheetId }
         })
       })
-      .pipe(map((response) => eval(response)));
+      .pipe(
+        map((response) => {
+          // Extract JSON from JSONP response: /*O_o*/google.visualization.Query.setResponse({...});
+          const jsonMatch = response.match(/setResponse\(({.*})\)/);
+          if (!jsonMatch) {
+            throw new Error('Invalid response format from Google Sheets API');
+          }
+          const data = JSON.parse(jsonMatch[1]) as ExpensesDTO;
+          return data.table.rows.map<Expense>((row) => {
+            const comment = row.c[1]?.v;
+            return {
+              category: String(row.c[0].v),
+              comment: comment ? String(comment) : undefined,
+              amount: Number(row.c[2].v),
+              date: secureParseDate(row.c[3].v as string)
+            };
+          });
+        })
+      );
   }
 
   /**
@@ -377,9 +385,17 @@ interface ExpensesDTO {
  */
 function secureParseDate(value: string): Date {
   const regex = /^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/;
-  const isMatch = regex.test(value);
-  if (isMatch) {
-    return eval(`new ${value}`);
+  const match = regex.exec(value);
+  if (match) {
+    const [, year, month, day, hours, minutes, seconds] = match;
+    return new Date(
+      parseInt(year, 10),
+      parseInt(month, 10),
+      parseInt(day, 10),
+      parseInt(hours, 10),
+      parseInt(minutes, 10),
+      parseInt(seconds, 10)
+    );
   }
 
   throw Error('should provide a valid date');
