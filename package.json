@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.7.2",
+  "version": "0.7.3",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
@@ -12,29 +12,29 @@
   },
   "private": true,
   "dependencies": {
-    "@angular/animations": "^20.3.21",
-    "@angular/cdk": "^20.2.14",
-    "@angular/common": "^20.3.21",
-    "@angular/compiler": "^20.3.21",
-    "@angular/core": "^20.3.21",
-    "@angular/forms": "^20.3.21",
-    "@angular/material": "^20.2.14",
-    "@angular/platform-browser": "^20.3.21",
-    "@angular/platform-browser-dynamic": "^20.3.21",
-    "@angular/router": "^20.3.21",
-    "@angular/service-worker": "^20.3.21",
-    "@ngrx/effects": "^20.1.0",
-    "@ngrx/entity": "^20.1.0",
-    "@ngrx/store": "^20.1.0",
-    "@ngrx/store-devtools": "^20.1.0",
+    "@angular/animations": "^21.2.13",
+    "@angular/cdk": "^21.2.11",
+    "@angular/common": "^21.2.13",
+    "@angular/compiler": "^21.2.13",
+    "@angular/core": "^21.2.13",
+    "@angular/forms": "^21.2.13",
+    "@angular/material": "^21.2.11",
+    "@angular/platform-browser": "^21.2.13",
+    "@angular/platform-browser-dynamic": "^21.2.13",
+    "@angular/router": "^21.2.13",
+    "@angular/service-worker": "^21.2.13",
+    "@ngrx/effects": "^21.1.0",
+    "@ngrx/entity": "^21.1.0",
+    "@ngrx/store": "^21.1.0",
+    "@ngrx/store-devtools": "^21.1.0",
     "rxjs": "~7.8.2",
     "tslib": "^2.8.1",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "^20.3.26",
-    "@angular/cli": "^20.3.26",
-    "@angular/compiler-cli": "^20.3.21",
+    "@angular/build": "^21.2.11",
+    "@angular/cli": "^21.2.11",
+    "@angular/compiler-cli": "^21.2.13",
     "@types/gapi": "^0.0.47",
     "@types/gapi.client.discovery-v1": "^0.0.4",
     "@types/gapi.client.oauth2-v2": "^0.0.4",
@@ -48,6 +48,6 @@
     "karma-coverage": "~2.2.1",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.8.2"
+    "typescript": "~5.9.3"
   }
 }
