@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { CategoriesPageContainer } from './categories-page.container';
@@ -7,24 +8,24 @@ import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 
 describe('SettingsPageContainer', () => {
-  let component: CategoriesPageContainer;
-  let fixture: ComponentFixture<CategoriesPageContainer>;
+    let component: CategoriesPageContainer;
+    let fixture: ComponentFixture<CategoriesPageContainer>;
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [FormsModule, UIKitModule], // Import necessary modules
-      declarations: [CategoriesPageContainer],
-      providers: [
-        { provide: Store, useValue: { select: jasmine.createSpy('select'), dispatch: jasmine.createSpy('dispatch') } } // Provide a mock Store with select and dispatch
-      ]
-    }).compileComponents();
+    beforeEach(async () => {
+        await TestBed.configureTestingModule({
+            imports: [CommonModule, FormsModule, UIKitModule],
+            declarations: [CategoriesPageContainer],
+            providers: [
+                { provide: Store, useValue: { select: vi.fn(), dispatch: vi.fn() } }
+            ]
+        }).compileComponents();
 
-    fixture = TestBed.createComponent(CategoriesPageContainer);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
-  });
+        fixture = TestBed.createComponent(CategoriesPageContainer);
+        component = fixture.componentInstance;
+        fixture.detectChanges();
+    });
 
-  it('should create', () => {
-    expect(component).toBeTruthy();
-  });
+    it('should create', () => {
+        expect(component).toBeTruthy();
+    });
 });

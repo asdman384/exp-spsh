@@ -1,6 +1,6 @@
 # exp-spsh
 
-**Project**: Angular 19 PWA expense tracking app with NgRx state management and Google Sheets API integration.
+**Project**: Angular PWA expense tracking app with NgRx state management and Google Sheets API integration.
 
 ## Architecture
 
@@ -45,66 +45,16 @@
 - If you're unsure — ASK, don't guess
 
 ## Working Style
+
 - Plan first, then code
 - Small changes: one file → tests → next file
 - Use sub-agents to explore the codebase
 
 ## Agents
+
 - Use the `planner` agent for planning
 - Use the `tester` agent after code changes
 - Use the `code-reviewer` agent before commits
-
-## Code Conventions
-
-### Styling
-
-- **Preprocessor**: SCSS
-- **Theme**: Angular Material (deeppurple-amber)
-- **New components**: default to `.scss` (via schematics config)
-
-### TypeScript
-
-- **Strict mode** enabled: `strict: true`, `noPropertyAccessFromIndexSignature`, `noImplicitReturns`, etc.
-- **Target**: ES2022 with type strictness
-
-### Testing
-
-- **Framework**: Karma + Jasmine
-- **Browser**: ChromeHeadless (default) | Chrome (headed mode via `npm run test:headed`)
-- **Pattern**: `.spec.ts` files co-located with source
-- **Single run**: `singleRun: true` in karma.conf.js
-
-### File Organization
-
-```
-src/
-  @state/          # NgRx store, effects, actions, selectors
-  app/             # Root module, routing, main component
-  modules/         # Feature modules (dashboard, setup)
-  services/        # Business logic, API clients
-  shared/          # Reusable components, guards, helpers, models
-  constants/       # UI strings, routes, spreadsheet configs
-  environments/    # Dev/prod configuration
-  http-interceptors/  # Auth interceptor
-  fun/             # Seasonal components (snow effect)
-```
-
-## Development Environment
-
-### Windows PowerShell Setup
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser  # before work
-Set-ExecutionPolicy Restricted                        # after work
-```
-
-### Dependencies
-
-- **Angular**: 19.2.3 (platform-browser, forms, material, router, animations, service-worker)
-- **NgRx**: 19.0.1 (store, effects, entity, store-devtools)
-- **Material**: 19.2.6
-- **RxJS**: 7.8.1
-- **Tooling**: Angular CLI 19.2.4, TypeScript 5.8.2
 
 ## Key Behaviors
 
@@ -114,11 +64,10 @@ Set-ExecutionPolicy Restricted                        # after work
 - **Base href**: Empty (use hash routing)
 - **GAPI**: Google Auth and Sheets API types included
 
+## Rules & Guidelines
 
-## Pitfalls & Notes
+See the `rules/` directory for detailed guidelines:
 
-- **keys.json required**: Build will fail silently if not configured
-- **HashLocationStrategy**: Used intentionally to support file:// serving
-- **Single Chrome instance**: Karma tests run in single browser, not headless by default
-- **Service Worker caching**: May need cache invalidation during development
-- **Strict typing**: `noPropertyAccessFromIndexSignature` means avoid dynamic property access without typed keys
+- [rules/code-style.md](rules/code-style.md) — Styling, TypeScript, and file organization conventions
+- [rules/testing.md](rules/testing.md) — Testing framework and conventions
+- [rules/development.md](rules/development.md) — Development environment setup and pitfalls

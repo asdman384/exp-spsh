@@ -2,15 +2,15 @@ import { TestBed } from '@angular/core/testing';
 
 import { LocalStorageService } from './local-storage.service';
 
-xdescribe('LocalStorageService', () => {
-  let service: LocalStorageService;
+describe.skip('LocalStorageService', () => {
+    let service: LocalStorageService;
 
-  beforeEach(() => {
-    TestBed.configureTestingModule({});
-    service = TestBed.inject(LocalStorageService);
-  });
+    beforeEach(() => {
+        TestBed.configureTestingModule({});
+        service = TestBed.inject(LocalStorageService);
+    });
 
-  it('should be created', () => {
-    expect(service).toBeTruthy();
-  });
+    it('should be created', () => {
+        expect(service).toBeTruthy();
+    });
 });

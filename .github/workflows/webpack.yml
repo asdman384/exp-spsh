@@ -3,8 +3,24 @@ name: build -> deploy gh-pages
 on:
   push:
     branches: ['master']
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig.json'
+      - 'ngsw-config.json'
+      - '.github/workflows/webpack.yml'
   pull_request:
     branches: ['master']
+    paths:
+      - 'src/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'angular.json'
+      - 'tsconfig.json'
+      - 'ngsw-config.json'
+      - '.github/workflows/webpack.yml'
 
 jobs:
   build:

@@ -85,15 +85,11 @@
           }
         },
         "test": {
-          "builder": "@angular/build:karma",
+          "builder": "@angular/build:unit-test",
           "options": {
-            "main": "src/test.ts",
-            "polyfills": ["zone.js", "zone.js/testing"],
             "tsConfig": "tsconfig.spec.json",
-            "inlineStyleLanguage": "scss",
-            "assets": ["src/favicon.ico", "src/assets", "src/manifest.webmanifest"],
-            "styles": ["@angular/material/prebuilt-themes/deeppurple-amber.css", "src/styles.scss"],
-            "scripts": []
+            "runnerConfig": "vitest.config.ts",
+            "browsers": ["ChromeHeadless"]
           }
         }
       }

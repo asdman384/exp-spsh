@@ -20,7 +20,8 @@
     "target": "ES2022",
     "module": "ES2022",
     "useDefineForClassFields": false,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "types": ["vitest/globals", "gapi", "gapi.client.oauth2-v2", "gapi.client.sheets-v4", "google.accounts", "node"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

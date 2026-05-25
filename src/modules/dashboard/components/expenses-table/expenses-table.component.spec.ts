@@ -1,3 +1,4 @@
+import { CommonModule } from '@angular/common';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import { ExpensesTableComponent } from './expenses-table.component';
@@ -9,7 +10,7 @@ describe('ExpensesTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [UIKitModule], // Import necessary modules
+      imports: [CommonModule, UIKitModule],
       declarations: [ExpensesTableComponent]
     })
     .compileComponents();

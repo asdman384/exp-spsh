@@ -6,8 +6,9 @@
     "serve": "npx http-server -p 4200 -c-1 dist/",
     "build": "ng build --configuration=production",
     "watch": "ng build --watch --configuration=development",
-    "test": "ng test --browsers=ChromeHeadless --watch=false",
-    "test:headed": "ng test --browsers=Chrome --watch=true",
+    "test": "ng test --watch=false",
+    "test:headed": "ng test --watch=true",
+    "test:coverage": "ng test --coverage",
     "postinstall": "node scripts/service-worker-ios-workaround.js"
   },
   "private": true,
@@ -40,14 +41,10 @@
     "@types/gapi.client.oauth2-v2": "^0.0.4",
     "@types/gapi.client.sheets-v4": "^0.0.4",
     "@types/google.accounts": "^0.0.18",
-    "@types/jasmine": "~5.1.4",
+    "@types/node": "^25.9.1",
     "http-server": "^14.1.1",
-    "jasmine-core": "~5.6.0",
-    "karma": "~6.4.4",
-    "karma-chrome-launcher": "~3.2.0",
-    "karma-coverage": "~2.2.1",
-    "karma-jasmine": "~5.1.0",
-    "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.9.3"
+    "jsdom": "^27.0.1",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.7"
   }
 }
