@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { NgForm } from '@angular/forms';
-
+import { FormsModule, NgForm } from '@angular/forms';
+import { UIKitModule } from 'src/shared/modules/uikit.module';
 import { Store } from '@ngrx/store';
 import { first, tap } from 'rxjs';
 
@@ -14,13 +14,14 @@ import {
 } from 'src/@state';
 import { TIME_FORMAT } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
+import { ExpensesTableComponent } from 'src/shared/components';
 
 @Component({
-    selector: 'dashboard-page',
-    templateUrl: './dashboard-page.container.html',
-    styleUrl: './dashboard-page.container.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+  selector: 'dashboard-page',
+  templateUrl: './dashboard-page.container.html',
+  styleUrl: './dashboard-page.container.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [FormsModule, UIKitModule, ExpensesTableComponent]
 })
 export class DashboardPageContainer {
   protected readonly loading$ = this.store.select(loadingSelector);

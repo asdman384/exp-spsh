@@ -1,4 +1,5 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, ViewChild } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatTabGroup } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
@@ -6,16 +7,18 @@ import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, t
 
 import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
 import { TOTAL } from 'src/constants';
+import { ExpensesTableComponent } from 'src/shared/components';
 import { Expense, Sheet } from 'src/shared/models';
+import { UIKitModule } from 'src/shared/modules';
 
 const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
 
 @Component({
-    selector: 'exp-statistics-container',
-    templateUrl: './statistics.container.html',
-    styleUrl: './statistics.container.scss',
-    standalone: false
+  selector: 'exp-statistics-container',
+  templateUrl: './statistics.container.html',
+  styleUrl: './statistics.container.scss',
+  imports: [FormsModule, UIKitModule, ExpensesTableComponent]
 })
 export class StatisticsContainer implements AfterViewInit {
   @ViewChild('summaryTable', { read: ElementRef })
@@ -48,7 +51,10 @@ export class StatisticsContainer implements AfterViewInit {
   protected selectedCategory?: string;
   protected total = 0;
 
-  constructor(private readonly cd: ChangeDetectorRef, private readonly store: Store) {
+  constructor(
+    private readonly cd: ChangeDetectorRef,
+    private readonly store: Store
+  ) {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
     combineLatest([this.store.select(sheetsSelector), this.store.select(currentSheetSelector)])
       .pipe(take(1))
@@ -146,13 +152,16 @@ function groupByCategory(data: Array<Expense>): Array<Expense> {
 }
 
 function groupBy<T extends { [key: string]: any }>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {
-  return xs.reduce(function (rv, x) {
-    const aggr = x[key as keyof T];
-    if (typeof aggr === 'string') {
-      (rv[aggr] = rv[aggr] || []).push(x);
-    }
-    return rv;
-  }, {} as { [key: string]: Array<T> });
+  return xs.reduce(
+    function (rv, x) {
+      const aggr = x[key as keyof T];
+      if (typeof aggr === 'string') {
+        (rv[aggr] = rv[aggr] || []).push(x);
+      }
+      return rv;
+    },
+    {} as { [key: string]: Array<T> }
+  );
 }
 
 function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {

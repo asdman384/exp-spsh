@@ -1,9 +1,12 @@
 import { provideZoneChangeDetection } from '@angular/core';
-import { platformBrowser } from '@angular/platform-browser';
-import { AppModule } from './app/app.module';
+import { bootstrapApplication } from '@angular/platform-browser';
+import { AppComponent } from './app/app.component';
+import { getAppConfig } from './app/app.config';
 
 import('./logger')
-  .then(() => platformBrowser().bootstrapModule(AppModule, { applicationProviders: [provideZoneChangeDetection()] }))
+  .then(() =>
+    bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), getAppConfig().providers] })
+  )
   .catch((err) => {
     console.error(err);
     log(err);

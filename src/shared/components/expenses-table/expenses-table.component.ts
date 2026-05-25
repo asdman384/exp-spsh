@@ -14,6 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
 import { Expense } from 'src/shared/models';
+import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment'];
 const DELETE_THRESHOLD = 100;
@@ -23,7 +24,7 @@ const DELETE_THRESHOLD = 100;
     templateUrl: './expenses-table.component.html',
     styleUrl: './expenses-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: false
+    imports: [UIKitModule]
 })
 export class ExpensesTableComponent implements OnChanges {
   private readonly cdRef = inject(ChangeDetectorRef);

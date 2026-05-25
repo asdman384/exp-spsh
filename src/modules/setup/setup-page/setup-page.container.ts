@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { NgForm } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { Store } from '@ngrx/store';
@@ -16,14 +16,15 @@ import {
 } from 'src/constants';
 import { AbstractSecurityService, SpreadsheetService } from 'src/services';
 import { Sheet, Userinfo } from 'src/shared/models';
+import { UIKitModule } from 'src/shared/modules';
 
 type State = 'check document' | 'finish';
 
 @Component({
-    selector: 'setup-page',
-    templateUrl: './setup-page.container.html',
-    styleUrl: './setup-page.container.scss',
-    standalone: false
+  selector: 'setup-page',
+  templateUrl: './setup-page.container.html',
+  styleUrl: './setup-page.container.scss',
+  imports: [FormsModule, UIKitModule]
 })
 export class SettingsPageContainer {
   readonly spreadsheetIdField = SPREADSHEET_ID;

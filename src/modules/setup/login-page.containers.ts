@@ -8,10 +8,11 @@ import { filter } from 'rxjs';
 import { AppActions } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, AbstractSecurityService } from 'src/services';
+import { UIKitModule } from 'src/shared/modules';
 
 @Component({
-    selector: 'login-page',
-    template: `
+  selector: 'login-page',
+  template: `
     @if ((isOnline$ | async) === false) {
       <div class="info">
         <h2>No network connection</h2>
@@ -24,9 +25,9 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
         Google Sign In
       </button>
     </div>
-    `,
-    styles: [
-        `
+  `,
+  styles: [
+    `
       .info {
         display: flex;
         flex-direction: column;
@@ -40,8 +41,8 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
         font-size: 36px;
       }
     `
-    ],
-    standalone: false
+  ],
+  imports: [UIKitModule]
 })
 export class LoginPageContainer implements OnInit {
   readonly isOnline$ = this.status.online$;

@@ -1,4 +1,5 @@
 import { DragDropModule } from '@angular/cdk/drag-drop';
+import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
@@ -26,6 +27,7 @@ import { ExpDialogComponent } from '../components';
 
 @NgModule({
   imports: [
+    CommonModule,
     DragDropModule,
     MatBadgeModule,
     MatButtonModule,
@@ -47,6 +49,7 @@ import { ExpDialogComponent } from '../components';
     ExpDialogComponent
   ],
   exports: [
+    CommonModule,
     DragDropModule,
     MatBadgeModule,
     MatButtonModule,

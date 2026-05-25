@@ -1,21 +1,22 @@
 import { CdkDragDrop, CdkDragMove, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, OnInit } from '@angular/core';
-import { NgModel } from '@angular/forms';
+import { Component } from '@angular/core';
+import { FormsModule, NgModel } from '@angular/forms';
 
 import { Store } from '@ngrx/store';
 import { first } from 'rxjs';
 
 import { AppActions, categoriesSelector, loadingSelector } from 'src/@state';
 import { Category } from 'src/shared/models';
+import { UIKitModule } from 'src/shared/modules';
 
 const DELETE_THRESHOLD = 150;
 const MOVE_THRESHOLD = 23;
 
 @Component({
-    selector: 'categories-page',
-    templateUrl: './categories-page.container.html',
-    styleUrl: './categories-page.container.scss',
-    standalone: false
+  selector: 'categories-page',
+  templateUrl: './categories-page.container.html',
+  styleUrl: './categories-page.container.scss',
+  imports: [FormsModule, UIKitModule]
 })
 export class CategoriesPageContainer {
   readonly loading$ = this.store.select(loadingSelector);

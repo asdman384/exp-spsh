@@ -1,21 +1,23 @@
 import { Component } from '@angular/core';
-import { Router } from '@angular/router';
+import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
 import { Store } from '@ngrx/store';
-import { combineLatest, first, map, startWith } from 'rxjs';
+import { combineLatest, debounceTime, first, map, startWith } from 'rxjs';
 
 import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
-import { NetworkStatusService, AbstractSecurityService, SpreadsheetService } from 'src/services';
+import { SnowComponent } from 'src/fun/snow/snow.component';
+import { AbstractSecurityService, NetworkStatusService, SpreadsheetService } from 'src/services';
+import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 import pak from '../../package.json';
 
 @Component({
-    selector: 'app-root',
-    templateUrl: './app.component.html',
-    styleUrls: ['./app.component.scss'],
-    standalone: false
+  selector: 'app-root',
+  templateUrl: './app.component.html',
+  styleUrls: ['./app.component.scss'],
+  imports: [RouterOutlet, RouterLink, UIKitModule, SnowComponent]
 })
 export class AppComponent {
   protected readonly pageState$ = combineLatest({
@@ -28,7 +30,7 @@ export class AppComponent {
       map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
       startWith(false)
     )
-  });
+  }).pipe(debounceTime(100));
 
   readonly route = ROUTE;
   readonly version = pak.version;
