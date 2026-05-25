@@ -10,11 +10,9 @@ describe('ExpensesTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CommonModule, UIKitModule],
-      declarations: [ExpensesTableComponent]
-    })
-    .compileComponents();
-    
+      imports: [ExpensesTableComponent, UIKitModule]
+    }).compileComponents();
+
     fixture = TestBed.createComponent(ExpensesTableComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();

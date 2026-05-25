@@ -8,8 +8,6 @@ export default defineConfig({
     globals: true,
     environment: 'jsdom',
     setupFiles: [],
-    include: ['src/**/*.spec.ts'],
-    exclude: ['node_modules', 'dist'],
     browser: {
       screenshotFailures: false
     }

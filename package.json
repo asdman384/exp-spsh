@@ -42,6 +42,7 @@
     "@types/gapi.client.sheets-v4": "^0.0.4",
     "@types/google.accounts": "^0.0.18",
     "@types/node": "^25.9.1",
+    "@vitest/browser-playwright": "^4.1.7",
     "http-server": "^14.1.1",
     "jsdom": "^27.0.1",
     "typescript": "~5.9.3",
