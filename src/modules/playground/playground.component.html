@@ -1,0 +1,28 @@
+<div class="playground-container">
+  <header class="playground-header">
+    <h1>{{ title }}</h1>
+    <p class="subtitle">Test and explore new Angular features here</p>
+  </header>
+
+  <main class="playground-content">
+    <section class="features-section">
+      <h2>Feature Tests</h2>
+      <div class="features-grid">
+        <div *ngFor="let feature of testFeatures" class="feature-card" (click)="onFeatureClick(feature.name)">
+          <h3>{{ feature.name }}</h3>
+          <span class="status" [class.implemented]="feature.implemented">
+            {{ feature.implemented ? '✓ Ready' : '○ Todo' }}
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <section class="sandbox-section">
+      <h2>Sandbox Area</h2>
+      <div class="sandbox">
+        <p>Add your experimental components and features here</p>
+        <!-- Your test components go here -->
+      </div>
+    </section>
+  </main>
+</div>

@@ -18,5 +18,10 @@ export const routes: Routes = [
     path: ROUTE.setup,
     loadComponent: () => import('src/modules/setup/setup.component').then((m) => m.SetupComponent),
     loadChildren: () => import('src/modules/setup/setup.routes').then((m) => m.routes)
+  },
+  {
+    path: ROUTE.playground,
+    loadComponent: () => import('src/modules/playground/playground.component').then((m) => m.PlaygroundComponent),
+    loadChildren: () => import('src/modules/playground/playground.routes').then((m) => m.routes)
   }
 ];
