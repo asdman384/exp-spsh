@@ -1,5 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Store } from '@ngrx/store';
+import { AppActions } from 'src/@state';
 
 @Component({
   selector: 'app-playground',
@@ -8,17 +10,12 @@ import { CommonModule } from '@angular/common';
   templateUrl: './playground.component.html',
   styleUrls: ['./playground.component.scss']
 })
-export class PlaygroundComponent {
-  title = 'Angular Features Playground';
-  
-  // Add your playground data and methods here
-  testFeatures = [
-    { name: 'Signals', implemented: false },
-    { name: 'Control Flow', implemented: false },
-    { name: 'Directives', implemented: false },
-    { name: 'Pipes', implemented: false },
-    { name: 'Dependency Injection', implemented: false }
-  ];
+export class PlaygroundComponent implements OnInit {
+  private readonly store = inject(Store);
+
+  ngOnInit() {
+    this.store.dispatch(AppActions.setTitle({ title: 'Angular Features Playground', icon: 'settings' }));
+  }
 
   onFeatureClick(feature: string) {
     console.log(`Testing: ${feature}`);
