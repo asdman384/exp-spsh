@@ -1,0 +1,21 @@
+{
+  "policy_id": "W3-NG-SPRINT-42",
+  "actor": "me-actor",
+  "purpose": "gating-sprint",
+  "allowed_write_paths": [
+    "src/"
+  ],
+  "denied_write_paths": [
+    "angular.json",
+    "package.json"
+  ],
+  "allowed_build_configurations": [
+    "development"
+  ],
+  "approval_required_configurations": [
+    "staging"
+  ],
+  "not_after": "2028-08-13T00:00:00.000Z",
+  "approval_owner": "self",
+  "recovery": "stop the session"
+}

@@ -49,6 +49,7 @@
 - Plan first, then code
 - Small changes: one file → tests → next file
 - Use sub-agents to explore the codebase
+- When reporting information, be extremely concise and sacrifice grammar for the sake of concision
 
 ## Agents
 
