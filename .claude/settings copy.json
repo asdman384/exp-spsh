@@ -1,0 +1,59 @@
+{
+  "permissions": {
+    "deny": [
+      "Write(angular.json)",
+      "Edit(angular.json)",
+      "Write(package.json)",
+      "Edit(package.json)",
+      "Write(src/app/app.config.ts)",
+      "Edit(src/app/app.config.ts)",
+      "Bash(npm publish *)",
+      "Bash(yarn publish *)",
+      "Bash(ng deploy *)",
+      "Bash(npx ng deploy *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Read(./.env)",
+      "Read(./.env.*)"
+    ],
+    "ask": [
+      "Bash(npm install *)",
+      "Bash(npm i *)",
+      "Bash(yarn add *)",
+      "Bash(pnpm add *)",
+      "Bash(ng add *)",
+      "Bash(npx ng add *)",
+      "Bash(ng update *)",
+      "Bash(npx ng update *)",
+      "Bash(git push *)"
+    ],
+    "allow": [
+      "Bash(node scripts/*)",
+      "Bash(npx ng generate *)",
+      "Bash(npx ng g *)",
+      "Bash(npx ng build *)",
+      "Bash(npx ng test *)",
+      "Bash(npx ng version)",
+      "Bash(npm run *)",
+      "Bash(git status *)",
+      "Bash(git diff *)",
+      "Bash(git log *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": ["${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.mjs"],
+            "timeout": 15,
+            "statusMessage": "Проверяю личность, путь, конфигурацию и срок..."
+          }
+        ]
+      }
+    ]
+  }
+}
