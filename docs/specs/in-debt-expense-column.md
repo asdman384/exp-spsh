@@ -196,7 +196,7 @@ automated test, because this spec adds no test file for
 
 - [ ] `npx tsc --noEmit` — exits 0
 - [ ] `npx ng lint` — exits 0
-- [ ] `npx ng test --watch=false --browsers=ChromeHeadless` — all specs pass
+- [ ] `npx ng test --watch=false --browsers=chromiumHeadless` — all specs pass
 - [ ] `npx ng build` — exits 0
 
 `ng build` is required for this slice, not optional: Stages 4 and 6 change two

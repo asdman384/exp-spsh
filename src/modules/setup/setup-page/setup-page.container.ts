@@ -89,7 +89,7 @@ export class SettingsPageContainer {
   }
 
   private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo): Observable<any> {
-    return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 4, spreadsheet).pipe(
+    return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 5, spreadsheet).pipe(
       switchMap((dataSheet) => {
         this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
         this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));

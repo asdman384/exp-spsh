@@ -1,3 +1,6 @@
+> **Artifact version note:** this copy was taken before the follow-up decision
+> on `undefined` versus `false` was added. It is intentionally stale.
+
 # Spec: "In Debt" expense flag (spreadsheet column E)
 
 ## Status
@@ -102,7 +105,6 @@ Not applicable — `isInDebt` is a per-row boolean flag set once at creation, no
 - **Option B:** Add `isInDebt` to the comparison so `deleteExpense$` can't match the wrong row.
 - **Chosen:** B
 - **Why:** Confirmed with user. Two expenses on the same day with identical category/comment/amount/date but different debt flags are otherwise indistinguishable to the delete matcher, which could delete the wrong row.
-- **Follow-up decision:** treat `undefined` and `false` as equal in this comparison (`(e1.isInDebt ?? false) === (e2.isInDebt ?? false)`), not strict `===`, because historical rows loaded before this feature (or any row where column E was blank) will deserialize to `isInDebt: undefined`/`false` inconsistently depending on which load method ran, and a strict comparison would spuriously treat those as different values.
 
 ### How `isInDebt` is derived on read
 
@@ -196,7 +198,7 @@ automated test, because this spec adds no test file for
 
 - [ ] `npx tsc --noEmit` — exits 0
 - [ ] `npx ng lint` — exits 0
-- [ ] `npx ng test --watch=false --browsers=ChromeHeadless` — all specs pass
+- [ ] `npx ng test --watch=false --browsers=chromiumHeadless` — all specs pass
 - [ ] `npx ng build` — exits 0
 
 `ng build` is required for this slice, not optional: Stages 4 and 6 change two

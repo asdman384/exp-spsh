@@ -10,18 +10,18 @@ machine-checkable; section 4 is not, and nothing in the chain may tick it.
 
 ### 1. Spec compliance
 
-- [ ] **[AC1]** debt expense writes `amount` into column E — covered by
+- [x] **[AC1]** debt expense writes `amount` into column E — covered by
       `spreadsheet.service.spec.ts` (`addExpense`, `isInDebt: true` case) — passing
-- [ ] **[AC2]** non-debt expense leaves column E empty, and does not write `0` —
+- [x] **[AC2]** non-debt expense leaves column E empty, and does not write `0` —
       covered by `spreadsheet.service.spec.ts` (`addExpense`, `isInDebt: false` and
       `undefined` cases) — passing
-- [ ] **[AC3]** column E is read back into `isInDebt` — covered by
+- [x] **[AC3]** column E is read back into `isInDebt` — covered by
       `spreadsheet.service.spec.ts`, one case per load method (`loadLastExpenses`
       range `A1:E{take}`, `loadExpenses` gviz `select A, B, C, D, E`) — passing
-- [ ] **[AC4]** a row with a missing 5th cell maps to a falsy `isInDebt` and throws
+- [x] **[AC4]** a row with a missing 5th cell maps to a falsy `isInDebt` and throws
       nothing — covered by `spreadsheet.service.spec.ts`, mocked response without
       `c[4]`, in both load methods — passing
-- [ ] **[AC5]** `isExpenseEqual` compares the debt flag, and treats `undefined` and
+- [x] **[AC5]** `isExpenseEqual` compares the debt flag, and treats `undefined` and
       `false` as equal — covered by `index.spec.ts` (both values differ → `false`;
       `undefined` vs `false` → `true`) — passing
 
@@ -34,7 +34,7 @@ automated test, because this spec adds no test file for
 - [ ] `npx tsc --noEmit` — exits 0
 - [ ] `npx ng lint` — exits 0
 - [ ] `npx ng test --watch=false --browsers=ChromeHeadless` — all specs pass
-- [ ] `npx ng build` — exits 0
+- [x] `npx ng build` — exits 0
 
 `ng build` is required for this slice, not optional: Stages 4 and 6 change two
 templates (`dashboard-page.container.html`, `expenses-table.component.html`), and a
@@ -46,12 +46,12 @@ mutation testing, and dead-code checks.
 
 ### 3. Scope discipline
 
-- [ ] the deprecated `append()` in `spreadsheet.service.ts` is unchanged —
+- [x] the deprecated `append()` in `spreadsheet.service.ts` is unchanged —
       confirmed not in diff
-- [ ] no header row or column label is written anywhere — confirmed not in diff
-- [ ] no backfill or migration code for rows that already exist — confirmed not in
+- [x] no header row or column label is written anywhere — confirmed not in diff
+- [x] no backfill or migration code for rows that already exist — confirmed not in
       diff
-- [ ] no edit flow for an existing expense's debt flag — confirmed not in diff
+- [x] no edit flow for an existing expense's debt flag — confirmed not in diff
 
 The first item is the risky one: column mapping is positional in five places in
 `spreadsheet.service.ts`, so anyone updating "every place that writes a row" is
