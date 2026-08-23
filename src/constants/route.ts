@@ -4,5 +4,6 @@ export enum ROUTE {
   login = 'login',
   settings = 'settings',
   categories = 'categories',
-  stats = 'statistics'
+  stats = 'statistics',
+  playground = 'playground'
 }

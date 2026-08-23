@@ -51,6 +51,16 @@
     </td>
   </ng-container>
 
+  <!-- In Debt col. -->
+  <ng-container matColumnDef="isInDebt">
+    <th mat-header-cell *matHeaderCellDef>In Debt</th>
+    <td mat-cell *matCellDef="let row">
+      @if (row.isInDebt) {
+        <mat-icon aria-label="In debt">check</mat-icon>
+      }
+    </td>
+  </ng-container>
+
   <tr class="non-selectable" mat-header-row *matHeaderRowDef="columns"></tr>
   <tr
     mat-row

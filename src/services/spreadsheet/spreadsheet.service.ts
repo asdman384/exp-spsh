@@ -168,6 +168,17 @@ export class SpreadsheetService {
       fields: 'dataValidation.condition'
     };
 
+    const inDebtCellValidation: gapi.client.sheets.RepeatCellRequest = {
+      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 4, endColumnIndex: 5 },
+      cell: {
+        dataValidation: {
+          condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
+          strict: true
+        }
+      },
+      fields: 'dataValidation.condition'
+    };
+
     const updateDimensionProperties = {
       properties: { pixelSize: 120 },
       range: { dimension: 'COLUMNS', sheetId, startIndex: 3, endIndex: 4 },
@@ -181,6 +192,7 @@ export class SpreadsheetService {
           { repeatCell: dateCellValidation },
           { repeatCell: categoriesCellValidation },
           { repeatCell: currencyCellValidation },
+          { repeatCell: inDebtCellValidation },
           { updateDimensionProperties }
         ]
       } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
@@ -235,7 +247,8 @@ export class SpreadsheetService {
             { userEnteredValue: { stringValue: expense.category } },
             { userEnteredValue: { stringValue: expense.comment } },
             { userEnteredValue: { numberValue: expense.amount } },
-            { userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } }
+            { userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } },
+            { userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined }
           ]
         }
       ]
@@ -254,7 +267,7 @@ export class SpreadsheetService {
    * @param take
    */
   loadLastExpenses(sheetName: string, take: number = 1): Observable<Array<Expense>> {
-    const range = encodeURIComponent(sheetName + `!A1:D${take}`);
+    const range = encodeURIComponent(sheetName + `!A1:E${take}`);
 
     return this.http
       .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
@@ -263,11 +276,12 @@ export class SpreadsheetService {
       .pipe(
         map(
           (result) =>
-            result.values?.map<Expense>(([category, comment, amount, date]) => ({
+            result.values?.map<Expense>(([category, comment, amount, date, isInDebt]) => ({
               category,
               comment: comment ? String(comment) : undefined,
               amount,
-              date: getDateFromSerialNumber(date)
+              date: getDateFromSerialNumber(date),
+              isInDebt: isInDebt !== undefined
             })) ?? []
         )
       );
@@ -282,7 +296,7 @@ export class SpreadsheetService {
   loadExpenses(filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
     let tq = `
-      select A, B, C, D 
+      select A, B, C, D, E
       where D >= date '${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}'
     `.trim();
 
@@ -307,11 +321,13 @@ export class SpreadsheetService {
           const data = JSON.parse(jsonMatch[1]) as ExpensesDTO;
           return data.table.rows.map<Expense>((row) => {
             const comment = row.c[1]?.v;
+            const isInDebt = row.c[4]?.v;
             return {
               category: String(row.c[0].v),
               comment: comment ? String(comment) : undefined,
               amount: Number(row.c[2].v),
-              date: secureParseDate(row.c[3].v as string)
+              date: secureParseDate(row.c[3].v as string),
+              isInDebt: isInDebt !== undefined
             };
           });
         })

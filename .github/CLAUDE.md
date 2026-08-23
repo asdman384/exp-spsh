@@ -45,10 +45,11 @@
 - If you're unsure — ASK, don't guess
 
 ## Working Style
-
-- Plan first, then code
+- First, create a plan, show it to the user, and ask for approval before proceeding with the coding. The plan should be saved into a separate <feature-name>_plan.md file in the root folder of this project.
 - Small changes: one file → tests → next file
 - Use sub-agents to explore the codebase
+- Always update CLAUDE.md and AGENTS.md if architectural or infrastructural changes have been made. Update README.md if a new feature has been added or an existing one has been modified.
+- When reporting information, be extremely concise and sacrifice grammar for the sake of concision
 
 ## Agents
 

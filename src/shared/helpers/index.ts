@@ -10,6 +10,7 @@ export function isExpenseEqual(e1: Expense, e2: Expense): boolean {
     e1.date?.getHours() === e2.date?.getHours() &&
     e1.date?.getDate() === e2.date?.getDate() &&
     e1.date?.getMonth() === e2.date?.getMonth() &&
-    e1.date?.getFullYear() === e2.date?.getFullYear()
+    e1.date?.getFullYear() === e2.date?.getFullYear() &&
+    !!e1.isInDebt === !!e2.isInDebt
   );
 }

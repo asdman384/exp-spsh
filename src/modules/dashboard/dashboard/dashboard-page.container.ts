@@ -51,7 +51,14 @@ export class DashboardPageContainer {
     const sheet = form.value['sheet'] as Sheet;
     const date = form.value['date'] as Date;
     this.store.dispatch(AppActions.addExpense({ expense: form.value as Expense, sheetId: sheet.id }));
-    form.resetForm({ date, sheet, amount: undefined, category: undefined, comment: undefined });
+    form.resetForm({
+      date,
+      sheet,
+      amount: undefined,
+      category: undefined,
+      comment: undefined,
+      isInDebt: false
+    });
   }
 
   protected onSheetChange(sheet: Sheet): void {

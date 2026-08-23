@@ -37,6 +37,7 @@ yarn-error.log
 testem.log
 /typings
 keys.json
+logs
 
 # System files
 .DS_Store
