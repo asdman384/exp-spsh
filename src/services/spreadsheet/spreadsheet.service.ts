@@ -17,7 +17,7 @@ export class SpreadsheetService {
     return `https://content-sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`;
   }
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   setSpreadsheetId(spreadsheetId: string): void {
     this.spreadsheetId = spreadsheetId;
@@ -281,7 +281,7 @@ export class SpreadsheetService {
               comment: comment ? String(comment) : undefined,
               amount,
               date: getDateFromSerialNumber(date),
-              isInDebt: isInDebt !== undefined || isInDebt !== null
+              isInDebt: isInDebt !== undefined && isInDebt !== null
             })) ?? []
         )
       );
@@ -327,7 +327,7 @@ export class SpreadsheetService {
               comment: comment ? String(comment) : undefined,
               amount: Number(row.c[2].v),
               date: secureParseDate(row.c[3].v as string),
-              isInDebt: isInDebt !== undefined
+              isInDebt: isInDebt !== undefined && isInDebt !== null
             };
           });
         })
