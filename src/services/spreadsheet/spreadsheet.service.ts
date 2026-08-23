@@ -17,7 +17,7 @@ export class SpreadsheetService {
     return `https://content-sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`;
   }
 
-  constructor(private readonly http: HttpClient) {}
+  constructor(private readonly http: HttpClient) { }
 
   setSpreadsheetId(spreadsheetId: string): void {
     this.spreadsheetId = spreadsheetId;
@@ -248,11 +248,14 @@ export class SpreadsheetService {
             { userEnteredValue: { stringValue: expense.comment } },
             { userEnteredValue: { numberValue: expense.amount } },
             { userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } },
-            { userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined }
           ]
         }
       ]
     };
+
+    if (expense.isInDebt) {
+      updateCells.rows![0].values!.push({ userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined })
+    }
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `${this.apiUrl}:batchUpdate`,
