@@ -281,7 +281,7 @@ export class SpreadsheetService {
               comment: comment ? String(comment) : undefined,
               amount,
               date: getDateFromSerialNumber(date),
-              isInDebt: isInDebt !== undefined
+              isInDebt: isInDebt !== undefined || isInDebt !== null
             })) ?? []
         )
       );
