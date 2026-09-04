@@ -19,6 +19,6 @@ Set-ExecutionPolicy Restricted                        # after work
 
 - **keys.json required**: Build will fail silently if not configured
 - **HashLocationStrategy**: Used intentionally to support file:// serving
-- **Single Chrome instance**: Karma tests run in single browser, not headless by default
+- **Unit tests**: Angular's Vitest runner uses configured headless Chromium; `npm run test:headed` changes watch mode, not browser visibility
 - **Service Worker caching**: May need cache invalidation during development
 - **Strict typing**: `noPropertyAccessFromIndexSignature` means avoid dynamic property access without typed keys

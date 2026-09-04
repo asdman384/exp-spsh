@@ -31,8 +31,8 @@
 
 - **Build**: `npm run build` (production) | `npm run watch` (development with watch)
 - **Serve**: `npm run serve` — dev server at http://localhost:4200/exp-spsh/
-- **Test**: `npm test` — Karma + Jasmine tests (headless)
-- **Test (UI)**: `npm run test:headed` — Tests with Chrome UI
+- **Test**: `npm test` — Vitest tests in headless Chromium
+- **Test (watch)**: `npm run test:headed` — Vitest watch mode (still headless Chromium)
 - **Setup**: Fill `keys.json` before first build
 
 
