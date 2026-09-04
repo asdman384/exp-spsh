@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
 
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, take, tap, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
 import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
 import { isExpenseEqual } from 'src/shared/helpers';
+import { Expense } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, expensesSelector, sheetsSelector } from './app.selectors';
 
@@ -165,39 +166,61 @@ export class AppEffects {
     )
   );
 
+  private deletedExpenseBackup: { expense: Expense; index: number } | undefined;
   readonly deleteExpense$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.deleteExpense),
       tap<ReturnType<typeof AppActions.deleteExpense>>(log),
-      exhaustMap((action) => {
+      withLatestFrom(this.store.select(expensesSelector)),
+      exhaustMap(([action, oldExpenses]) => {
+        const index = oldExpenses.findIndex((e) => isExpenseEqual(e, action.expense));
+        if (~index) {
+          this.deletedExpenseBackup = { expense: oldExpenses[index], index };
+          const newExpenses = [...oldExpenses];
+          newExpenses.splice(index, 1);
+          this.store.dispatch(AppActions.storeExpenses({ expenses: newExpenses }));
+        } else {
+          this.deletedExpenseBackup = undefined;
+        }
+
         this.store.dispatch(AppActions.loading({ loading: true }));
         return this.spreadSheetService
           .loadLastExpenses(action.sheet.title, 100)
           .pipe(map((expenses) => ({ action, expenses })));
       }),
-      withLatestFrom(this.store.select(expensesSelector)),
-      exhaustMap(([{ action, expenses }, oldExpenses]) => {
+      exhaustMap(({ action, expenses }) => {
         const i = expenses.findIndex((e) => isExpenseEqual(e, action.expense));
         if (!~i) {
-          return of([...oldExpenses]);
+          return of(undefined);
         }
-        return this.spreadSheetService.deleteSheetRow(action.sheet.id, i).pipe(
-          map(() => {
-            const i = oldExpenses.findIndex((e) => isExpenseEqual(e, action.expense));
-            const newExpenses = [...oldExpenses];
-            newExpenses.splice(i, 1);
-            return newExpenses;
-          })
-        );
+        return this.spreadSheetService.deleteSheetRow(action.sheet.id, i);
       }),
-      map((expenses) => {
-        this.store.dispatch(AppActions.loading({ loading: false }));
-        return AppActions.storeExpenses({ expenses });
+      map(() => {
+        this.deletedExpenseBackup = undefined;
+        return AppActions.loading({ loading: false });
       }),
       catchError((e) => {
         log(e);
-        this.store.dispatch(AppActions.loading({ loading: false }));
-        return EMPTY;
+        const backup = this.deletedExpenseBackup;
+        this.deletedExpenseBackup = undefined;
+        if (!backup) {
+          this.store.dispatch(AppActions.loading({ loading: false }));
+          return EMPTY;
+        }
+        return this.store.select(expensesSelector).pipe(
+          take(1),
+          map((currentExpenses) => {
+            const idx = currentExpenses.findIndex((e) => isExpenseEqual(e, backup.expense));
+            const restored = [...currentExpenses];
+            if (!~idx) {
+              const insertAt = Math.min(backup.index, restored.length);
+              restored.splice(insertAt, 0, backup.expense);
+            }
+            return restored;
+          }),
+          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+          map((expenses) => AppActions.storeExpenses({ expenses }))
+        );
       })
     )
   );
