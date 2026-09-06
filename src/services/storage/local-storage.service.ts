@@ -4,7 +4,7 @@ import { StorageService } from './interfaces/storage';
 @Injectable()
 export class LocalStorageService implements StorageService {
   static get<T>(key: string): T | undefined {
-    let item = localStorage.getItem(key);
+    const item = localStorage.getItem(key);
     if (item) return JSON.parse(item) as T;
 
     return undefined;

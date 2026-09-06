@@ -64,7 +64,7 @@ export class SettingsPageContainer {
         tap((spreadsheet) => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
         tap((spreadsheet) => this.storeDataSheets(spreadsheet)),
         withLatestFrom(this.security.user$),
-        tap(([spreadsheet, user]) => {
+        tap(([, user]) => {
           if (!user) throw new Error('error getting user');
         }),
         switchMap(([spreadsheet, user]) =>
@@ -88,7 +88,7 @@ export class SettingsPageContainer {
     dataSheets?.forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
   }
 
-  private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo): Observable<any> {
+  private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo) {
     return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 5, spreadsheet).pipe(
       switchMap((dataSheet) => {
         this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
@@ -103,7 +103,7 @@ export class SettingsPageContainer {
     );
   }
 
-  private createCategoriesSheet(spreadsheet: gapi.client.sheets.Spreadsheet): Observable<any> {
+  private createCategoriesSheet(spreadsheet: gapi.client.sheets.Spreadsheet) {
     return this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet).pipe(
       switchMap((categoriesSheet) => {
         this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
@@ -156,7 +156,7 @@ export class SettingsPageContainer {
     columnCount: number,
     spreadsheet: gapi.client.sheets.Spreadsheet
   ): Observable<Sheet> {
-    let sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
+    const sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
 
     if (sheet) {
       log(`sheet exists [${sheet.title}]`);

@@ -3,7 +3,7 @@
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map, tap } from 'rxjs';
+import { Observable, map } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { Category, Expense } from 'src/shared/models';

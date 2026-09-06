@@ -7,7 +7,7 @@ import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
 import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
 import { isExpenseEqual } from 'src/shared/helpers';
-import { Expense } from 'src/shared/models';
+import { Category, Expense } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, expensesSelector, sheetsSelector } from './app.selectors';
 
@@ -123,7 +123,7 @@ export class AppEffects {
     )
   );
 
-  private categoriesBackUp: any;
+  private categoriesBackUp: Category[] = [];
   readonly updateCategoryPosition$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.updateCategoryPosition),

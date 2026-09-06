@@ -9,6 +9,7 @@ import { AbstractSecurityService } from 'src/services';
 export class ExpAuthInterceptor implements HttpInterceptor {
   constructor(private security: AbstractSecurityService) {}
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- HttpInterceptor.intercept is declared with <any> in @angular/common/http
   intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
     if (req.url.includes('oauth2.googleapis.com/token')) {
       return next.handle(req);
@@ -23,6 +24,7 @@ export class ExpAuthInterceptor implements HttpInterceptor {
   }
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any -- matches HttpInterceptor.intercept's <any> request/event types
 function setToken(req: HttpRequest<any>, token: { access_token: string }): HttpRequest<any> {
   return req.clone({ setHeaders: { Authorization: `Bearer ${token.access_token}` } });
 }

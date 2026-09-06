@@ -9,6 +9,11 @@ import {
   MatDialogTitle
 } from '@angular/material/dialog';
 
+interface ExpDialogData {
+  title?: string;
+  content?: string;
+}
+
 @Component({
     selector: 'exp-dialog',
     imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
@@ -19,7 +24,10 @@ export class ExpDialogComponent {
   title = this.data?.title;
   content = this.data?.content;
 
-  constructor(public dialogRef: MatDialogRef<ExpDialogComponent>, @Inject(MAT_DIALOG_DATA) private readonly data: any) {}
+  constructor(
+    public dialogRef: MatDialogRef<ExpDialogComponent>,
+    @Inject(MAT_DIALOG_DATA) private readonly data: ExpDialogData
+  ) {}
 
   onOK() {
     this.dialogRef.close(true);

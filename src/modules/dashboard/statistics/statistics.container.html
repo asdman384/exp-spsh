@@ -36,8 +36,8 @@
   [selected]="expenses"
   [selectable]="selectable"
   [dataSource]="expenses"
-  (onCellClick)="expensesTableCellClickHandler($event)"
-  (onSelection)="onSelection($event)"
+  (cellClick)="expensesTableCellClickHandler($event)"
+  (selectionChange)="onSelection($event)"
 ></expenses-table>
 }
 

@@ -34,12 +34,6 @@
     ]
   },
   "hooks": {
-    // Deny `git push` in every form the guard can detect statically -- aliases,
-    // wrappers, chained segments, substitutions. The permission patterns above are
-    // prefix matches and only catch a literal leading "git push"; this parses the
-    // command. Runs on every Bash call (no "if" filter) precisely so that a push
-    // hidden after `&&` or inside `bash -c` is still seen.
-    // Tests: node .claude/hooks/deny-git-push.test.mjs
     "PreToolUse": [
       {
         "matcher": "Bash|PowerShell",
@@ -53,9 +47,6 @@
         ]
       }
     ],
-    // Enable to run the harness automatically on every subagent handoff, so the
-    // orchestrator gets an independent signal rather than trusting the subagent's
-    // claim. Costs a build + test run per handoff (tens of seconds).
     "SubagentStop": [
       {
         "hooks": [

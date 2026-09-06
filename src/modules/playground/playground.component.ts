@@ -4,9 +4,6 @@ import { Store } from '@ngrx/store';
 import { catchError, debounceTime, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, switchMap, timer } from 'rxjs';
 import { AppActions } from 'src/@state';
 
-declare const Zone: any;
-
-
 interface State<T> {
   items: T[];
   loading: boolean;
@@ -22,7 +19,7 @@ export function searchQuery<T>(
     switchMap(q => fetch(q).pipe(
       map(items => ({ items, loading: false, error: null })),
       startWith({ items: [], loading: true, error: null }),
-      catchError(e => of({ items: [], loading: false, error: 'error' })),
+      catchError(() => of({ items: [], loading: false, error: 'error' })),
     )),
   );
 }
@@ -49,7 +46,7 @@ export class PlaygroundComponent implements OnInit {
 
   private readonly test$ = this.obs.pipe(
     searchQuery(fetchData),
-    (source: Observable<any>) => source.pipe(
+    (source: Observable<State<string>>) => source.pipe(
       retry({ count: 1, delay: (_e, i) => timer(2 ** i * 300) })
     )
   );

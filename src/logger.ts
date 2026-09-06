@@ -20,6 +20,7 @@ class ExpLogger {
     parent.appendChild(this.wrapper);
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variadic like console.log, which is itself typed (...data: any[])
   writeLog(...args: any[]): void {
     console.log(...args);
 
@@ -60,7 +61,8 @@ class ExpLogger {
   }
 
   private toggleLog(): void {
-    this.visible ? this.hide() : this.show();
+    if (this.visible) this.hide();
+    else this.show();
     this.visible = !this.visible;
   }
 
@@ -80,7 +82,7 @@ class ExpLogger {
   }
 
   private fallbackCopyTextToClipboard(text: string): void {
-    var textArea = document.createElement('textarea');
+    const textArea = document.createElement('textarea');
     textArea.value = text;
 
     // Avoid scrolling to bottom
@@ -93,8 +95,8 @@ class ExpLogger {
     textArea.select();
 
     try {
-      var successful = document.execCommand('copy');
-      var msg = successful ? 'successful' : 'unsuccessful';
+      const successful = document.execCommand('copy');
+      const msg = successful ? 'successful' : 'unsuccessful';
       console.log('Fallback: Copying text command was ' + msg);
     } catch (err) {
       console.error('Fallback: Oops, unable to copy', err);
@@ -104,18 +106,17 @@ class ExpLogger {
   }
 
   private getStackTrace(): string {
-    var obj = {} as { stack: string };
+    const obj = {} as { stack: string };
     Error.captureStackTrace(obj, this.getStackTrace.bind(this));
     return obj.stack;
   }
 }
 
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- variadic like console.log, which is itself typed (...data: any[])
   function log(...args: any[]): void;
 }
 
-const search = window.location.href.split('?')[1];
-const urlParams = new URLSearchParams(search);
 const loggerType: string = 'window'; //urlParams.get('logger');
 const body = document.querySelector('body');
 

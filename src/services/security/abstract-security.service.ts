@@ -7,7 +7,7 @@ import { GoogleToken, Token, Userinfo } from 'src/shared/models';
 import { NetworkStatusService } from './../network-status.service';
 import { StorageService } from './../storage';
 
-export abstract class AbstractSecurityService<C = any, T = GoogleToken> {
+export abstract class AbstractSecurityService<C = unknown, T = GoogleToken> {
   protected readonly SCOPES =
     'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile';
   protected isTokenSet: boolean = false;
@@ -41,6 +41,7 @@ export abstract class AbstractSecurityService<C = any, T = GoogleToken> {
   logout(): void {
     const token = this.storageService.get<Token>(TOKEN);
     if (token) {
+      // eslint-disable-next-line @typescript-eslint/no-empty-function -- revoke() requires a callback; we don't need to react to it
       google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
     }
     this.user.next(undefined);

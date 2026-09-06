@@ -17,7 +17,14 @@
           matBadgePosition="below after"
           [matMenuTriggerFor]="menu"
           >
-          <img [ngClass]="{ online: page.online }" class="avatar" width="38" height="38" [src]="page.user.picture" />
+          <img
+            [ngClass]="{ online: page.online }"
+            class="avatar"
+            width="38"
+            height="38"
+            [src]="page.user.picture"
+            [alt]="page.user.name"
+          />
         </button>
       }
     </mat-toolbar-row>

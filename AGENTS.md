@@ -28,7 +28,13 @@ npx ng test --watch=false --filter "isExpenseEqual"                    # single 
 ```
 
 App URL is **http://localhost:4200/exp-spsh/** — the path segment is required. No live reload.
-There is no lint or typecheck script. `keys.json` must exist at the repo root before building.
+`keys.json` must exist at the repo root before building.
+
+```bash
+npm run lint                                       # ng lint (ESLint + angular-eslint)
+npx tsc -b tsconfig.app.json tsconfig.spec.json     # plain TS project build; also type-checks specs
+bash scripts/harness.sh                             # lint + typecheck + build + test, in that order
+```
 
 ## What this project is
 
@@ -49,7 +55,9 @@ Read these before non-trivial work:
 
 `policy/sprint-window.json` declares the write policy in force: writes are expected within
 `src/`, and `angular.json` and `package.json` are **denied** — changing build or dependency
-configuration is an explicit, approved decision, not a routine edit.
+configuration is an explicit, approved decision, not a routine edit. (The ESLint setup added by
+`ng add @angular-eslint/schematics` touched both files under an explicit approved request; if
+you need to touch them again, get the same kind of explicit go-ahead first.)
 
 Do not run `git push`; deployment happens on push to `master` and is a human step. This is
 enforced, not just requested: a `PreToolUse` hook (`.claude/hooks/deny-git-push.mjs`) parses

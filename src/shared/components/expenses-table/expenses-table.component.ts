@@ -61,16 +61,16 @@ export class ExpensesTableComponent implements OnChanges {
   }
 
   @Output()
-  readonly onDeleteRow = new EventEmitter<Expense>();
+  readonly deleteRow = new EventEmitter<Expense>();
 
   @Output()
-  readonly onCellClick = new EventEmitter<{ field: keyof Expense; cellData: unknown; rowData: Expense }>();
+  readonly cellClick = new EventEmitter<{ field: keyof Expense; cellData: unknown; rowData: Expense }>();
 
   @Output()
-  readonly onSelection = new EventEmitter<ReadonlyArray<Expense>>(true);
+  readonly selectionChange = new EventEmitter<ReadonlyArray<Expense>>(true);
 
   constructor() {
-    this.selection.changed.pipe(takeUntilDestroyed()).subscribe(() => this.onSelection.emit(this.selection.selected));
+    this.selection.changed.pipe(takeUntilDestroyed()).subscribe(() => this.selectionChange.emit(this.selection.selected));
   }
 
   ngOnChanges(changes: SimpleChanges): void {
@@ -84,7 +84,7 @@ export class ExpensesTableComponent implements OnChanges {
   }
 
   protected cellClickHandler(field: keyof Expense, cellData: unknown, rowData: Expense): void {
-    this.onCellClick.emit({ field, cellData, rowData });
+    this.cellClick.emit({ field, cellData, rowData });
   }
 
   protected cdkDragMoved(event: CdkDragMove<Expense>): void {
@@ -103,7 +103,7 @@ export class ExpensesTableComponent implements OnChanges {
     if (event.distance.x > DELETE_THRESHOLD) {
       this.lastDeletedDragRow = event.source;
       event.source.setFreeDragPosition({ x: window.outerWidth, y: 0 });
-      this.onDeleteRow.emit(event.source.data);
+      this.deleteRow.emit(event.source.data);
     } else {
       event.source.reset();
     }

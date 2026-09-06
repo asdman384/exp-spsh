@@ -101,9 +101,11 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
     });
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any -- requestCode() redirects the browser and never emits; `any` lets it stand in for the Observable<GoogleToken> callers expect
   private requestCode(): Observable<any> {
     return this.status.online$.pipe(
       first((online) => online),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see requestCode() above
       map<boolean, any>(() => this.client.requestCode())
     );
   }

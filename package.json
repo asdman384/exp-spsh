@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "scripts": {
     "ng": "ng",
     "serve": "npx http-server -p 4200 -c-1 dist/",
@@ -9,7 +9,8 @@
     "test": "ng test --watch=false",
     "test:headed": "ng test --watch=true",
     "test:coverage": "ng test --coverage",
-    "postinstall": "node scripts/service-worker-ios-workaround.js"
+    "postinstall": "node scripts/service-worker-ios-workaround.js",
+    "lint": "ng lint"
   },
   "private": true,
   "dependencies": {
@@ -36,6 +37,7 @@
     "@angular/build": "^21.2.11",
     "@angular/cli": "^21.2.11",
     "@angular/compiler-cli": "^21.2.13",
+    "@eslint/js": "^10.0.1",
     "@types/gapi": "^0.0.47",
     "@types/gapi.client.discovery-v1": "^0.0.4",
     "@types/gapi.client.oauth2-v2": "^0.0.4",
@@ -43,9 +45,12 @@
     "@types/google.accounts": "^0.0.18",
     "@types/node": "^25.9.1",
     "@vitest/browser-playwright": "^4.1.7",
+    "angular-eslint": "21.4.0",
+    "eslint": "^10.3.0",
     "http-server": "^14.1.1",
     "jsdom": "^27.0.1",
     "typescript": "~5.9.3",
+    "typescript-eslint": "8.59.2",
     "vitest": "^4.1.7"
   }
 }

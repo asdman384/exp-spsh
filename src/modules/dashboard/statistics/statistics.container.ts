@@ -151,7 +151,7 @@ function groupByCategory(data: Array<Expense>): Array<Expense> {
   return sumByAmount(groupBy(data, 'category'));
 }
 
-function groupBy<T extends { [key: string]: any }>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {
+function groupBy<T>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {
   return xs.reduce(
     function (rv, x) {
       const aggr = x[key as keyof T];
@@ -176,12 +176,13 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
   return result;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-empty-function -- no-op default when the caller doesn't need a completion callback
 function transitionHelper(updateDOM = () => {}): void {
-  if (!(document as any).startViewTransition) {
+  if (!document.startViewTransition) {
     updateDOM();
     console.warn('View transitions unsupported');
     return;
   }
 
-  (document as any).startViewTransition(updateDOM);
+  document.startViewTransition(updateDOM);
 }

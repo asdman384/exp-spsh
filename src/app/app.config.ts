@@ -34,7 +34,7 @@ export function getAppConfig(): ApplicationConfig {
   return {
     providers: [
       withViewTransitions({
-        onViewTransitionCreated: (event) => {
+        onViewTransitionCreated: () => {
           // playing around with view transitions
           // https://blog.angular.io/check-out-angulars-support-for-the-view-transitions-api-3937376cfc19
           // https://developer.chrome.com/docs/web-platform/view-transitions/

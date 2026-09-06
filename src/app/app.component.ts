@@ -44,13 +44,13 @@ export class AppComponent {
     private readonly swUpdate: SwUpdate
   ) {
     securityService.user$.pipe(first()).subscribe((user) => {
-      user && this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
+      if (user) this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
     });
     store
       .select(spreadsheetIdSelector)
       .pipe(first())
       .subscribe((spreadsheetId) => {
-        spreadsheetId && spreadsheetService.setSpreadsheetId(spreadsheetId);
+        if (spreadsheetId) spreadsheetService.setSpreadsheetId(spreadsheetId);
       });
   }
 

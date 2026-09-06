@@ -37,8 +37,19 @@ npx ng test --watch=false --filter "isExpenseEqual"     # regex over suite/test 
 npx ng test --ui                                        # interactive Vitest UI
 ```
 
-There is **no lint or typecheck script** and no ESLint config. `npm run build` is the
-type-check.
+```bash
+npm run lint            # ng lint -- ESLint + angular-eslint over src/**/*.ts and src/**/*.html
+npx tsc -b tsconfig.app.json tsconfig.spec.json   # plain TS project-reference build; also
+                                                   # type-checks *.spec.ts, which `build` does not
+```
+
+`eslint.config.js` relaxes several stock angular-eslint/typescript-eslint rules (component
+selector prefix, `prefer-inject`, `array-type`, `no-inferrable-types`,
+`consistent-indexed-object-style`) because the existing codebase predates them and fixing every
+call site is a dedicated rename/refactor task, not a lint-gate side effect. `no-explicit-any` is
+still an error; the handful of legitimate uses (e.g. `HttpInterceptor.intercept`'s `<any>`
+signature, `log()`'s variadic args) carry an inline `eslint-disable-next-line` with a reason —
+keep that pattern rather than loosening the rule further.
 
 On Windows, `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` may be needed before npm
 shims run; hence the `npx npm run <script>` form seen in the README.
