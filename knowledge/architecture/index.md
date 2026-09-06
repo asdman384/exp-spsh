@@ -6,10 +6,6 @@
 * [Bootstrap and dependency wiring](dependency-wiring.md) - What `main.ts` and `app.config.ts` provide, which abstractions are bound to which implementations, and the global `log()` side channel.
 * [PWA, service worker, and caching](pwa-and-service-worker.md) - How the app installs, what ngsw caches (and deliberately does not cache), the iOS patch applied at postinstall, and how updates reach the user.
 
-# Judgement
-
-* [Assessment of the backend-less design](backend-less-assessment.md) - A judgement on whether Google-Sheets-as-backend is the right bet, where the implementation fails the bet, and a ranked list of improvements that keep it.
-
 # Related
 
 * [Systems](../systems/) - the external systems this architecture depends on.
