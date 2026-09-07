@@ -4,6 +4,11 @@ import { Category, Expense, Sheet } from 'src/shared/models';
 export interface SheetsState extends EntityState<Sheet> {
   selectedSheetId: string | null;
 }
+export interface AppError {
+  id: number;
+  source: string;
+  message: string;
+}
 export interface AppState {
   loading: boolean;
   title: string;
@@ -13,4 +18,5 @@ export interface AppState {
   categoriesSheetId: number | undefined;
   categories: Array<Category>;
   expenses: Array<Expense>;
+  lastError: AppError | null;
 }

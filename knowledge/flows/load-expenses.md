@@ -74,8 +74,14 @@ it does not match. Rows map to [`Expense`](/domain/expense.md) with
 - The `tq` date literals are built from local date parts with **no zero padding**
   (`2026-9-5`); the query language accepts this.
 - `row.c[0].v` and `row.c[2].v` are dereferenced without a null check, so a data row with an
-  **empty category or amount cell** throws inside the `map` and the effect swallows it —
-  the table then silently keeps its previous contents.
+  **empty category or amount cell** throws inside the `map`; since 2026-09-08 this now also
+  triggers `reportFailure('loadExpenses$', ...)` — a "Couldn't load your expenses. Check your
+  connection and try again." toast — in addition to the table silently keeping its previous
+  contents (the toast's wording assumes a network cause, which is misleading for this
+  particular trigger; the log overlay still has the real thrown message). After the *first*
+  such failure in a session, `loadExpenses$`'s stream is complete and no further load
+  succeeds, toast or otherwise, until reload — see
+  [known issues](/constraints/known-issues.md) item 21.
 - There is no paging or row limit; a month with many rows is fetched in full.
 - `loadLastExpenses` (`values.get` on `A1:E<n>`) is a *different* read used only by
   [delete](/flows/delete-expense.md).

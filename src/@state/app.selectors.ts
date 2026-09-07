@@ -9,6 +9,7 @@ const selectAppFeature = createFeatureSelector<AppState>('app');
 export const loadingSelector = createSelector(selectAppFeature, (state: AppState) => state.loading);
 export const titleSelector = createSelector(selectAppFeature, ({ title, icon }: AppState) => ({ title, icon }));
 export const spreadsheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.spreadsheetId);
+export const lastErrorSelector = createSelector(selectAppFeature, (state: AppState) => state.lastError);
 
 // sheets
 const { selectEntities, selectAll } = sheetsAdapter.getSelectors();

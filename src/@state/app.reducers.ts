@@ -19,7 +19,8 @@ export const initialState: AppState = {
   dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }),
   categoriesSheetId: LocalStorageService.get<number>(CATEGORIES_SHEET_ID) ?? undefined,
   categories: LocalStorageService.get<Array<Category>>(CATEGORIES) ?? [],
-  expenses: []
+  expenses: [],
+  lastError: null
 };
 
 // INIT DATA SHEETS
@@ -44,7 +45,11 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
     })),
     on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId })),
     on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories })),
-    on(AppActions.storeExpenses, (state, { expenses }) => ({ ...state, expenses }))
+    on(AppActions.storeExpenses, (state, { expenses }) => ({ ...state, expenses })),
+    on(AppActions.operationFailed, (state, { source, message }) => ({
+      ...state,
+      lastError: { id: (state.lastError?.id ?? 0) + 1, source, message }
+    }))
   )
 };
 

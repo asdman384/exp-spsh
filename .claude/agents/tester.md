@@ -56,11 +56,28 @@ You do **not** run:
   - Components: `TestBed.configureTestingModule({ imports: [TheStandaloneComponent, ...] })`,
     with either a stubbed store (`{ provide: Store, useValue: { select: vi.fn(), dispatch: vi.fn() } }`)
     or the real one (`StoreModule.forRoot(reducers, { metaReducers })`). Both patterns are in use.
-  - Effects have no tests yet. `@ngrx/effects/testing` (`provideMockActions`) is available if
-    the spec calls for one; say so in your report, since it would be the first.
+  - Effects: `@ngrx/effects/testing` (`provideMockActions`) is the precedented approach — see
+    `src/@state/app.effects.spec.ts` (established 2026-09-08). Pattern: a `Subject<Action>`
+    fed through `provideMockActions`; a `Store` stub whose `select` returns an **observable**
+    (e.g. `of(undefined)`), never a bare function or `undefined` — several `AppEffects`
+    fields call `this.store.select(...)` during field initialization, so a non-observable
+    return throws before any test body runs; stubs for any injected services the effect
+    needs (e.g. `NetworkStatusService` needs an `online$`); and see the `log()` note above
+    before constructing `AppEffects` at all.
 - **Vitest globals are on.** `describe`, `it`, `expect`, `vi` need no import.
-- **`log()` is a global** from `src/logger.ts`, included in `tsconfig.spec.json`. Code under
-  test calls it freely; you do not need to stub it.
+- **`log()` is a global** from `src/logger.ts`, included in `tsconfig.spec.json` — but it is
+  only installed at runtime by a dynamic `import('src/logger')` in `main.ts` before
+  bootstrap, which a `TestBed` unit test never goes through. If the file under test calls
+  `log()` anywhere that can run during construction or module init — not just inside a
+  method body — referencing the bare `log` identifier throws `ReferenceError: log is not
+  defined` before your test body even runs. This bites effects especially: several
+  `AppEffects` fields do `tap(log)` inside `createEffect`'s factory, which is invoked
+  synchronously as a class-field initializer, i.e. during `new AppEffects(...)`, regardless
+  of whether that effect is ever subscribed or triggered. **Add `import 'src/logger';` as
+  the first import at the top of any spec file whose file-under-test calls `log()`** — this
+  is a real (side-effecting) import, not a type-only one, so it installs the global exactly
+  as `main.ts` does. Do this proactively for any `*.effects.spec.ts` or similar file, don't
+  wait for the `ReferenceError` to appear first.
 - **No trivial tests.** If a test can't fail, it isn't a test. A bare "should create" smoke
   test does not close an acceptance criterion.
 - **Never skip.** Do not add `describe.skip` or `it.skip`, and do not un-skip the three

@@ -46,9 +46,12 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
    `deleteSheetRow(sheet.id, i)` -> `deleteDimension` for `[i, i+1)`. If no match is found,
    emit `of(undefined)` and **do nothing** — a silent no-op.
 4. **Settle.** Clear the backup and emit `loading(false)`.
-5. **Rollback.** On any error: log it, and if a backup exists, re-read the current expenses,
-   splice the row back at `min(backup.index, length)` when it is not already present, clear
-   `loading`, and dispatch `storeExpenses` with the restored array.
+5. **Rollback.** On any error: log it, dispatch `operationFailed({ source: 'deleteExpense$',
+   message: "Couldn't delete that expense. It's back in your list." })` (opens a snackbar,
+   since 2026-09-08 — on **both** exits from this step: the early return when there was no
+   backup to restore, and the restore pipeline below), and if a backup exists, re-read the
+   current expenses, splice the row back at `min(backup.index, length)` when it is not
+   already present, clear `loading`, and dispatch `storeExpenses` with the restored array.
 
 # Constraints this flow carries
 
@@ -63,6 +66,10 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
 - The whole flow uses `exhaustMap`, so a second swipe during an in-flight delete is dropped —
   which also means the second row stays visually flung off-screen until the next data change
   resets it (`ngOnChanges` calls `lastDeletedDragRow.reset()`).
+
+- After the *first* failed delete in a session, `deleteExpense$`'s stream is complete and
+  further swipes silently do nothing — no optimistic removal, no toast, no network call. See
+  [known issues](/constraints/known-issues.md) item 21.
 
 There is no confirmation dialog; `ExpDialogComponent` exists but is not wired to this flow.
 

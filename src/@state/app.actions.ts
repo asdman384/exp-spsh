@@ -25,6 +25,9 @@ export const AppActions = createActionGroup({
     addExpense: props<{ sheetId: number; expense: Expense }>(),
     deleteExpense: props<{ sheet: Sheet; expense: Expense }>(),
     loadExpenses: props<{ sheetId: number; from?: Date; to?: Date }>(),
-    storeExpenses: props<{ expenses: Array<Expense> }>()
+    storeExpenses: props<{ expenses: Array<Expense> }>(),
+
+    // errors
+    operationFailed: props<{ source: string; message: string }>()
   }
 });

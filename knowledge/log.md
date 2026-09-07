@@ -1,5 +1,31 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-08
+
+* **Update**: Reflected the `effect-error-surfacing` feature
+  (`docs/specs/effect-error-surfacing.md`, `docs/architecture/effect-error-surfacing.md`)
+  across the bundle — the 7 remote-calling effects now dispatch `operationFailed` and show a
+  `MatSnackBar` toast on failure, instead of failing silently.
+* **Update**: [state management](/architecture/state-management.md) — new `AppState.lastError`
+  field, new `lastErrorSelector`, effects catalogue updated with `showFailureToast$` and the
+  `reportFailure` mechanism.
+* **Update**: [NgRx action surface](/interfaces/ngrx-actions.md) — new `operationFailed`
+  action documented; the "no failure actions" claim removed.
+* **Update**: [known issues](/constraints/known-issues.md) — item 1 (rollback never
+  dispatches) and item 10 (all errors silent) marked **fixed**; two issues surfaced during
+  the fix added as new entries: item 20 (the 4 localStorage effects still have no failure
+  path) and item 21 (every remote effect goes permanently unresponsive after its first
+  failure of the session, since `catchError` completes rather than errors).
+* **Update**: [troubleshooting](/operations/troubleshooting.md),
+  [testing](/operations/testing.md), and the four affected flows
+  ([add expense](/flows/add-expense.md), [delete expense](/flows/delete-expense.md),
+  [load expenses](/flows/load-expenses.md), [manage categories](/flows/manage-categories.md))
+  updated to match — including the new effects-testing pattern (`provideMockActions`, and the
+  `log()`-must-exist-before-construction gotcha) now precedented in
+  `src/@state/app.effects.spec.ts` and `src/@state/report-failure.spec.ts`.
+* Two follow-up specs identified but not written: `storage-write-failures` (known issues
+  item 20) and `effect-resubscription` (item 21).
+
 ## 2026-09-05
 
 * **Initialization**: Created the OKF v0.2 bundle for exp-spsh from a full read of the

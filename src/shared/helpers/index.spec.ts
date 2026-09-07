@@ -1,4 +1,6 @@
-import { isExpenseEqual } from './index';
+import { HttpErrorResponse } from '@angular/common/http';
+
+import { isExpenseEqual, toMessage } from './index';
 import { Expense } from '../models';
 
 describe('isExpenseEqual', () => {
@@ -105,5 +107,69 @@ describe('isExpenseEqual', () => {
     const expense2: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: date, isInDebt: true };
 
     expect(isExpenseEqual(expense1, expense2)).toBeTruthy();
+  });
+});
+
+// [AC7] toMessage(e: unknown): string — D8 precedence
+describe('toMessage', () => {
+  it('[AC7] should_return_google_envelope_message_for_HttpErrorResponse', () => {
+    const error = new HttpErrorResponse({
+      status: 400,
+      statusText: 'Bad Request',
+      error: { error: { message: 'Unable to parse range: Sheet1!A1:E' } }
+    });
+
+    expect(toMessage(error)).toBe('Unable to parse range: Sheet1!A1:E');
+  });
+
+  it('[AC7] should_return_status_and_statusText_for_HttpErrorResponse_without_envelope', () => {
+    const error = new HttpErrorResponse({ status: 500, statusText: 'Internal Server Error', error: null });
+
+    expect(toMessage(error)).toBe('500 Internal Server Error');
+  });
+
+  it('[AC7] should_never_include_url_for_HttpErrorResponse_constructed_with_one', () => {
+    const error = new HttpErrorResponse({
+      status: 403,
+      statusText: 'Forbidden',
+      url: 'https://sheets.googleapis.com/v4/spreadsheets/abc123?key=SECRET_API_KEY',
+      error: null
+    });
+
+    const message = toMessage(error);
+
+    expect(message).not.toContain('sheets.googleapis.com');
+    expect(message).not.toContain('SECRET_API_KEY');
+    expect(message).toBe('403 Forbidden');
+  });
+
+  it('[AC7] should_return_thrown_string_verbatim', () => {
+    expect(toMessage('cannot find category [Food]')).toBe('cannot find category [Food]');
+  });
+
+  it('[AC7] should_return_error_message_and_never_stack_for_Error', () => {
+    const error = new Error('should provide a valid date');
+
+    const message = toMessage(error);
+
+    expect(message).toBe('should provide a valid date');
+    expect(message).not.toContain('at ');
+    expect(message).not.toBe(error.stack);
+  });
+
+  it('[AC7] should_fall_through_to_generic_literal_for_Error_with_empty_message', () => {
+    expect(toMessage(new Error(''))).toBe('Something went wrong. Please try again.');
+  });
+
+  it('[AC7] should_return_generic_literal_for_undefined', () => {
+    expect(toMessage(undefined)).toBe('Something went wrong. Please try again.');
+  });
+
+  it('[AC7] should_return_generic_literal_for_null', () => {
+    expect(toMessage(null)).toBe('Something went wrong. Please try again.');
+  });
+
+  it('[AC7] should_return_generic_literal_for_plain_object', () => {
+    expect(toMessage({})).toBe('Something went wrong. Please try again.');
   });
 });

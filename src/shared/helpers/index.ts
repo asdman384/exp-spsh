@@ -1,4 +1,24 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { Expense } from '../models';
+
+const GENERIC_ERROR_MESSAGE = 'Something went wrong. Please try again.';
+
+export function toMessage(e: unknown): string {
+  if (e instanceof HttpErrorResponse) {
+    const envelopeMessage: unknown = e.error?.error?.message;
+    if (typeof envelopeMessage === 'string' && envelopeMessage) {
+      return envelopeMessage;
+    }
+    return `${e.status} ${e.statusText}`;
+  }
+  if (typeof e === 'string') {
+    return e || GENERIC_ERROR_MESSAGE;
+  }
+  if (e instanceof Error) {
+    return e.message || GENERIC_ERROR_MESSAGE;
+  }
+  return GENERIC_ERROR_MESSAGE;
+}
 
 export function isExpenseEqual(e1: Expense, e2: Expense): boolean {
   return (

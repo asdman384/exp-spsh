@@ -29,6 +29,13 @@ interface SheetsState extends EntityState<Sheet> {   // ids are Sheet.title, not
   selectedSheetId: string | null;
 }
 
+interface AppError {
+  id: number;      // (state.lastError?.id ?? 0) + 1 -- pure, so consecutive identical
+                    // failures still produce distinct objects
+  source: string;   // the effect property name that failed, e.g. 'loadCategories$'
+  message: string;  // fixed, user-facing copy -- never the raw error
+}
+
 interface AppState {
   loading: boolean;                 // drives the toolbar progress bar
   title: string;                    // toolbar headline, set per page
@@ -38,6 +45,8 @@ interface AppState {
   categoriesSheetId: number | undefined;
   categories: Array<Category>;
   expenses: Array<Expense>;         // the currently displayed set of expenses
+  lastError: AppError | null;       // written by operationFailed, never read back by any
+                                     // UI -- a debugging record, not a display source
 }
 ```
 
@@ -52,7 +61,10 @@ interface AppState {
 `categories`, and `dataSheets` (upserted through the adapter). `expenses` is never
 persisted; it is always re-fetched.[^reducers]
 
-`metaReducers` is currently an empty array in both dev and prod.
+`metaReducers` is currently an empty array in both dev and prod. `lastError` is a new
+`AppState` field: it is set only by the `operationFailed` reducer branch, is **never**
+hydrated from or written to `LocalStorageService`, and is deliberately kept outside the four
+localStorage-backed keys below — it exists purely as a debugging record, not a display source.
 
 # Reducer-handled versus effect-only actions
 
@@ -64,6 +76,7 @@ persisted; it is always re-fetched.[^reducers]
 | `storeCategories`, `storeExpenses` | yes | `storeCategories` persists |
 | `loadCategories`, `addCategory`, `deleteCategory`, `updateCategoryPosition` | no | remote call, ends in `storeCategories` |
 | `addExpense`, `deleteExpense`, `loadExpenses` | no | remote call, ends in `storeExpenses` |
+| `operationFailed` | yes (`lastError`) | consumed by `showFailureToast$` (opens a snackbar) |
 
 The pattern is consistent: **intent actions are effect-only and terminate in a `store*`
 action** that the reducer applies. `setCurrentSheet` is the one selection action with no
@@ -85,10 +98,35 @@ name (`data_<user.name>`) inside `AppComponent`.
 | `addExpense$` | `loadExpenses` | re-reads that single day after a successful write |
 | `deleteExpense$` | `loading(false)` or `storeExpenses` | **optimistic** with rollback |
 | `loadExpenses$` | `storeExpenses` | gated on `NetworkStatusService.online$` |
+| `showFailureToast$` | — | `{ dispatch: false }`; `ofType(operationFailed)` → `MatSnackBar.open(message, 'Dismiss', { politeness: 'assertive', verticalPosition: 'top' })`, no `duration` (WCAG 2.2.1) |
 
-Every effect ends with `catchError` → `log(e)` → clear `loading` → `EMPTY`. **Remote
-failures are therefore silent to the user**; the only signal is the on-screen logger
-([known issues](/constraints/known-issues.md)).
+The 7 remote-calling effects (`loadCategories$`, `addCategory$`, `deleteCategory$`,
+`updateCategoryPosition$`, `addExpense$`, `deleteExpense$`, `loadExpenses$`) now all
+dispatch `operationFailed({ source, message })` on failure, in addition to logging and
+clearing `loading` — 5 of them via the shared `reportFailure(source, store)` helper in
+`src/@state/report-failure.ts` (a plain `catchError` replacement), the 2 optimistic ones
+(`updateCategoryPosition$`, `deleteExpense$`) inline, alongside their bespoke rollback logic.
+`message` is always one of 7 fixed, plain-language strings (`report-failure.ts`'s
+`FAILURE_MESSAGES` table) — the raw error (via `toMessage(e)` in
+`src/shared/helpers/index.ts`) goes only into the `log()` line, never into the toast or
+`lastError`. **A failed remote operation now surfaces to the user as a snackbar**, not just a
+stopped spinner; see [`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md)
+and [`docs/architecture/effect-error-surfacing.md`](../../docs/architecture/effect-error-surfacing.md)
+in the repository root for the full design.
+
+The 4 localStorage-only persist effects (`saveSpreadsheetId$`, `saveSheetId$`,
+`saveCategoriesSheetId$`, `saveCategories$`) are **unchanged** — no `catchError`, still
+fully silent on a `LocalStorageService.put` failure (e.g. quota exceeded). This is a
+deliberate, still-open gap (a different failure class — synchronous, non-network); see
+[known issues](/constraints/known-issues.md) item 20.
+
+**Caveat:** every effect's `catchError` still sits on the *outer* pipe and returns `EMPTY`,
+which *completes* that effect's stream. NgRx's default effects error handler resubscribes on
+an **error** notification, not on a **completion**, so each of the 7 remote effects still
+goes permanently unresponsive to its trigger action after its first failure of the session —
+the toast now fires for that first failure, but a second failure of the same effect produces
+no toast at all (not because dispatch is broken, but because the effect is no longer
+listening). See [known issues](/constraints/known-issues.md) item 21.
 
 Loading state is managed imperatively: effects call `dispatch(AppActions.loading(...))`
 from inside `tap`/`exhaustMap` rather than emitting it as a mapped action.
@@ -100,7 +138,12 @@ in flight is **dropped, not queued**.
 
 `loadingSelector`, `titleSelector`, `spreadsheetIdSelector`, `currentSheetIdSelector`,
 `sheetsSelector`, `currentSheetSelector`, `byIdSheetSelector(id)`,
-`categoriesSheetIdSelector`, `categoriesSelector`, `expensesSelector`.[^selectors]
+`categoriesSheetIdSelector`, `categoriesSelector`, `expensesSelector`,
+`lastErrorSelector`.[^selectors] `lastErrorSelector` is a flat
+`createSelector(selectAppFeature, (state) => state.lastError)`; nothing in the UI currently
+subscribes to it — `showFailureToast$` listens to the `operationFailed` action stream
+directly, not to this selector, so identical consecutive failures each still open a
+snackbar (the action stream is not deduplicated the way a selector would be).
 
 `currentSheetSelector` resolves the entity by the stored title and returns `undefined` when
 nothing is selected — several call sites assert it non-null with `!`.

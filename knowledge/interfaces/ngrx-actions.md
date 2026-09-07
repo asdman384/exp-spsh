@@ -57,6 +57,19 @@ Login/`login`.
 | `loadExpenses` | `{ sheetId: number; from?: Date; to?: Date }` | dashboard, statistics, `addExpense$` | `loadExpenses$` |
 | `storeExpenses` | `{ expenses: Expense[] }` | `loadExpenses$`, `deleteExpense$` | reducer (replaces the array) |
 
+# Errors
+
+| Action | Payload | Dispatched by | Consumed by |
+|---|---|---|---|
+| `operationFailed` | `{ source: string; message: string }` | `reportFailure(source, store)` (5 effects) or inline in the 2 optimistic effects' `catchError`, on any remote-call failure | reducer (`lastError`) + `showFailureToast$` (opens a `MatSnackBar`) |
+
+`source` is always one of the 7 remote effects' own property names (e.g.
+`'loadCategories$'`); `message` is always one of 7 fixed, plain-language strings from
+`src/@state/report-failure.ts`'s `FAILURE_MESSAGES` table — never the raw error text. See
+[state management](/architecture/state-management.md) and
+[`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md) in the
+repository root.
+
 # Conventions
 
 - **Intent versus result.** `load*`/`add*`/`delete*`/`update*` are intents handled only by
@@ -65,7 +78,11 @@ Login/`login`.
 - **Payload asymmetry.** `addExpense` takes a `sheetId: number` while `deleteExpense` takes
   the whole `Sheet` — delete needs both the gid (for `deleteDimension`) and the title (for
   the `A1:E100` re-read).
-- There are **no failure actions**. Errors terminate in `catchError` inside each effect
-  ([known issues](/constraints/known-issues.md)).
+- **Failure is a single shared action, not a pair per intent.** Unlike the `load*`/`store*`
+  split, there is no `loadCategoriesFailure`-style action per effect — all 7 remote effects
+  funnel into one `operationFailed({ source, message })`, distinguished only by `source`. The
+  4 localStorage-only persist effects (`saveSpreadsheetId$` and siblings) still have **no**
+  failure path at all — `LocalStorageService.put` throwing is still fully uncaught
+  ([known issues](/constraints/known-issues.md) item 20).
 
 [^actions]: AppActions action group
