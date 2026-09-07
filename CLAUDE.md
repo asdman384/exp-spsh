@@ -1,11 +1,10 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+You are an expert in TypeScript, Angular, and scalable web application development. You write functional, maintainable, performant, and accessible code following Angular and TypeScript best practices.
 
 ## Critical rules
 
 - **NEVER** delete or overwrite working tests without explicit permission.
-- **NEVER** delete files without confirmation.
 - **ALWAYS** run tests after any code change.
 - **ALWAYS** create a git checkpoint before a major refactoring.
 - One task at a time. Do not make multiple unrelated changes simultaneously.
@@ -67,48 +66,6 @@ Spreadsheet is the database and the browser calls Google APIs directly. The `gap
 library is never loaded — only its TypeScript types are used; all traffic goes through
 Angular's `HttpClient`.
 
-### Data flow
-
-Containers hold no business logic beyond forms. They dispatch an action and select state;
-**every remote read and write lives in an effect** (`src/@state/app.effects.ts`).
-
-```
-container --dispatch--> intent action --> effect --> SpreadsheetService --> Google
-                                            |
-                                            +--> store* action --> reducer --> selectors
-```
-
-Intent actions (`load*`, `add*`, `delete*`, `update*`) are **effect-only** — the reducer
-ignores them. They terminate in `storeCategories` / `storeExpenses`, which the reducer
-applies. There is one feature slice, `app`, hydrated synchronously from `localStorage` at
-module load (`app.reducers.ts`).
-
-### The spreadsheet is the schema
-
-Two tab shapes: `categories` (A=name, B=position) and `data_<person>` (A=category,
-B=comment, C=amount, D=date, E=in-debt amount). Consequences that shape most of the code:
-
-- **Column order A–E is hard-coded in three places**: `addExpense`, the `A1:E{n}` ranges, and
-  the gviz `select A, B, C, D, E`. Changing the layout means changing all three.
-- **Rows have no id.** Deletion resolves a *row index* by re-reading and comparing every
-  field (`isExpenseEqual`). Row position is the only handle.
-- New expenses are **inserted at row 0**, so sheets are newest-first.
-- Dates cross the boundary in **two different encodings**: Sheets serial numbers (days since
-  1899-12-30) for `values.*`, and `Date(y,m,d,h,mi,s)` strings from gviz.
-
-### Two read paths
-
-`SpreadsheetService` uses the Sheets v4 REST API for writes and category reads, but expense
-reads go through the **Google Visualization Query endpoint** (`/gviz/tq`) so filtering happens
-server-side. That response is JSONP-shaped text unwrapped with a regex.
-
-### Auth
-
-`AbstractSecurityService` has two implementations; `RedirectSecurityService` is the one bound
-in `app.config.ts` (swap the single provider to change strategies). `ExpAuthInterceptor` calls
-`refreshToken()` **before every HTTP request** except the token endpoint, making it the single
-auth choke point. "Logged in" means a `user` object exists in `localStorage`, not that a token
-is valid.
 
 ### Things that will surprise you
 
@@ -128,21 +85,6 @@ is valid.
 - Deployment is a GitHub Pages project site under `/exp-spsh/`. That path is encoded in
   `ngsw-config.json` and in the Google OAuth redirect URIs. CI **does not run tests**.
 
-## Conventions
-
-- Root-absolute imports (`src/shared/models`, `src/@state`), enabled by `baseUrl: "./"`.
-- Standalone components importing `UIKitModule` wholesale rather than individual Material
-  modules; routed ones are named `*.container.ts`.
-- Template-driven forms (`ngModel`) throughout — no reactive forms anywhere.
-- Constructor injection with `private readonly` params; template-visible members `protected`.
-- `exhaustMap` is the default in effects (drop-while-busy); `switchMap` only where a newer
-  request should supersede the older one.
-- Public service methods carry a JSDoc block linking the Google API reference page they call.
-  Keep that habit.
-
-Details: [`.claude/rules/code-style.md`](.claude/rules/code-style.md),
-[`.claude/rules/testing.md`](.claude/rules/testing.md),
-[`.claude/rules/development.md`](.claude/rules/development.md).
 
 ## Knowledge base
 
@@ -165,19 +107,6 @@ claim against its sources before acting on it irreversibly.
 [`docs/backend-less-assessment.md`](docs/backend-less-assessment.md) is a judgement rather
 than a description: it evaluates the Sheets-as-backend design and ranks the improvements that
 keep it.
-
-## Guards
-
-`git push` is blocked by a `PreToolUse` hook, not merely discouraged:
-`.claude/hooks/deny-git-push.mjs` parses every Bash command and denies a push in any form it
-can detect statically — git aliases, shell aliases, `bash -c`, `xargs`, `$(...)`, chained
-segments, `npm run` scripts. Pushing is a human step. Run
-`node .claude/hooks/deny-git-push.test.mjs` after changing the guard; the header of the hook
-documents what it deliberately cannot see.
-
-`.claude/settings.json` also enables a `SubagentStop` hook that runs the harness on every
-subagent handoff, so an orchestrator gets an independent signal rather than the subagent's
-own claim.
 
 ## Subagents
 
