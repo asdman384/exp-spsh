@@ -38,13 +38,13 @@ Zone.js change detection is still in use; the app has not moved to zoneless.
 | Token | Implementation | Note |
 |---|---|---|
 | `AbstractSecurityService` | `RedirectSecurityService` | swap to `PopupSecurityService` here to change the auth UX |
-| `HTTP_INTERCEPTORS` (multi) | `ExpAuthInterceptor` | see [auth interceptor](/interfaces/http-auth-interceptor.md) |
+| `HTTP_INTERCEPTORS` (multi) | `ExpAuthInterceptor` | see [auth interceptor](../interfaces/http-auth-interceptor.md) |
 | `LocationStrategy` | `HashLocationStrategy` | required for the GitHub Pages / `file://` serving model |
-| `StorageService` | `LocalStorageService` | see [local storage](/interfaces/local-storage.md) |
+| `StorageService` | `LocalStorageService` | see [local storage](../interfaces/local-storage.md) |
 | — | `provideHttpClient(withInterceptorsFromDi(), withJsonpSupport())` | DI-style interceptors, JSONP support enabled |
-| — | `provideRouter(routes, withComponentInputBinding())` | [routing](/architecture/routing-and-guards.md) |
+| — | `provideRouter(routes, withComponentInputBinding())` | [routing](routing-and-guards.md) |
 | — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled unconditionally, including in dev** |
-| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot(AppEffects)` | [state](/architecture/state-management.md) |
+| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot(AppEffects)` | [state](state-management.md) |
 | — | `StoreDevtoolsModule.instrument(...)` | **conditional**: only when the URL has a `logger` query param |
 
 `SpreadsheetService`, `NetworkStatusService` are `providedIn: 'root'`;

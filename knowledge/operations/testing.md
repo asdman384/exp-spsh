@@ -91,15 +91,15 @@ logic (the Sheets calls themselves, the optimistic updates/rollbacks, the `store
 dispatches) is still untested** — only their shared failure path is. Guards, the
 interceptor, the security services, and the setup flow still have no tests at all. Treat a
 green run as a regression check on those units, not as a safety net for
-[the flows](/flows/).
+[the flows](../flows/).
 
 # Rules
 
 `.github/CLAUDE.md` states two hard rules that apply here: **never delete or overwrite
 working tests without explicit permission**, and **always run tests after any code
-change**.[^rules] See [working agreements](/constraints/working-agreements.md).
+change**.[^rules] See [working agreements](../constraints/working-agreements.md).
 
-CI does not run tests — see [CI and deployment](/operations/ci-and-deployment.md).
+CI does not run tests — see [CI and deployment](ci-and-deployment.md).
 
 There is no end-to-end testing configured.
 

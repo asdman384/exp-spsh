@@ -77,7 +77,7 @@ and registers a `PreToolUse` hook at `${CLAUDE_PROJECT_DIR}/.claude/hooks/guard.
 - Deployment is push-triggered on `master`, and `git push` is denied to agents: **a human
   performs the release step**.
 - Because CI runs no tests, rule 3 (always run tests) is the only real verification gate
-  ([testing](/operations/testing.md)).
+  ([testing](../operations/testing.md)).
 - `rm` is denied; rule 2 says the same thing. Prefer leaving dead code in place and flagging
   it over deleting it.
 

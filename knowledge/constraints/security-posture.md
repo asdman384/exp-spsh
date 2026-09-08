@@ -32,7 +32,7 @@ Consequences: the secret is public to anyone who opens the published site; it ca
 "rotated to a safe state" without removing this flow. The standard alternatives are PKCE
 with a public client (no secret) or a small token-exchange backend — either is a design
 change, not a configuration change. The already-implemented
-[`PopupSecurityService`](/flows/authentication.md) needs no client secret and is the smaller
+[`PopupSecurityService`](../flows/authentication.md) needs no client secret and is the smaller
 step of the two.
 
 # 2. `API_KEY` is sent on every Sheets request
@@ -45,7 +45,7 @@ project's Sheets quota.
 # 3. Tokens live in `localStorage`
 
 `token`, `redirect-token`, and `refresh-token` are stored as plain JSON on the origin
-([storage](/interfaces/local-storage.md)). Any XSS on the origin reads them, and the
+([storage](../interfaces/local-storage.md)). Any XSS on the origin reads them, and the
 **refresh token is long-lived**. The mitigations that exist: `logout()` revokes the access
 token and clears storage, and `Token` expires access tokens 60 seconds early.
 
@@ -66,7 +66,7 @@ this scope short of the Drive file-picker flow, so narrowing means adopting
 # What is done well
 
 - `secureParseDate` validates the gviz date strings with an anchored regex instead of
-  `eval`-ing them ([date encoding](/domain/spreadsheet-layout.md)).
+  `eval`-ing them ([date encoding](../domain/spreadsheet-layout.md)).
 - The gviz `tq` string interpolates only numbers derived from `Date` getters, so user text
   never reaches the query.
 - Spreadsheet ranges are `encodeURIComponent`-escaped.

@@ -59,7 +59,7 @@ the guard and fails later at the HTTP layer.
 
 The code exchange sends `client_id`, **`client_secret`**, `redirect_uri`, and `code` as
 `application/x-www-form-urlencoded` — from the browser. See
-[security posture](/constraints/security-posture.md).
+[security posture](../constraints/security-posture.md).
 
 On return from Google, `LoginPageContainer.ngOnInit` reads `state` from the URL and, if it
 contains `autologin`, calls `login()` automatically, which fetches
@@ -79,7 +79,7 @@ responses.[^popup] Differences worth knowing:
 - Token errors push `token.error(...)` and remove the stored `token` key.
 
 To switch strategies, change the single `{ provide: AbstractSecurityService, useClass: ... }`
-binding in `app.config.ts` ([dependency wiring](/architecture/dependency-wiring.md)).
+binding in `app.config.ts` ([dependency wiring](../architecture/dependency-wiring.md)).
 
 # Every request refreshes
 
@@ -100,7 +100,7 @@ observable to error, which each effect swallows in its `catchError`.
 `user$`, and calls `storageService.clear()` — which wipes **all** localStorage, including
 `spreadsheetId`, `dataSheets`, `categoriesSheetId`, and `categories`. Logging out therefore
 resets the app to a state where `isSetupReady` fails and the user must re-run
-[setup](/flows/initial-setup.md). `AppComponent.logout()` then navigates to `setup`.
+[setup](initial-setup.md). `AppComponent.logout()` then navigates to `setup`.
 
 [^abstract]: AbstractSecurityService
 [^redirect]: RedirectSecurityService

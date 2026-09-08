@@ -24,8 +24,8 @@ One spreadsheet, owned by the user, holds every tab:
 
 | Tab | Columns | Created by | Purpose |
 |---|---|---|---|
-| `categories` | 2 | setup (`addSheet(title, 2)`) | one [category](/domain/category.md) per row |
-| `data_<name>` | 5 | setup (`addSheet(title, 5)`) | one [expense](/domain/expense.md) per row, per person |
+| `categories` | 2 | setup (`addSheet(title, 2)`) | one [category](category.md) per row |
+| `data_<name>` | 5 | setup (`addSheet(title, 5)`) | one [expense](expense.md) per row, per person |
 | anything else | — | the user | ignored; setup only picks up non-hidden tabs containing `data_` |
 
 New tabs are created with `gridProperties: { rowCount: 1, columnCount }` — a single row —
@@ -84,7 +84,7 @@ The Visualization Query endpoint returns dates as literal strings such as
 the anchored regex
 `/^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/` and throws
 `should provide a valid date` on anything else — deliberately refusing to `eval` the value.
-See [the gviz interface](/interfaces/gviz-query.md).
+See [the gviz interface](../interfaces/gviz-query.md).
 
 # Why the layout is load-bearing
 

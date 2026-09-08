@@ -59,7 +59,7 @@ range as `[[name, id], ...]` in the new visual order.
 > actually dispatched (`this.store.dispatch(...)`), alongside `loading(false)` and a new
 > `operationFailed({ source: 'updateCategoryPosition$', message: "Couldn't save the new
 > order. Your categories were put back the way they were." })` that opens a snackbar. See
-> [known issues](/constraints/known-issues.md) item 1 (fixed) and item 10. Note: after the
+> [known issues](../constraints/known-issues.md) item 1 (fixed) and item 10. Note: after the
 > *first* failed reorder in a session, `updateCategoryPosition$`'s stream is complete and
 > further reorders silently do nothing at all — see item 21.
 

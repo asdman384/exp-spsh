@@ -40,9 +40,9 @@ Lives at the **repository root**, gitignored, imported directly as a module
 | `CLIENT_SECRET` | `RedirectSecurityService` only, in the token exchange and refresh |
 
 Missing file ⇒ the build cannot resolve the import. In CI the file is written from
-repository secrets ([CI](/operations/ci-and-deployment.md)). Note the security implication:
+repository secrets ([CI](ci-and-deployment.md)). Note the security implication:
 these values ship inside the JavaScript bundle
-([security posture](/constraints/security-posture.md)).
+([security posture](../constraints/security-posture.md)).
 
 # Environment files
 
@@ -72,7 +72,7 @@ All are re-exported from `src/constants/index.ts` and imported as `src/constants
 | `tsconfig*.json` | compiler strictness and ambient types |
 | `vitest.config.ts` | test environment |
 | `.prettierrc`, `.editorconfig` | formatting |
-| `policy/sprint-window.json` | agent write-scope policy ([working agreements](/constraints/working-agreements.md)) |
+| `policy/sprint-window.json` | agent write-scope policy ([working agreements](../constraints/working-agreements.md)) |
 | `.claude/settings.json` | tool permissions for agent sessions |
 
 `logs/` and `keys.json` are gitignored; `dist/` and `.angular/cache` too.[^gitignore]

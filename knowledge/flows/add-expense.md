@@ -56,7 +56,7 @@ Two details:
 # Notes and consequences
 
 - Because the write is an insert at row 0, sheets are ordered newest-first, which
-  [delete](/flows/delete-expense.md) relies on.
+  [delete](delete-expense.md) relies on.
 - The follow-up read narrows to the submitted expense's day. If the user had a wider range
   displayed (for example after picking an older date), the table collapses to that day.
 - `exhaustMap` means a double-tap on **Add Expense** while the first write is in flight is
@@ -68,9 +68,9 @@ Two details:
   optimistically on submit, and this effect's `catchError` cannot restore them. Note also:
   after the *first* failure of `addExpense$` in a session, the effect's stream is complete
   and further submits silently do nothing (no toast either) — see
-  [known issues](/constraints/known-issues.md) item 21.
+  [known issues](../constraints/known-issues.md) item 21.
 - The date written is the local wall-clock time; see
-  [date encoding](/domain/spreadsheet-layout.md).
+  [date encoding](../domain/spreadsheet-layout.md).
 
 [^html]: Dashboard form template
 [^page]: DashboardPageContainer

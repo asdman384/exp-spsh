@@ -45,12 +45,12 @@ toolbar avatar (the avatar is the app's connectivity indicator).
 
 Note the asymmetry: reads queue, writes do not. There is no outbox or background sync, and
 Google API responses are explicitly never cached
-([service worker](/architecture/pwa-and-service-worker.md)).
+([service worker](../architecture/pwa-and-service-worker.md)).
 
 # Update delivery
 
 1. A push to `master` rebuilds and republishes to GitHub Pages
-   ([CI and deployment](/operations/ci-and-deployment.md)).
+   ([CI and deployment](../operations/ci-and-deployment.md)).
 2. The installed service worker notices the new `ngsw.json` and emits `VERSION_READY`.
 3. `AppComponent` maps that to `hasUpdates`, which paints a `!` badge on the avatar and adds
    an **Update** item to the menu.[^appcomp]

@@ -56,12 +56,12 @@ Production build:[^ng]
 
 The 2 kB per-component style warning is easy to trip on a page with a lot of SCSS.
 `StoreDevtools` is deliberately kept behind a runtime flag partly for this reason
-([dependency wiring](/architecture/dependency-wiring.md)).
+([dependency wiring](../architecture/dependency-wiring.md)).
 
 # Environment constraints
 
 - **Windows/PowerShell** is the development platform; execution policy must permit npm shims
-  ([toolchain](/systems/toolchain.md)).
+  ([toolchain](../systems/toolchain.md)).
 - `keys.json` must exist before the first build — the failure mode is a module-resolution
   error, not a runtime warning.[^dev]
 - The service worker is enabled in development, so caching confusion is a normal part of the

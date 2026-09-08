@@ -67,7 +67,7 @@ so setup is a one-time action per browser, per spreadsheet.
 The pipeline has **no `catchError`**. A thrown `error getting user`, a rejected
 `getSpreadsheet`, or a 403 from `addSheet` leaves `loading = true` and the spinner running
 with nothing shown to the user; the reason appears only in the
-[on-page log](/architecture/dependency-wiring.md). Prerequisites that commonly cause this:
+[on-page log](../architecture/dependency-wiring.md). Prerequisites that commonly cause this:
 
 - the signed-in Google account lacks **edit** rights on the spreadsheet;
 - the URL points at a Docs/Slides file rather than a Sheet;

@@ -47,12 +47,12 @@ environments are otherwise identical and the `SCOPES` constant in them is unused
 - **Modern evergreen browser.** Target ES2022, zone.js change detection, and optional use of
   `document.startViewTransition` (guarded, with a console warning fallback).
 - **The `google.accounts` global exists** before a security service is constructed
-  ([OAuth interface](/interfaces/google-oauth.md)).
+  ([OAuth interface](../interfaces/google-oauth.md)).
 - **`window.log` exists** — installed by the dynamically imported `src/logger.ts` before
-  bootstrap ([dependency wiring](/architecture/dependency-wiring.md)).
-- `localStorage` is available and parseable ([storage](/interfaces/local-storage.md)).
+  bootstrap ([dependency wiring](../architecture/dependency-wiring.md)).
+- `localStorage` is available and parseable ([storage](../interfaces/local-storage.md)).
 - Served under `/exp-spsh/`, because the service worker asset globs hard-code that path
-  ([PWA](/architecture/pwa-and-service-worker.md)).
+  ([PWA](../architecture/pwa-and-service-worker.md)).
 - Hash routing, so the app also works when the host cannot rewrite unknown paths to
   `index.html` — which is exactly the GitHub Pages constraint.
 

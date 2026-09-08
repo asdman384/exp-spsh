@@ -34,14 +34,14 @@ the workflow file itself.
 | `deploy` | needs `build`; `actions/deploy-pages@v4` into the `github-pages` environment with `pages: write` and `id-token: write` |
 
 `npm install` (not `ci`) runs the `postinstall` iOS service-worker patch, which is required
-for a correct production bundle ([PWA](/architecture/pwa-and-service-worker.md)).
+for a correct production bundle ([PWA](../architecture/pwa-and-service-worker.md)).
 
 # Secrets
 
 `keys.json` is assembled inline by shell string concatenation from three repository secrets:
 `API_KEY`, `CLIENT_ID`, `CLIENT_SECRET`. The file is never committed (it is gitignored) but
 its contents are **compiled into the published bundle** — see
-[security posture](/constraints/security-posture.md).
+[security posture](../constraints/security-posture.md).
 
 Rotating a key means updating the GitHub secret and re-running the workflow; there is no
 runtime configuration.
@@ -62,6 +62,6 @@ which is why this coupling is easy to miss.
 # What CI does not do
 
 **The workflow never runs tests or a lint step.** `npm test` exists but is not wired into
-CI, so a red test suite still deploys ([testing](/operations/testing.md)).
+CI, so a red test suite still deploys ([testing](../operations/testing.md)).
 
 [^wf]: build -> deploy gh-pages workflow

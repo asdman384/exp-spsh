@@ -28,7 +28,7 @@ Three `mat-tab-group` carousels, each a selector rather than a tab panel:[^stats
 | Month | `Jan..Dec`, from `new Date(0, i).toLocaleString('default', { month: 'short' })` |
 
 Any change calls `formChanged(sheetIndex, yearIndex, monthIndex, sheets)`, which resets the
-table animation and dispatches [`loadExpenses`](/flows/load-expenses.md) for the whole month.
+table animation and dispatches [`loadExpenses`](load-expenses.md) for the whole month.
 The initial selection takes the current sheet from the store and the current month from the
 clock; `ngAfterViewInit` scrolls the month carousel so the current month is visible when it
 would otherwise be off-screen (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).
@@ -72,7 +72,7 @@ The label shows `selectedCategory ?? 'Total'`.
 browser supports it, warning `View transitions unsupported` and updating directly otherwise.
 `tableAnimation(direction)` toggles the CSS classes `summary-table-straight` /
 `summary-table-reverse` on the table element; the route's `canDeactivate` clears them on
-leave ([routing](/architecture/routing-and-guards.md)).
+leave ([routing](../architecture/routing-and-guards.md)).
 
 `this.summaryTable` is resolved with `@ViewChild('summaryTable', { read: ElementRef })` and
 accessed optionally (`?.`) because the table sits inside an `@if`.

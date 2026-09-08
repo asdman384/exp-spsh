@@ -65,7 +65,7 @@ type packages, and `node`.
 | `test:coverage` | `ng test --coverage` | same, with coverage |
 | `postinstall` | `node scripts/service-worker-ios-workaround.js` | patches ngsw-worker.js in `node_modules` |
 
-See [build and serve](/operations/build-and-serve.md) for how `watch` + `serve` combine.
+See [build and serve](../operations/build-and-serve.md) for how `watch` + `serve` combine.
 
 # Local platform
 

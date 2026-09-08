@@ -57,7 +57,7 @@ interface AppState {
 # Hydration from localStorage
 
 `initialState` is built synchronously at module load from four
-[localStorage keys](/interfaces/local-storage.md): `spreadsheetId`, `categoriesSheetId`,
+[localStorage keys](../interfaces/local-storage.md): `spreadsheetId`, `categoriesSheetId`,
 `categories`, and `dataSheets` (upserted through the adapter). `expenses` is never
 persisted; it is always re-fetched.[^reducers]
 
@@ -118,7 +118,7 @@ The 4 localStorage-only persist effects (`saveSpreadsheetId$`, `saveSheetId$`,
 `saveCategoriesSheetId$`, `saveCategories$`) are **unchanged** — no `catchError`, still
 fully silent on a `LocalStorageService.put` failure (e.g. quota exceeded). This is a
 deliberate, still-open gap (a different failure class — synchronous, non-network); see
-[known issues](/constraints/known-issues.md) item 20.
+[known issues](../constraints/known-issues.md) item 20.
 
 **Caveat:** every effect's `catchError` still sits on the *outer* pipe and returns `EMPTY`,
 which *completes* that effect's stream. NgRx's default effects error handler resubscribes on
@@ -126,7 +126,7 @@ an **error** notification, not on a **completion**, so each of the 7 remote effe
 goes permanently unresponsive to its trigger action after its first failure of the session —
 the toast now fires for that first failure, but a second failure of the same effect produces
 no toast at all (not because dispatch is broken, but because the effect is no longer
-listening). See [known issues](/constraints/known-issues.md) item 21.
+listening). See [known issues](../constraints/known-issues.md) item 21.
 
 Loading state is managed imperatively: effects call `dispatch(AppActions.loading(...))`
 from inside `tap`/`exhaustMap` rather than emitting it as a mapped action.
@@ -152,7 +152,7 @@ nothing is selected — several call sites assert it non-null with `!`.
 
 `StoreDevtoolsModule.instrument(...)` is registered **only when the URL carries a `logger`
 query parameter**, keeping it out of the normal bundle path. See
-[build and serve](/operations/build-and-serve.md).
+[build and serve](../operations/build-and-serve.md).
 
 [^model]: AppState / SheetsState interfaces
 [^reducers]: Reducers, entity adapter, initial-state hydration

@@ -54,7 +54,7 @@ sorts by `id` at read time.
 
 Drag-and-drop reordering rewrites the **entire** `categories!A1:B<n>` range with
 `values.update` (`valueInputOption: RAW`), reassigning nothing — the array order carries the
-meaning and each row keeps its original `id`. See [manage categories](/flows/manage-categories.md).
+meaning and each row keeps its original `id`. See [manage categories](../flows/manage-categories.md).
 
 # Referential integrity
 

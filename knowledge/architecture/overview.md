@@ -52,31 +52,31 @@ the database, and the browser talks to Google APIs directly.[^appcfg]
 ```
 
 - **Containers hold no business logic beyond form handling.** They dispatch
-  [actions](/interfaces/ngrx-actions.md) and select slices of state.
+  [actions](../interfaces/ngrx-actions.md) and select slices of state.
 - **Every remote read and write lives in an effect**, never in a component. See
-  [state management](/architecture/state-management.md).
+  [state management](state-management.md).
 - **The only HTTP client is Angular's `HttpClient`.** The `gapi` client library is *not*
   loaded at runtime; only its TypeScript types are used. See
-  [the Sheets interface](/interfaces/google-sheets-api.md).
+  [the Sheets interface](../interfaces/google-sheets-api.md).
 
 # Key architectural choices
 
 1. **Backend-less by design.** The user owns the data and the app never sees it
    server-side. The consequence is that all credentials, `CLIENT_SECRET` included, ship
-   inside the browser bundle ([security posture](/constraints/security-posture.md)).
+   inside the browser bundle ([security posture](../constraints/security-posture.md)).
 2. **Two interchangeable auth strategies** behind `AbstractSecurityService`
-   ([authentication](/flows/authentication.md)); the redirect one is the wired default.
+   ([authentication](../flows/authentication.md)); the redirect one is the wired default.
 3. **A token refresh is attempted on every outgoing HTTP call** through
    `ExpAuthInterceptor`, making that interceptor the single choke point for auth.
 4. **Offline-tolerant reads.** `loadExpenses$` waits for connectivity before firing and
-   guards block online-only routes ([offline and updates](/flows/offline-and-updates.md)).
+   guards block online-only routes ([offline and updates](../flows/offline-and-updates.md)).
 5. **One tab per person.** Each user gets a `data_<name>` sheet in the same spreadsheet,
    which is what the dashboard's "User" selector switches between
-   ([spreadsheet layout](/domain/spreadsheet-layout.md)).
+   ([spreadsheet layout](../domain/spreadsheet-layout.md)).
 
 # Where things live
 
-See [the source map](/references/source-map.md) for a directory-by-directory index, and
-[the app system record](/systems/exp-spsh-app.md) for the deployed-artifact view.
+See [the source map](../references/source-map.md) for a directory-by-directory index, and
+[the app system record](../systems/exp-spsh-app.md) for the deployed-artifact view.
 
 [^appcfg]: Root application providers

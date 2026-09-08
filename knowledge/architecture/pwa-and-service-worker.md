@@ -47,12 +47,12 @@ Two things follow.[^ngsw]
 1. **The asset globs are hard-coded to the `/exp-spsh/` deployment path.** Serving the app
    from any other path leaves the app-shell group unmatched. This is coupled to the
    GitHub Pages project-site URL — see
-   [deployment](/operations/ci-and-deployment.md).
+   [deployment](../operations/ci-and-deployment.md).
 2. **API responses are intentionally never cached** (`maxSize: 0`, `maxAge: "0u"`,
    `strategy: freshness`). The dataGroup exists to *route* those URLs through the worker
    without serving stale expense data. Offline reads therefore fail rather than return
    stale rows; offline tolerance comes from the store cache and the guards instead
-   ([offline behaviour](/flows/offline-and-updates.md)).
+   ([offline behaviour](../flows/offline-and-updates.md)).
 
 # The iOS postinstall patch
 

@@ -43,10 +43,10 @@ The UI displays `sheet.title.split('_')[1]` as the person's name, so a display n
 containing `_` renders truncated.
 
 `Sheet.id` (the gid) is what the API needs for row-level `batchUpdate` operations and for
-the `gid` parameter of the [gviz query](/interfaces/gviz-query.md); `Sheet.title` is what
+the `gid` parameter of the [gviz query](../interfaces/gviz-query.md); `Sheet.title` is what
 range-based `values.*` calls need — which is why both are carried together, and why the
 NgRx entity adapter keys sheets by title
-([state management](/architecture/state-management.md)).
+([state management](../architecture/state-management.md)).
 
 # Userinfo
 
@@ -59,7 +59,7 @@ uses three fields:
 - `id` — passed as `login_hint` when the popup strategy refreshes silently.
 
 It is persisted whole to `localStorage` under the `user` key, and its presence *is* the
-app's definition of "logged in" ([authentication](/flows/authentication.md)).
+app's definition of "logged in" ([authentication](../flows/authentication.md)).
 
 # Token
 
@@ -78,7 +78,7 @@ before Google does.[^token] Validity is always tested as `Date.now() < token.exp
 
 Tokens are persisted under different keys per strategy: `token` for the popup strategy,
 `redirect-token` plus `refresh-token` for the redirect strategy. See
-[local storage](/interfaces/local-storage.md).
+[local storage](../interfaces/local-storage.md).
 
 [^consts]: Sheet title constants
 [^userinfo]: Userinfo class

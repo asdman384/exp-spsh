@@ -73,7 +73,7 @@ they re-emit on state change; Angular only consumes the first emission per activ
 - `LoginPageContainer` navigates to `setup/settings` with `replaceUrl: true` as soon as
   `user$` emits, so the login page is not left in history.
 
-See [authentication](/flows/authentication.md) and [initial setup](/flows/initial-setup.md).
+See [authentication](../flows/authentication.md) and [initial setup](../flows/initial-setup.md).
 
 [^routeenum]: ROUTE enum
 [^dashroutes]: Dashboard child routes

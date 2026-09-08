@@ -31,7 +31,7 @@ sources:
 
 | Output | Payload | Used by |
 |---|---|---|
-| `onDeleteRow` | `Expense` | dashboard -> [delete flow](/flows/delete-expense.md) |
+| `onDeleteRow` | `Expense` | dashboard -> [delete flow](../flows/delete-expense.md) |
 | `onCellClick` | `{ field: keyof Expense; cellData: unknown; rowData: Expense }` | statistics drill-down |
 | `onSelection` | `ReadonlyArray<Expense>` | statistics total (constructed with `async: true`) |
 
@@ -47,7 +47,7 @@ change `defineCols` rebuilds the column list:
 2. keep a default column only if **some row has a defined value for it**
    (`exps.some(e => e[field] !== undefined)`) and it is not hidden by `showDateCol`.
 
-This is why [statistics](/flows/statistics.md) can reuse the table: aggregate rows carry only
+This is why [statistics](../flows/statistics.md) can reuse the table: aggregate rows carry only
 `category` + `amount`, so the other columns disappear on their own, and the drill-down
 projection (`amount`, `comment`, `date`) swaps them back.
 

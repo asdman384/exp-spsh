@@ -23,7 +23,7 @@ push to master (path-filtered)
   -> deploy job: actions/deploy-pages@v4  ->  github-pages environment
 ```
 
-Details and the path filter are in [the GitHub system record](/systems/github-pages.md).
+Details and the path filter are in [the GitHub system record](../systems/github-pages.md).
 
 # Release checklist
 
@@ -36,7 +36,7 @@ Details and the path filter are in [the GitHub system record](/systems/github-pa
 4. Watch the `deploy` job and the `github-pages` environment for the published URL.
 5. Verify in the browser: existing installs pick up the new version through
    `VERSION_READY` and show an update badge
-   ([offline and updates](/flows/offline-and-updates.md)); a hard reload is the fast path.
+   ([offline and updates](../flows/offline-and-updates.md)); a hard reload is the fast path.
 
 # Rollback
 
@@ -54,7 +54,7 @@ Users on an installed PWA keep the previous version until the worker fetches the
 `API_KEY`, `CLIENT_ID`, `CLIENT_SECRET` are repository secrets, concatenated into `keys.json`
 at build time. Rotating any of them requires updating the secret **and** re-running the
 workflow, because the values are baked into the bundle
-([configuration and secrets](/operations/configuration-and-secrets.md)).
+([configuration and secrets](configuration-and-secrets.md)).
 
 # Gaps to be aware of
 

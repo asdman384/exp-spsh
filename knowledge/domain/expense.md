@@ -30,14 +30,14 @@ interface Expense {
 ```
 
 **Every field is optional.** This is deliberate: the same type is reused for aggregate rows
-produced by [statistics](/flows/statistics.md), where only `category` + `amount` are set, or
-only `amount` + `comment` + `date`. The [expenses table](/interfaces/expenses-table-component.md)
+produced by [statistics](../flows/statistics.md), where only `category` + `amount` are set, or
+only `amount` + `comment` + `date`. The [expenses table](../interfaces/expenses-table-component.md)
 decides which columns to render by testing which fields have data.
 
 # Row mapping
 
 An expense is one row of a `data_<user>` sheet, five columns wide.[^svc] See
-[spreadsheet layout](/domain/spreadsheet-layout.md) for the authoritative column table.
+[spreadsheet layout](spreadsheet-layout.md) for the authoritative column table.
 
 | Field | Column | Stored as |
 |---|---|---|
@@ -61,7 +61,7 @@ booleans `!!isInDebt`, and the date compared field-by-field down to seconds
 (year, month, date, hours, minutes, seconds — deliberately *not* `getTime()`, so that two
 `Date` objects differing only in milliseconds still match).
 
-This identity function is what [delete expense](/flows/delete-expense.md) uses to locate the
+This identity function is what [delete expense](../flows/delete-expense.md) uses to locate the
 row to remove, and it is the most heavily unit-tested piece of the codebase (13 cases in
 `src/shared/helpers/index.spec.ts`).
 

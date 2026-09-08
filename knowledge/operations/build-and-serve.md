@@ -21,7 +21,7 @@ sources:
 
 Create `keys.json` at the repo root from `keys.example.json` before the first build. It is
 imported at compile time, so **the build fails to resolve without it**
-([configuration and secrets](/operations/configuration-and-secrets.md)).
+([configuration and secrets](configuration-and-secrets.md)).
 
 On Windows, allow script execution first:
 
@@ -45,7 +45,7 @@ npx npm run serve
 Then open **http://localhost:4200/exp-spsh/** — the `exp-spsh` path segment is required
 because the server roots at `dist/` while the build writes into `dist/exp-spsh`, and because
 the service worker's asset globs assume that path
-([PWA](/architecture/pwa-and-service-worker.md)).
+([PWA](../architecture/pwa-and-service-worker.md)).
 
 The page does **not** live-reload. After a rebuild, refresh manually.
 
@@ -57,7 +57,7 @@ npm run build          # ng build --configuration=production
 
 Output: `dist/exp-spsh`, hashed filenames, budgets enforced (initial 2.5 MB warn / 5 MB
 error).[^ng] This is exactly what CI runs
-([CI and deployment](/operations/ci-and-deployment.md)).
+([CI and deployment](ci-and-deployment.md)).
 
 # Useful runtime flags
 

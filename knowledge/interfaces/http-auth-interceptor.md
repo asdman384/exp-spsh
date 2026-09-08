@@ -48,6 +48,6 @@ is why the app calls `provideHttpClient(withInterceptorsFromDi())`.[^cfg]
   logger overlay an effective request trace during debugging.
 - `refreshToken()` is typed loosely here as `{ access_token: string }`, which is what lets
   the same interceptor serve both security strategies
-  ([authentication](/flows/authentication.md)).
+  ([authentication](../flows/authentication.md)).
 
 [^cfg]: HTTP_INTERCEPTORS registration

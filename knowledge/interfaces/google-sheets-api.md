@@ -27,11 +27,11 @@ Two things are unusual and worth knowing:
 - **The `gapi` client library is never loaded.** Only its `@types` are used, for request and
   response typing. All traffic goes through Angular's `HttpClient`.
 - **Every call carries `key: keys.API_KEY`** *and* a `Bearer` token added by
-  [`ExpAuthInterceptor`](/interfaces/http-auth-interceptor.md). The API key is imported at
-  build time from `keys.json` ([configuration](/operations/configuration-and-secrets.md)).
+  [`ExpAuthInterceptor`](http-auth-interceptor.md). The API key is imported at
+  build time from `keys.json` ([configuration](../operations/configuration-and-secrets.md)).
 - `setSpreadsheetId` must be called before any method except `getSpreadsheet`. It happens in
   two places: `AppComponent`'s constructor (from persisted state) and during
-  [setup](/flows/initial-setup.md).
+  [setup](../flows/initial-setup.md).
 
 # Calls
 
@@ -52,25 +52,25 @@ Two things are unusual and worth knowing:
 All ranges are `encodeURIComponent`-escaped before being interpolated into the path.
 
 Reads for the expense table do **not** appear above — they go through
-[the gviz endpoint](/interfaces/gviz-query.md) instead.
+[the gviz endpoint](gviz-query.md) instead.
 
 # Validation payloads (setup only)
 
 `setDataSheetFormats` applies four `repeatCell` requests across rows `0..1048576`, plus a
 120px width on the date column. `setCategoriesSheetFormats` applies one. The exact
-conditions are tabulated in [spreadsheet layout](/domain/spreadsheet-layout.md).
+conditions are tabulated in [spreadsheet layout](../domain/spreadsheet-layout.md).
 
 # Error handling
 
 None at this layer: the service returns raw `Observable`s and every caller (an effect, or
 the setup container) decides. Effects log and swallow; the setup container does not catch at
 all. HTTP status codes are never inspected, so a 401 and a 403 are indistinguishable
-downstream ([known issues](/constraints/known-issues.md)).
+downstream ([known issues](../constraints/known-issues.md)).
 
 # Test coverage
 
 `spreadsheet.service.spec.ts` has 8 tests using `HttpTestingController`, asserting URLs,
 methods, and the serial-number date conversion. It is the best-covered unit in the project
-([testing](/operations/testing.md)).
+([testing](../operations/testing.md)).
 
 [^svc]: SpreadsheetService

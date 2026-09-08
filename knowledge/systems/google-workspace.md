@@ -25,8 +25,8 @@ persistence tier.
 
 | Host | Used for |
 |---|---|
-| `content-sheets.googleapis.com` | all Sheets v4 REST calls ([interface](/interfaces/google-sheets-api.md)) |
-| `docs.google.com` | the `gviz/tq` read path ([interface](/interfaces/gviz-query.md)) |
+| `content-sheets.googleapis.com` | all Sheets v4 REST calls ([interface](../interfaces/google-sheets-api.md)) |
+| `docs.google.com` | the `gviz/tq` read path ([interface](../interfaces/gviz-query.md)) |
 | `content.googleapis.com` | `oauth2/v2/userinfo` |
 | `oauth2.googleapis.com` | token exchange and refresh |
 | Google Identity Services | the `google.accounts.oauth2` client library |
@@ -63,7 +63,7 @@ The spreadsheet belongs to the end user, not to the project. Consequences:
   `batchUpdate` in setup.
 - Users can (and do) edit rows directly in Google Sheets, which is why several flows re-read
   before writing, and why row-index-based deletion is fragile
-  ([delete](/flows/delete-expense.md)).
+  ([delete](../flows/delete-expense.md)).
 - Uninstalling the app loses nothing; the data outlives it.
 - Quotas are per project (`API_KEY` / `CLIENT_ID`), so all users of a given deployment share
   the Sheets API rate limits.

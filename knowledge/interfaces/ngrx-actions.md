@@ -66,7 +66,7 @@ Login/`login`.
 `source` is always one of the 7 remote effects' own property names (e.g.
 `'loadCategories$'`); `message` is always one of 7 fixed, plain-language strings from
 `src/@state/report-failure.ts`'s `FAILURE_MESSAGES` table — never the raw error text. See
-[state management](/architecture/state-management.md) and
+[state management](../architecture/state-management.md) and
 [`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md) in the
 repository root.
 
@@ -83,6 +83,6 @@ repository root.
   funnel into one `operationFailed({ source, message })`, distinguished only by `source`. The
   4 localStorage-only persist effects (`saveSpreadsheetId$` and siblings) still have **no**
   failure path at all — `LocalStorageService.put` throwing is still fully uncaught
-  ([known issues](/constraints/known-issues.md) item 20).
+  ([known issues](../constraints/known-issues.md) item 20).
 
 [^actions]: AppActions action group

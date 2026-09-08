@@ -46,7 +46,7 @@ where D >= date '2026-9-5'
 ```
 
 - Column letters are positional — this is the third place the
-  [column layout](/domain/spreadsheet-layout.md) is hard-coded.
+  [column layout](../domain/spreadsheet-layout.md) is hard-coded.
 - Date literals use `getFullYear()`-`getMonth()+1`-`getDate()` with **no zero padding**.
 - `from` defaults to `new Date()` (today) when omitted; the `and D < ...` clause is added
   only when `to` is provided.
@@ -86,20 +86,20 @@ Only `rows` is read; `cols` is declared but unused. Cell access is positional:
 
 Datetime cells arrive as the string `Date(2024,0,16,12,14,23)` (zero-based month) and go
 through `secureParseDate`, which validates with an anchored regex rather than evaluating the
-string. See [date encoding](/domain/spreadsheet-layout.md).
+string. See [date encoding](../domain/spreadsheet-layout.md).
 
 # Auth and caching
 
 The endpoint accepts the same OAuth bearer token as the Sheets API.[^oauthdoc] It is listed
 in the service worker's `dataGroups` with zero caching
-([service worker](/architecture/pwa-and-service-worker.md)).
+([service worker](../architecture/pwa-and-service-worker.md)).
 
 # Stability risk
 
 This is a charting endpoint being used as a query API. It is not versioned alongside the
 Sheets API and its response envelope has changed before (commit `cdc85e6` reworked response
 handling). Treat a sudden universal read failure as a candidate for an upstream format
-change first ([troubleshooting](/operations/troubleshooting.md)).
+change first ([troubleshooting](../operations/troubleshooting.md)).
 
 [^svc]: SpreadsheetService.loadExpenses and ExpensesDTO
 [^qlang]: Visualization API query language reference

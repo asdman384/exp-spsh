@@ -36,7 +36,7 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
 `deleteExpense$` is the most intricate effect in the app.[^effects]
 
 1. **Optimistic removal.** Find the expense in the current `expenses` array with
-   [`isExpenseEqual`](/domain/expense.md); if found, save
+   [`isExpenseEqual`](../domain/expense.md); if found, save
    `deletedExpenseBackup = { expense, index }` and dispatch `storeExpenses` without it. If
    not found, clear the backup (nothing to roll back).
 2. **Resolve the real row.** Set `loading = true` and call
@@ -69,7 +69,7 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
 
 - After the *first* failed delete in a session, `deleteExpense$`'s stream is complete and
   further swipes silently do nothing — no optimistic removal, no toast, no network call. See
-  [known issues](/constraints/known-issues.md) item 21.
+  [known issues](../constraints/known-issues.md) item 21.
 
 There is no confirmation dialog; `ExpDialogComponent` exists but is not wired to this flow.
 

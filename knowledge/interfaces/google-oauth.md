@@ -65,7 +65,7 @@ interface GoogleToken {
 // popup strategy uses google.accounts.oauth2.TokenResponse
 ```
 
-Both are wrapped in [`Token`](/domain/sheet-and-user.md), which computes an absolute
+Both are wrapped in [`Token`](../domain/sheet-and-user.md), which computes an absolute
 `expiration` with a 60-second safety margin. `id_token` is stored but never validated or
 decoded — identity comes from the userinfo call instead.
 
@@ -78,7 +78,7 @@ Google returns to `redirect_uri` with `code`, `scope`, and `state` in the **quer
 - `LoginPageContainer.ngOnInit` — reads `state`, auto-logins when it contains `autologin`;
 - `app.config.ts` and `logger.ts` — read `logger`.
 
-They are stripped later by `finishSetup()` ([initial setup](/flows/initial-setup.md)).
+They are stripped later by `finishSetup()` ([initial setup](../flows/initial-setup.md)).
 Because the app uses hash routing, these query parameters sit *before* the `#`, which is why
 `queryParamsHandling="preserve"` appears on the toolbar links.
 

@@ -62,8 +62,8 @@ could be swapped in for everything except that static hydration path.
   `Userinfo` is likewise used as a bag of fields.
 - `get` does not `try/catch`: corrupted JSON in any key throws during store construction and
   the app fails to boot. Clearing site data is the recovery
-  ([troubleshooting](/operations/troubleshooting.md)).
+  ([troubleshooting](../operations/troubleshooting.md)).
 - `clear()` wipes **the whole origin**, not just these keys — see the logout note in
-  [authentication](/flows/authentication.md).
+  [authentication](../flows/authentication.md).
 
 [^reducers]: Hydration at store init

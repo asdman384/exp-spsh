@@ -55,7 +55,7 @@ Combined with `switchMap`, a newer request supersedes a pending offline one.
 # The request
 
 The read does **not** use the Sheets REST API. It uses the Google Visualization Query
-endpoint with a SQL-like query — see [gviz](/interfaces/gviz-query.md) for the full
+endpoint with a SQL-like query — see [gviz](../interfaces/gviz-query.md) for the full
 contract:[^svc]
 
 ```
@@ -66,7 +66,7 @@ GET https://docs.google.com/a/google.com/spreadsheets/d/<spreadsheetId>/gviz/tq
 
 The response is JSONP-shaped text; the service extracts the JSON with
 `/setResponse\(({.*})\)/` and throws `Invalid response format from Google Sheets API` when
-it does not match. Rows map to [`Expense`](/domain/expense.md) with
+it does not match. Rows map to [`Expense`](../domain/expense.md) with
 `secureParseDate` handling the `Date(y,m,d,h,mi,s)` values.
 
 # Caveats
@@ -81,10 +81,10 @@ it does not match. Rows map to [`Expense`](/domain/expense.md) with
   particular trigger; the log overlay still has the real thrown message). After the *first*
   such failure in a session, `loadExpenses$`'s stream is complete and no further load
   succeeds, toast or otherwise, until reload — see
-  [known issues](/constraints/known-issues.md) item 21.
+  [known issues](../constraints/known-issues.md) item 21.
 - There is no paging or row limit; a month with many rows is fetched in full.
 - `loadLastExpenses` (`values.get` on `A1:E<n>`) is a *different* read used only by
-  [delete](/flows/delete-expense.md).
+  [delete](delete-expense.md).
 
 [^page]: DashboardPageContainer.getInterval
 [^stats]: StatisticsContainer.formChanged
