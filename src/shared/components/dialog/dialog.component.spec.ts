@@ -4,7 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ExpDialogComponent } from './dialog.component';
 import { MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 
-describe.skip('DialogComponent', () => {
+describe('DialogComponent', () => {
     let component: ExpDialogComponent;
     let fixture: ComponentFixture<ExpDialogComponent>;
 

@@ -321,12 +321,13 @@ export class SpreadsheetService {
           const data = JSON.parse(jsonMatch[1]) as ExpensesDTO;
           return data.table.rows.map<Expense>((row) => {
             const comment = row.c[1]?.v;
+            const date = row.c[3]?.v;
             const isInDebt = row.c[4]?.v;
             return {
-              category: String(row.c[0].v),
+              category: String(row.c[0]?.v ?? ''),
               comment: comment ? String(comment) : undefined,
-              amount: Number(row.c[2].v),
-              date: secureParseDate(row.c[3].v as string),
+              amount: Number(row.c[2]?.v ?? 0),
+              date: date !== undefined && date !== null ? secureParseDate(date as string) : undefined,
               isInDebt: isInDebt !== undefined && isInDebt !== null
             };
           });
@@ -334,32 +335,6 @@ export class SpreadsheetService {
       );
   }
 
-  /**
-   * @deprecated
-   * @param sheetId
-   * @param expense
-   * @returns
-   */
-  append(sheetId: number, expense: Array<Expense>) {
-    const appendCells: gapi.client.sheets.AppendCellsRequest = {
-      fields: 'userEnteredValue',
-      sheetId,
-      rows: expense.map((e) => ({
-        values: [
-          { userEnteredValue: { stringValue: e.category } },
-          { userEnteredValue: { stringValue: e.comment } },
-          { userEnteredValue: { numberValue: e.amount } },
-          { userEnteredValue: { numberValue: getSerialNumberFromDate(e.date!) } }
-        ]
-      }))
-    };
-
-    return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
-      `${this.apiUrl}:batchUpdate`,
-      { requests: [{ appendCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
-    );
-  }
 }
 
 /**
@@ -377,8 +352,11 @@ function getSerialNumberFromDate(date: Date): number {
 }
 
 function getDateFromSerialNumber(date: number): Date {
-  const time = (date + 0.0000000001 - 25569.0) * 1000 * 60 * 60 * 24 + new Date().getTimezoneOffset() * 60 * 1000;
-  return new Date(time);
+  const utcTime = (date + 0.0000000001 - 25569.0) * 1000 * 60 * 60 * 24;
+  // Offset must come from the target instant, not "now" -- DST rules differ across the year,
+  // so a fixed "now" offset shifts historical dates near a DST boundary by an hour.
+  const offsetMinutes = new Date(utcTime).getTimezoneOffset();
+  return new Date(utcTime + offsetMinutes * 60 * 1000);
 }
 
 interface ExpensesDTO {

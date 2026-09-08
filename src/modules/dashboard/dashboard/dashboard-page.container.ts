@@ -38,8 +38,14 @@ export class DashboardPageContainer {
     this.store.dispatch(AppActions.setTitle({ title: 'Dashboard', icon: 'dashboard' }));
     this.store
       .select(currentSheetSelector)
-      .pipe(first())
-      .pipe(tap((sheet) => this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet!.id }))))
+      .pipe(
+        first(),
+        tap((sheet) => {
+          if (sheet) {
+            this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id }));
+          }
+        })
+      )
       .subscribe((sheet) => (this.sheet = sheet));
   }
 

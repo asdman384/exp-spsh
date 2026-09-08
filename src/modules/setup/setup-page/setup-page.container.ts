@@ -3,7 +3,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { Store } from '@ngrx/store';
-import { Observable, forkJoin, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, forkJoin, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
 import {
@@ -69,7 +69,12 @@ export class SettingsPageContainer {
         }),
         switchMap(([spreadsheet, user]) =>
           forkJoin([this.createDataSheet(spreadsheet, user!), this.createCategoriesSheet(spreadsheet)])
-        )
+        ),
+        catchError((e) => {
+          log(e);
+          this.loading = false;
+          return EMPTY;
+        })
       )
       .subscribe(() => {
         this.loading = false;

@@ -117,8 +117,14 @@ declare global {
   function log(...args: any[]): void;
 }
 
-const loggerType: string = 'window'; //urlParams.get('logger');
+const search = window.location.href.split('?')[1];
+const urlParams = new URLSearchParams(search);
+const loggerType = urlParams.get('logger');
 const body = document.querySelector('body');
+
+// `log()` is called unconditionally throughout the app (every effect's `catchError`), so it
+// must always exist; only the on-page overlay is opt-in via `?logger=window`.
+window.log = console.log.bind(console);
 
 if (loggerType === 'window' && body) {
   const logger = new ExpLogger(body);

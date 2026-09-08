@@ -74,7 +74,7 @@ export class ExpensesTableComponent implements OnChanges {
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes['dataSource'].currentValue) {
+    if (changes['dataSource']?.currentValue) {
       const exps = changes['dataSource'].currentValue as ReadonlyArray<Expense>;
       this.defineCols(exps);
       if (this.lastDeletedDragRow?._dragRef['_rootElement']) {

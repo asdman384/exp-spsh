@@ -2,11 +2,11 @@ import { TestBed } from '@angular/core/testing';
 
 import { LocalStorageService } from './local-storage.service';
 
-describe.skip('LocalStorageService', () => {
+describe('LocalStorageService', () => {
     let service: LocalStorageService;
 
     beforeEach(() => {
-        TestBed.configureTestingModule({});
+        TestBed.configureTestingModule({ providers: [LocalStorageService] });
         service = TestBed.inject(LocalStorageService);
     });
 

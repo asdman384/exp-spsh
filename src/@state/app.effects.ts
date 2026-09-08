@@ -2,7 +2,19 @@ import { Injectable } from '@angular/core';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, Observable, catchError, exhaustMap, filter, map, of, switchMap, take, tap, withLatestFrom } from 'rxjs';
+import {
+  EMPTY,
+  Observable,
+  catchError,
+  exhaustMap,
+  filter,
+  map,
+  switchMap,
+  take,
+  tap,
+  throwError,
+  withLatestFrom
+} from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
@@ -26,7 +38,11 @@ export class AppEffects {
       this.actions$.pipe(
         ofType(AppActions.spreadsheetId),
         tap(log),
-        tap(({ spreadsheetId }) => spreadsheetId && LocalStorageService.put(SPREADSHEET_ID, spreadsheetId))
+        tap(({ spreadsheetId }) => spreadsheetId && LocalStorageService.put(SPREADSHEET_ID, spreadsheetId)),
+        catchError((e) => {
+          log(e);
+          return EMPTY;
+        })
       ),
     { dispatch: false }
   );
@@ -37,7 +53,11 @@ export class AppEffects {
         ofType(AppActions.upsertDataSheet),
         tap(log),
         switchMap(() => this.store.select(sheetsSelector)),
-        tap((sheets) => LocalStorageService.put(DATA_SHEETS, sheets))
+        tap((sheets) => LocalStorageService.put(DATA_SHEETS, sheets)),
+        catchError((e) => {
+          log(e);
+          return EMPTY;
+        })
       ),
     { dispatch: false }
   );
@@ -50,7 +70,11 @@ export class AppEffects {
         tap(
           ({ categoriesSheetId }) =>
             categoriesSheetId !== undefined && LocalStorageService.put(CATEGORIES_SHEET_ID, categoriesSheetId)
-        )
+        ),
+        catchError((e) => {
+          log(e);
+          return EMPTY;
+        })
       ),
     { dispatch: false }
   );
@@ -60,7 +84,11 @@ export class AppEffects {
       this.actions$.pipe(
         ofType(AppActions.storeCategories),
         tap(log),
-        tap(({ categories }) => LocalStorageService.put(CATEGORIES, categories))
+        tap(({ categories }) => LocalStorageService.put(CATEGORIES, categories)),
+        catchError((e) => {
+          log(e);
+          return EMPTY;
+        })
       ),
     { dispatch: false }
   );
@@ -70,10 +98,13 @@ export class AppEffects {
       ofType(AppActions.loadCategories),
       tap<ReturnType<typeof AppActions.loadCategories>>(log),
       tap(() => this.store.dispatch(AppActions.loading({ loading: true }))),
-      exhaustMap(() => this.spreadSheetService.getAllCategories()),
-      map((categories) => AppActions.storeCategories({ categories })),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-      catchError(reportFailure('loadCategories$', this.store))
+      exhaustMap(() =>
+        this.spreadSheetService.getAllCategories().pipe(
+          map((categories) => AppActions.storeCategories({ categories })),
+          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+          catchError(reportFailure('loadCategories$', this.store))
+        )
+      )
     )
   );
 
@@ -83,12 +114,13 @@ export class AppEffects {
       tap<ReturnType<typeof AppActions.addCategory>>(log),
       exhaustMap(({ newCategory }) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.addCategory(newCategory).pipe(map(() => newCategory));
-      }),
-      withLatestFrom(this.store.select(categoriesSelector)),
-      map(([newCategory, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-      catchError(reportFailure('addCategory$', this.store))
+        return this.spreadSheetService.addCategory(newCategory).pipe(
+          withLatestFrom(this.store.select(categoriesSelector)),
+          map(([, categories]) => AppActions.storeCategories({ categories: [...categories, newCategory] })),
+          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+          catchError(reportFailure('addCategory$', this.store))
+        );
+      })
     )
   );
 
@@ -100,16 +132,19 @@ export class AppEffects {
       exhaustMap(([action, sheetId, categories]) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
         const index = categories.findIndex((c) => c.name === action.category.name);
-        if (!~index) {
-          throw `cannot find category [${action.category.name}]`;
-        }
-        const newCategories = [...categories];
-        newCategories.splice(index, 1);
-        return this.spreadSheetService.deleteSheetRow(sheetId!, index).pipe(map(() => newCategories));
-      }),
-      map((categories) => AppActions.storeCategories({ categories })),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-      catchError(reportFailure('deleteCategory$', this.store))
+        const deletion$ = !~index
+          ? throwError(() => `cannot find category [${action.category.name}]`)
+          : (() => {
+              const newCategories = [...categories];
+              newCategories.splice(index, 1);
+              return this.spreadSheetService.deleteSheetRow(sheetId!, index).pipe(map(() => newCategories));
+            })();
+        return deletion$.pipe(
+          map((newCategories) => AppActions.storeCategories({ categories: newCategories })),
+          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+          catchError(reportFailure('deleteCategory$', this.store))
+        );
+      })
     )
   );
 
@@ -123,20 +158,21 @@ export class AppEffects {
         this.categoriesBackUp = categoriesBackUp;
         this.store.dispatch(AppActions.loading({ loading: true }));
         this.store.dispatch(AppActions.storeCategories({ categories: action.categories }));
-        return this.spreadSheetService.updateCategories(action.categories);
-      }),
-      map(() => AppActions.loading({ loading: false })),
-      catchError((e) => {
-        log(e);
-        this.store.dispatch(AppActions.storeCategories({ categories: this.categoriesBackUp }));
-        this.store.dispatch(AppActions.loading({ loading: false }));
-        this.store.dispatch(
-          AppActions.operationFailed({
-            source: 'updateCategoryPosition$',
-            message: FAILURE_MESSAGES.updateCategoryPosition$
+        return this.spreadSheetService.updateCategories(action.categories).pipe(
+          map(() => AppActions.loading({ loading: false })),
+          catchError((e) => {
+            log(e);
+            this.store.dispatch(AppActions.storeCategories({ categories: this.categoriesBackUp }));
+            this.store.dispatch(AppActions.loading({ loading: false }));
+            this.store.dispatch(
+              AppActions.operationFailed({
+                source: 'updateCategoryPosition$',
+                message: FAILURE_MESSAGES.updateCategoryPosition$
+              })
+            );
+            return EMPTY;
           })
         );
-        return EMPTY;
       })
     )
   );
@@ -147,14 +183,15 @@ export class AppEffects {
       tap<ReturnType<typeof AppActions.addExpense>>(log),
       exhaustMap((action) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.addExpense(action.sheetId, action.expense).pipe(map(() => action));
-      }),
-      map((action) => {
-        const to = new Date(action.expense.date!);
-        to.setDate(to.getDate() + 1); // add a day
-        return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
-      }),
-      catchError(reportFailure('addExpense$', this.store))
+        return this.spreadSheetService.addExpense(action.sheetId, action.expense).pipe(
+          map(() => {
+            const to = new Date(action.expense.date!);
+            to.setDate(to.getDate() + 1); // add a day
+            return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
+          }),
+          catchError(reportFailure('addExpense$', this.store))
+        );
+      })
     )
   );
 
@@ -176,50 +213,49 @@ export class AppEffects {
         }
 
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService
-          .loadLastExpenses(action.sheet.title, 100)
-          .pipe(map((expenses) => ({ action, expenses })));
-      }),
-      exhaustMap(({ action, expenses }) => {
-        const i = expenses.findIndex((e) => isExpenseEqual(e, action.expense));
-        if (!~i) {
-          return of(undefined);
-        }
-        return this.spreadSheetService.deleteSheetRow(action.sheet.id, i);
-      }),
-      map(() => {
-        this.deletedExpenseBackup = undefined;
-        return AppActions.loading({ loading: false });
-      }),
-      catchError((e) => {
-        log(e);
-        const backup = this.deletedExpenseBackup;
-        this.deletedExpenseBackup = undefined;
-        if (!backup) {
-          this.store.dispatch(AppActions.loading({ loading: false }));
-          this.store.dispatch(
-            AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
-          );
-          return EMPTY;
-        }
-        return this.store.select(expensesSelector).pipe(
-          take(1),
-          map((currentExpenses) => {
-            const idx = currentExpenses.findIndex((e) => isExpenseEqual(e, backup.expense));
-            const restored = [...currentExpenses];
-            if (!~idx) {
-              const insertAt = Math.min(backup.index, restored.length);
-              restored.splice(insertAt, 0, backup.expense);
+        return this.spreadSheetService.loadLastExpenses(action.sheet.title, 100).pipe(
+          switchMap((expenses) => {
+            const i = expenses.findIndex((e) => isExpenseEqual(e, action.expense));
+            if (!~i) {
+              throw `cannot find expense in the last 100 rows`;
             }
-            return restored;
+            return this.spreadSheetService.deleteSheetRow(action.sheet.id, i);
           }),
-          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-          tap(() =>
-            this.store.dispatch(
-              AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
-            )
-          ),
-          map((expenses) => AppActions.storeExpenses({ expenses }))
+          map(() => {
+            this.deletedExpenseBackup = undefined;
+            return AppActions.loading({ loading: false });
+          }),
+          catchError((e) => {
+            log(e);
+            const backup = this.deletedExpenseBackup;
+            this.deletedExpenseBackup = undefined;
+            if (!backup) {
+              this.store.dispatch(AppActions.loading({ loading: false }));
+              this.store.dispatch(
+                AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
+              );
+              return EMPTY;
+            }
+            return this.store.select(expensesSelector).pipe(
+              take(1),
+              map((currentExpenses) => {
+                const idx = currentExpenses.findIndex((e) => isExpenseEqual(e, backup.expense));
+                const restored = [...currentExpenses];
+                if (!~idx) {
+                  const insertAt = Math.min(backup.index, restored.length);
+                  restored.splice(insertAt, 0, backup.expense);
+                }
+                return restored;
+              }),
+              tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+              tap(() =>
+                this.store.dispatch(
+                  AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
+                )
+              ),
+              map((expenses) => AppActions.storeExpenses({ expenses }))
+            );
+          })
         );
       })
     )
@@ -232,11 +268,12 @@ export class AppEffects {
       switchMap(this.whenOnline),
       exhaustMap((action) => {
         this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.loadExpenses(action);
-      }),
-      map((expenses) => AppActions.storeExpenses({ expenses })),
-      tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-      catchError(reportFailure('loadExpenses$', this.store))
+        return this.spreadSheetService.loadExpenses(action).pipe(
+          map((expenses) => AppActions.storeExpenses({ expenses })),
+          tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+          catchError(reportFailure('loadExpenses$', this.store))
+        );
+      })
     )
   );
 

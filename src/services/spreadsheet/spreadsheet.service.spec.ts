@@ -123,6 +123,76 @@ describe('SpreadsheetService', () => {
     });
   });
 
+  describe('addExpense() / loadLastExpenses() date serial number round-trip', () => {
+    it('round-trips a local date through getSerialNumberFromDate and getDateFromSerialNumber', () => {
+      const expense: Expense = { ...baseExpense, date: new Date(2024, 0, 16, 12, 14, 23) };
+
+      service.addExpense(SHEET_ID, expense).subscribe();
+
+      const addReq = httpMock.expectOne(
+        (request) => request.method === 'POST' && request.url.endsWith(':batchUpdate')
+      );
+      const serialNumber = addReq.request.body.requests[1].updateCells.rows[0].values[3].userEnteredValue.numberValue;
+      addReq.flush({});
+
+      expect(serialNumber).toBeDefined();
+
+      let result: Array<Expense> = [];
+      service.loadLastExpenses(SHEET_NAME, 1).subscribe((expenses) => (result = expenses));
+
+      const getReq = httpMock.expectOne((request) => request.method === 'GET' && request.url.includes('/values/'));
+      getReq.flush({ values: [['Food', 'lunch', 12.5, serialNumber]] });
+
+      const decoded = result[0].date!;
+      expect(decoded.getFullYear()).toBe(2024);
+      expect(decoded.getMonth()).toBe(0);
+      expect(decoded.getDate()).toBe(16);
+      expect(decoded.getHours()).toBe(12);
+      expect(decoded.getMinutes()).toBe(14);
+      expect(decoded.getSeconds()).toBe(23);
+    });
+  });
+
+  describe('getDateFromSerialNumber DST regression (uses target instant offset, not "now" offset)', () => {
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('decodes a winter date correctly even when "now" is in a summer DST offset', () => {
+      // "Now" is mocked into summer (Kiev: UTC+3 / -180 minutes), while the encoded date
+      // itself is in winter (Kiev: UTC+2 / -120 minutes). The old buggy decoder used
+      // `new Date().getTimezoneOffset()` (the mocked summer "now"), shifting the decoded
+      // winter date by the 1-hour DST delta. The fixed decoder derives the offset from the
+      // target instant itself, so this must decode back to exactly 10:30, not 09:30.
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date(2026, 6, 15, 8, 0, 0));
+
+      const winterDate = new Date(2026, 0, 15, 10, 30, 0);
+      const expense: Expense = { ...baseExpense, date: winterDate };
+
+      service.addExpense(SHEET_ID, expense).subscribe();
+
+      const addReq = httpMock.expectOne(
+        (request) => request.method === 'POST' && request.url.endsWith(':batchUpdate')
+      );
+      const serialNumber = addReq.request.body.requests[1].updateCells.rows[0].values[3].userEnteredValue.numberValue;
+      addReq.flush({});
+
+      let result: Array<Expense> = [];
+      service.loadLastExpenses(SHEET_NAME, 1).subscribe((expenses) => (result = expenses));
+
+      const getReq = httpMock.expectOne((request) => request.method === 'GET' && request.url.includes('/values/'));
+      getReq.flush({ values: [['Food', 'lunch', 12.5, serialNumber]] });
+
+      const decoded = result[0].date!;
+      expect(decoded.getFullYear()).toBe(2026);
+      expect(decoded.getMonth()).toBe(0);
+      expect(decoded.getDate()).toBe(15);
+      expect(decoded.getHours()).toBe(10);
+      expect(decoded.getMinutes()).toBe(30);
+    });
+  });
+
   describe('loadExpenses() column E read-back', () => {
     function flushGviz(httpMockInstance: HttpTestingController, rowsC: Array<Array<{ v: unknown }>>): void {
       const req = httpMockInstance.expectOne((request) => request.url.includes('/gviz/tq'));
@@ -163,6 +233,25 @@ describe('SpreadsheetService', () => {
 
       expect(thrown).toBeUndefined();
       expect(result[0].isInDebt).toBeFalsy();
+    });
+
+    it('a blank column-D (date) cell maps to an undefined date and throws nothing', () => {
+      let result: Array<Expense> = [];
+      let thrown: unknown;
+
+      service.loadExpenses({ sheetId: SHEET_ID }).subscribe({
+        next: (expenses) => (result = expenses),
+        error: (err) => (thrown = err)
+      });
+
+      // gviz represents a blank cell as `null` in the `c` array, not `{v: null}` -- same shape
+      // as the already-fixed blank category/amount cells, but column D (date) was missed.
+      flushGviz(httpMock, [
+        [{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, null as unknown as { v: unknown }]
+      ]);
+
+      expect(thrown).toBeUndefined();
+      expect(result[0].date).toBeUndefined();
     });
   });
 });

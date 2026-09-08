@@ -11,7 +11,7 @@ export class LocalStorageService implements StorageService {
   }
 
   static put<T>(key: string, value: T): void {
-    if (value) localStorage.setItem(key, JSON.stringify(value));
+    if (value !== undefined && value !== null) localStorage.setItem(key, JSON.stringify(value));
   }
 
   get<T>(key: string): T | undefined {
