@@ -21,6 +21,7 @@ import {
   SPREADSHEET_ID
 } from 'src/constants';
 import { AbstractSecurityService, SpreadsheetService } from 'src/services';
+import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
 import { Sheet, Userinfo } from 'src/shared/models';
 
 type State = 'check document' | 'finish';
@@ -99,7 +100,7 @@ export class SettingsPageContainer {
   }
 
   private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo) {
-    return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, 5, spreadsheet).pipe(
+    return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, EXPENSE_COLUMN_COUNT, spreadsheet).pipe(
       switchMap((dataSheet) => {
         this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
         this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));

@@ -119,23 +119,6 @@ would require an additional scope). The local-first answer is to revalidate on v
 change plus an explicit pull-to-refresh, and to accept eventual consistency — which is what
 the architecture already implies but does not yet admit.
 
-## 3. Failure has no vocabulary
-
-Every effect ends `catchError → log(e) → EMPTY`.[^effects] There is no error state in the
-store, no failure action, no toast, no retry. `SpreadsheetService` never inspects a status
-code, so a 401, a 403, and a 429 are indistinguishable downstream. The user's only signal is
-a spinner that stops.
-
-In a conventional app this is sloppiness. **In a backend-less app it is a design error**,
-because the datastore is outside your control and failure is a *normal* operating condition:
-the sheet was renamed, a column was inserted, permission was revoked, quota was hit, the
-token expired, someone deleted the tab. Combine that with optimistic updates and the app will
-confidently show state that the spreadsheet does not agree with — which is exactly what
-happens today when the [category reorder rollback never dispatches](/constraints/known-issues.md).
-
-An `error` slice, explicit `*Failure` actions, and a snackbar is perhaps a day of work and is
-the single largest improvement to perceived reliability.
-
 ## 4. The auth flow is the wrong flow for a browser
 
 `RedirectSecurityService` performs an OAuth **authorization-code exchange from the browser**,
@@ -187,14 +170,9 @@ stamping over it. Worth noting that `Category.id` is already **vestigial for ord
 order is carried by row position and nothing sorts by `id` on read — so moving the row *is*
 the operation, and column B could be dropped or repurposed.
 
-## 7. The schema is hard-coded in three places, with no version marker
+## 7. No schema version marker
 
-Column order A–E is encoded independently in `addExpense`, in the `A1:E{n}` ranges, and in the
-gviz `select A, B, C, D, E`.[^svc] Adding the id column of §1 means touching all three, and
-nothing would catch a mismatch. A single row-mapper module — one place that defines column
-order, serialization, and parsing — is a prerequisite for any schema change, not a nicety.
-
-More importantly: **the data outlives the deployment.** That is the whole point of the design,
+**The data outlives the deployment.** That is the whole point of the design,
 and it creates an obligation the app has not yet met. There is no schema version anywhere in
 the spreadsheet, and setup reuses existing tabs without reconciling their shape, so a future
 layout change silently misreads every existing user's history. A version marker (a hidden
@@ -232,14 +210,12 @@ Effort is a rough order of magnitude, not an estimate.
 | # | Change | Fixes | Effort |
 |---|---|---|---|
 | 1 | **Id column + id-based delete** (§1) | 3 known issues at once: the 100-row limit, wrong-row deletion, duplicate ambiguity | S |
-| 2 | **Error state + failure actions + a snackbar** (§3); dispatch the reorder rollback that is currently built and dropped | every silent failure in the app | S |
 | 3 | **Switch to `PopupSecurityService`, delete `CLIENT_SECRET`** (§4) | a published client secret | XS |
 
 ## P1 — architecture, medium effort, high leverage
 
 | # | Change | Fixes | Effort |
 |---|---|---|---|
-| 4 | **Centralise row mapping in one module** (§7) | prerequisite for 1 and 5 | S |
 | 5 | **One read path + a local cache** (§2) | gviz fragility, two date encodings, slow statistics, hollow offline mode | M |
 | 6 | **`moveDimension` for category reorder** (§6) | lost updates on concurrent reorder | S |
 | 7 | **Schema version + migration step in setup** (§7) | silent misreads of existing users' data after any layout change | S |

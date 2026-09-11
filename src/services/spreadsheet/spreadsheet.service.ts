@@ -8,6 +8,17 @@ import { Observable, map } from 'rxjs';
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { Category, Expense } from 'src/shared/models';
 
+import {
+  EXPENSE_COLUMN_COUNT,
+  EXPENSE_COLUMN_INDEX,
+  EXPENSE_DATE_COLUMN_LETTER,
+  EXPENSE_GVIZ_COLUMNS,
+  GvizCell,
+  expenseValuesRange,
+  fromExpenseGvizRow,
+  fromExpenseValueRow,
+  toExpenseCells
+} from './expense-row';
 import keys from '../../../keys.json';
 
 @Injectable({ providedIn: 'root' })
@@ -137,7 +148,13 @@ export class SpreadsheetService {
    */
   setDataSheetFormats(sheetId: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const dateCellValidation: gapi.client.sheets.RepeatCellRequest = {
-      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 3, endColumnIndex: 4 },
+      range: {
+        sheetId,
+        startRowIndex: 0,
+        endRowIndex: 1048576,
+        startColumnIndex: EXPENSE_COLUMN_INDEX.date,
+        endColumnIndex: EXPENSE_COLUMN_INDEX.date + 1
+      },
       cell: {
         dataValidation: { condition: { type: 'DATE_IS_VALID' }, strict: true },
         effectiveFormat: { numberFormat: { type: 'DATE_TIME', pattern: `d/mm/yyyy HH:mm` } },
@@ -147,7 +164,13 @@ export class SpreadsheetService {
     };
 
     const categoriesCellValidation: gapi.client.sheets.RepeatCellRequest = {
-      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 0, endColumnIndex: 1 },
+      range: {
+        sheetId,
+        startRowIndex: 0,
+        endRowIndex: 1048576,
+        startColumnIndex: EXPENSE_COLUMN_INDEX.category,
+        endColumnIndex: EXPENSE_COLUMN_INDEX.category + 1
+      },
       cell: {
         dataValidation: {
           condition: { type: 'ONE_OF_RANGE', values: [{ userEnteredValue: `=${CATEGORIES_SHEET_TITLE}!$A:$A` }] },
@@ -158,7 +181,13 @@ export class SpreadsheetService {
     };
 
     const currencyCellValidation: gapi.client.sheets.RepeatCellRequest = {
-      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 2, endColumnIndex: 3 },
+      range: {
+        sheetId,
+        startRowIndex: 0,
+        endRowIndex: 1048576,
+        startColumnIndex: EXPENSE_COLUMN_INDEX.amount,
+        endColumnIndex: EXPENSE_COLUMN_INDEX.amount + 1
+      },
       cell: {
         dataValidation: {
           condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
@@ -169,7 +198,13 @@ export class SpreadsheetService {
     };
 
     const inDebtCellValidation: gapi.client.sheets.RepeatCellRequest = {
-      range: { sheetId, startRowIndex: 0, endRowIndex: 1048576, startColumnIndex: 4, endColumnIndex: 5 },
+      range: {
+        sheetId,
+        startRowIndex: 0,
+        endRowIndex: 1048576,
+        startColumnIndex: EXPENSE_COLUMN_INDEX.isInDebt,
+        endColumnIndex: EXPENSE_COLUMN_COUNT
+      },
       cell: {
         dataValidation: {
           condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
@@ -181,7 +216,7 @@ export class SpreadsheetService {
 
     const updateDimensionProperties = {
       properties: { pixelSize: 120 },
-      range: { dimension: 'COLUMNS', sheetId, startIndex: 3, endIndex: 4 },
+      range: { dimension: 'COLUMNS', sheetId, startIndex: EXPENSE_COLUMN_INDEX.date, endIndex: EXPENSE_COLUMN_INDEX.date + 1 },
       fields: 'pixelSize'
     };
 
@@ -241,17 +276,7 @@ export class SpreadsheetService {
     const updateCells: gapi.client.sheets.UpdateCellsRequest = {
       fields: 'userEnteredValue',
       start: { sheetId, rowIndex: 0, columnIndex: 0 },
-      rows: [
-        {
-          values: [
-            { userEnteredValue: { stringValue: expense.category } },
-            { userEnteredValue: { stringValue: expense.comment } },
-            { userEnteredValue: { numberValue: expense.amount } },
-            { userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } },
-            { userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined }
-          ]
-        }
-      ]
+      rows: [{ values: toExpenseCells(expense) }]
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
@@ -267,24 +292,13 @@ export class SpreadsheetService {
    * @param take
    */
   loadLastExpenses(sheetName: string, take: number = 1): Observable<Array<Expense>> {
-    const range = encodeURIComponent(sheetName + `!A1:E${take}`);
+    const range = encodeURIComponent(expenseValuesRange(sheetName, take));
 
     return this.http
       .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
         params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } })
       })
-      .pipe(
-        map(
-          (result) =>
-            result.values?.map<Expense>(([category, comment, amount, date, isInDebt]) => ({
-              category,
-              comment: comment ? String(comment) : undefined,
-              amount,
-              date: getDateFromSerialNumber(date),
-              isInDebt: isInDebt !== undefined && isInDebt !== null
-            })) ?? []
-        )
-      );
+      .pipe(map((result) => result.values?.map<Expense>(fromExpenseValueRow) ?? []));
   }
 
   /**
@@ -296,12 +310,12 @@ export class SpreadsheetService {
   loadExpenses(filter: { sheetId: number; from?: Date; to?: Date }): Observable<Array<Expense>> {
     const from = filter.from ?? new Date();
     let tq = `
-      select A, B, C, D, E
-      where D >= date '${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}'
+      select ${EXPENSE_GVIZ_COLUMNS}
+      where ${EXPENSE_DATE_COLUMN_LETTER} >= date '${from.getFullYear()}-${from.getMonth() + 1}-${from.getDate()}'
     `.trim();
 
     if (filter.to) {
-      tq += ` and D < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
+      tq += ` and ${EXPENSE_DATE_COLUMN_LETTER} < date '${filter.to.getFullYear()}-${filter.to.getMonth() + 1}-${filter.to.getDate()}'`;
     }
 
     return this.http
@@ -319,44 +333,11 @@ export class SpreadsheetService {
             throw new Error('Invalid response format from Google Sheets API');
           }
           const data = JSON.parse(jsonMatch[1]) as ExpensesDTO;
-          return data.table.rows.map<Expense>((row) => {
-            const comment = row.c[1]?.v;
-            const date = row.c[3]?.v;
-            const isInDebt = row.c[4]?.v;
-            return {
-              category: String(row.c[0]?.v ?? ''),
-              comment: comment ? String(comment) : undefined,
-              amount: Number(row.c[2]?.v ?? 0),
-              date: date !== undefined && date !== null ? secureParseDate(date as string) : undefined,
-              isInDebt: isInDebt !== undefined && isInDebt !== null
-            };
-          });
+          return data.table.rows.map<Expense>((row) => fromExpenseGvizRow(row.c));
         })
       );
   }
 
-}
-
-/**
- * https://developers.google.com/sheets/api/reference/rest/v4/DateTimeRenderOption
- * Instructs date, time, datetime, and duration fields to be output as doubles in "serial number" format, as popularized by Lotus 1-2-3.
- * The whole number portion of the value (left of the decimal) counts the days since December 30th 1899.
- * The fractional portion (right of the decimal) counts the time as a fraction of the day.
- * For example, January 1st 1900 at noon would be 2.5, 2 because it's 2 days after December 30th 1899, and .5 because noon is half a day.
- * February 1st 1900 at 3pm would be 33.625. This correctly treats the year 1900 as not a leap year.
- * @param date
- * @returns SERIAL_NUMBER
- */
-function getSerialNumberFromDate(date: Date): number {
-  return 25569.0 + (date.getTime() - date.getTimezoneOffset() * 60 * 1000) / (1000 * 60 * 60 * 24);
-}
-
-function getDateFromSerialNumber(date: number): Date {
-  const utcTime = (date + 0.0000000001 - 25569.0) * 1000 * 60 * 60 * 24;
-  // Offset must come from the target instant, not "now" -- DST rules differ across the year,
-  // so a fixed "now" offset shifts historical dates near a DST boundary by an hour.
-  const offsetMinutes = new Date(utcTime).getTimezoneOffset();
-  return new Date(utcTime + offsetMinutes * 60 * 1000);
 }
 
 interface ExpensesDTO {
@@ -369,28 +350,7 @@ interface ExpensesDTO {
     }>;
 
     rows: Array<{
-      c: Array<{ v: string | number; f?: string }>;
+      c: Array<GvizCell>;
     }>;
   };
-}
-
-/**
- * @param value string date representation example: Date(2024,0,16,12,14,23)
- */
-function secureParseDate(value: string): Date {
-  const regex = /^Date\((\d{4}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2}),(\d{1,2})\)$/;
-  const match = regex.exec(value);
-  if (match) {
-    const [, year, month, day, hours, minutes, seconds] = match;
-    return new Date(
-      parseInt(year, 10),
-      parseInt(month, 10),
-      parseInt(day, 10),
-      parseInt(hours, 10),
-      parseInt(minutes, 10),
-      parseInt(seconds, 10)
-    );
-  }
-
-  throw Error('should provide a valid date');
 }
