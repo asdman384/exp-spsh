@@ -13,8 +13,9 @@ window.addEventListener('error', (event) => {
 });
 
 import('./logger')
-  .then(() =>
-    bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), getAppConfig().providers] })
+  .then(() => getAppConfig())
+  .then((appConfig) =>
+    bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), appConfig.providers] })
   )
   .catch((err) => {
     console.error(err);

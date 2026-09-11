@@ -44,20 +44,21 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
 3. **Delete by index.** Find the matching row in that fresh array; its array index *is* the
    sheet row index because the sheet is newest-first and the read starts at row 1. Issue
    `deleteSheetRow(sheet.id, i)` -> `deleteDimension` for `[i, i+1)`. If no match is found,
-   emit `of(undefined)` and **do nothing** — a silent no-op.
+   the effect throws `cannot find expense in the last 100 rows`, which step 5 catches.
 4. **Settle.** Clear the backup and emit `loading(false)`.
-5. **Rollback.** On any error: log it, dispatch `operationFailed({ source: 'deleteExpense$',
-   message: "Couldn't delete that expense. It's back in your list." })` (opens a snackbar,
-   since 2026-09-08 — on **both** exits from this step: the early return when there was no
-   backup to restore, and the restore pipeline below), and if a backup exists, re-read the
-   current expenses, splice the row back at `min(backup.index, length)` when it is not
-   already present, clear `loading`, and dispatch `storeExpenses` with the restored array.
+5. **Rollback.** On any error (including the "not found" throw from step 3): log it and
+   dispatch `operationFailed({ source: 'deleteExpense$', message: "Couldn't delete that
+   expense. It's back in your list." })`, which opens a snackbar, on **both** exits from this
+   step — the early return when there was no backup to restore, and the restore pipeline
+   below. When a backup exists, the effect also re-reads the current expenses, splices the
+   row back at `min(backup.index, length)` when it is not already present, clears `loading`,
+   and dispatches `storeExpenses` with the restored array.
 
 # Constraints this flow carries
 
-- **Only the newest 100 rows are deletable.** Anything older is not found in step 3 and the
-  delete silently succeeds in the UI (the optimistic removal already happened) while the row
-  survives in the spreadsheet — until the next read brings it back.
+- **Only the newest 100 rows are deletable.** Anything older is not found in step 3, which
+  throws and triggers step 5's rollback: the optimistically-removed row reappears and a
+  toast reports the failure — the row was never actually deleted from the spreadsheet.
 - **The row index is positional.** If the sheet is edited or sorted in Google Sheets between
   step 2 and step 3, the wrong row can be deleted. The re-read in step 2 exists precisely to
   narrow that window.

@@ -1,6 +1,14 @@
+import { AsyncPipe, DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
-import { UIKitModule } from 'src/shared/modules/uikit.module';
+import { MatButtonModule } from '@angular/material/button';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { first, tap } from 'rxjs';
 
@@ -21,7 +29,37 @@ import { ExpensesTableComponent } from 'src/shared/components';
   templateUrl: './dashboard-page.container.html',
   styleUrl: './dashboard-page.container.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, UIKitModule, ExpensesTableComponent]
+  imports: [
+    FormsModule,
+    AsyncPipe,
+    DatePipe,
+    MatButtonModule,
+    MatCheckboxModule,
+    MatDatepickerModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatNativeDateModule,
+    MatSelectModule,
+    ExpensesTableComponent
+  ],
+  providers: [
+    { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },
+    {
+      provide: MAT_DATE_FORMATS,
+      useValue: {
+        ...MAT_NATIVE_DATE_FORMATS,
+        display: {
+          ...MAT_NATIVE_DATE_FORMATS.display,
+          dateInput: {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+          } as Intl.DateTimeFormatOptions
+        }
+      }
+    }
+  ]
 })
 export class DashboardPageContainer {
   protected readonly loading$ = this.store.select(loadingSelector);

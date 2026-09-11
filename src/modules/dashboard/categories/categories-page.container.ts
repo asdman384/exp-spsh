@@ -1,13 +1,17 @@
-import { CdkDragDrop, CdkDragMove, moveItemInArray } from '@angular/cdk/drag-drop';
+import { CdkDragDrop, CdkDragMove, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
+import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
 
 import { Store } from '@ngrx/store';
 import { first } from 'rxjs';
 
 import { AppActions, categoriesSelector, loadingSelector } from 'src/@state';
 import { Category } from 'src/shared/models';
-import { UIKitModule } from 'src/shared/modules';
 
 const DELETE_THRESHOLD = 150;
 const MOVE_THRESHOLD = 23;
@@ -16,7 +20,7 @@ const MOVE_THRESHOLD = 23;
   selector: 'categories-page',
   templateUrl: './categories-page.container.html',
   styleUrl: './categories-page.container.scss',
-  imports: [FormsModule, UIKitModule]
+  imports: [FormsModule, AsyncPipe, DragDropModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule]
 })
 export class CategoriesPageContainer {
   readonly loading$ = this.store.select(loadingSelector);

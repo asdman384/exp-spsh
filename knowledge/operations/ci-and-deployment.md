@@ -42,8 +42,7 @@ Details and the path filter are in [the GitHub system record](../systems/github-
 
 There is no rollback action. Options, in order of preference:
 
-1. Revert the commit on `master` and let the workflow redeploy (the pattern already used —
-   see commit `3075d41`, a revert of `98f2b23`).
+1. Revert the commit on `master` and let the workflow redeploy.
 2. Re-run an older successful workflow run from the Actions UI to republish its artifact.
 
 Users on an installed PWA keep the previous version until the worker fetches the new

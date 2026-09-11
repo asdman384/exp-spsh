@@ -15,7 +15,9 @@ sources:
 ---
 
 `<expenses-table>` is the only shared feature component. It is `OnPush` and imports
-`UIKitModule`.[^comp]
+`DatePipe`, `DragDropModule`, `MatCheckboxModule`, `MatIconModule`, `MatTableModule`, and
+`MatTooltipModule` directly — there is no shared UI-kit module to pull these in (see
+[dependency wiring](../architecture/dependency-wiring.md)).[^comp]
 
 # Inputs
 

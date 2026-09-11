@@ -97,9 +97,9 @@ in the service worker's `dataGroups` with zero caching
 # Stability risk
 
 This is a charting endpoint being used as a query API. It is not versioned alongside the
-Sheets API and its response envelope has changed before (commit `cdc85e6` reworked response
-handling). Treat a sudden universal read failure as a candidate for an upstream format
-change first ([troubleshooting](../operations/troubleshooting.md)).
+Sheets API, so its response envelope is not a contract Google guarantees stable for this
+use. Treat a sudden universal read failure as a candidate for an upstream format change
+first ([troubleshooting](../operations/troubleshooting.md)).
 
 [^svc]: SpreadsheetService.loadExpenses and ExpensesDTO
 [^qlang]: Visualization API query language reference

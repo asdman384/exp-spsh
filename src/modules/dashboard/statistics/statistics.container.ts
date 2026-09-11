@@ -1,6 +1,9 @@
+import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, ViewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { MatTabGroup } from '@angular/material/tabs';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
 import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, take } from 'rxjs';
@@ -9,7 +12,6 @@ import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } fr
 import { TOTAL } from 'src/constants';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { Expense, Sheet } from 'src/shared/models';
-import { UIKitModule } from 'src/shared/modules';
 
 const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
@@ -18,7 +20,7 @@ const PADDINGS = 76;
   selector: 'exp-statistics-container',
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
-  imports: [FormsModule, UIKitModule, ExpensesTableComponent]
+  imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent]
 })
 export class StatisticsContainer implements AfterViewInit {
   @ViewChild('summaryTable', { read: ElementRef })

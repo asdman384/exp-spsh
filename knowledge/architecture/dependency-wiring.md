@@ -15,9 +15,6 @@ sources:
   - id: logger
     resource: ../../src/logger.ts
     title: ExpLogger and the global log()
-  - id: uikit
-    resource: ../../src/shared/modules/uikit.module.ts
-    title: UIKitModule
 ---
 
 # Bootstrap order
@@ -27,9 +24,10 @@ sources:
 1. Registers `window` handlers for `unhandledrejection` and `error` (they only
    `console.log`; they do not suppress the default behaviour).
 2. **Dynamically imports `./logger`**, which installs the global `log()` function, and only
-   then calls `bootstrapApplication`. Nothing may call `log()` before this resolves.
-3. Bootstraps `AppComponent` with `provideZoneChangeDetection()` plus
-   `getAppConfig().providers`.
+   then calls `getAppConfig()`. Nothing may call `log()` before this resolves.
+3. `getAppConfig()` is **async** — it dynamically imports `@ngrx/store-devtools` itself (see
+   below) before resolving — and only once its `Promise` resolves does `main.ts` call
+   `bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), appConfig.providers] })`.
 
 Zone.js change detection is still in use; the app has not moved to zoneless.
 
@@ -45,7 +43,7 @@ Zone.js change detection is still in use; the app has not moved to zoneless.
 | — | `provideRouter(routes, withComponentInputBinding())` | [routing](routing-and-guards.md) |
 | — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled unconditionally, including in dev** |
 | — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot(AppEffects)` | [state](state-management.md) |
-| — | `StoreDevtoolsModule.instrument(...)` | **conditional**: only when the URL has a `logger` query param |
+| — | `StoreDevtoolsModule.instrument(...)` | **conditional and code-split**: `getAppConfig()`'s internal `getDebugProviders()` helper runs `await import('@ngrx/store-devtools')` only when the URL has a `logger` query param, so the package ships as its own lazy chunk, fetched only when that flag is present |
 
 `SpreadsheetService`, `NetworkStatusService` are `providedIn: 'root'`;
 `LocalStorageService`, `PopupSecurityService`, `RedirectSecurityService` are plain
@@ -72,16 +70,23 @@ guards and containers**, and any new environment (a test harness, SSR) must prov
 those code paths throw. `tsconfig.app.json` and `tsconfig.spec.json` both explicitly
 `include` `src/logger.ts` for this reason.
 
-# UIKitModule
+# Material and CDK imports
 
-The single remaining NgModule. It re-exports the Material modules the app uses
-(`toolbar`, `table`, `tabs`, `menu`, `badge`, `datepicker`, `checkbox`, `select`,
-`progress-bar`, `progress-spinner`, `tooltip`, `icon`, `input`, `form-field`, `button`)
-plus `CommonModule` and CDK `DragDropModule`, and provides date configuration:
-`MAT_DATE_LOCALE = 'en-GB'` and a `MAT_DATE_FORMATS` override whose `dateInput` display is
-`{ year: 'numeric', month: 'short', day: 'numeric' }`.[^uikit] Standalone components import
-`UIKitModule` rather than individual Material modules.
+There is no shared UI-kit module. Each standalone component's `imports: [...]` array lists
+only the specific Material/CDK modules and `@angular/common` pipes/directives (`AsyncPipe`,
+`DatePipe`, `NgClass`) its own template uses, so esbuild puts a module like Material's
+datepicker, table, tabs, or drag-drop only into the chunks of the components that actually
+reference it — e.g. the lazy `dashboard-routes` chunk — rather than the initial bundle.
+
+`DashboardPageContainer` is the only component with a `<mat-datepicker>`, and provides the
+date configuration — `MAT_DATE_LOCALE = 'en-GB'` and a `MAT_DATE_FORMATS` override whose
+`dateInput` display is `{ year: 'numeric', month: 'short', day: 'numeric' }` — in its own
+`@Component({ providers: [...] })` array. Angular resolves them for the datepicker's
+CDK-overlay popup the same way it resolves any other injected token, since the overlay is
+created through that component's injector.
+
+`ExpDialogComponent` (`src/shared/components/dialog/`) is unused: nothing in the app opens
+it (no `MatDialog.open()` call, no template reference).
 
 [^main]: Bootstrap entry point
 [^logger]: ExpLogger and the global log()
-[^uikit]: UIKitModule

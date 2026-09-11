@@ -1,4 +1,11 @@
+import { AsyncPipe, NgClass } from '@angular/common';
 import { Component } from '@angular/core';
+import { MatBadgeModule } from '@angular/material/badge';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
+import { MatMenuModule } from '@angular/material/menu';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatToolbarModule } from '@angular/material/toolbar';
 import { Router, RouterLink, RouterOutlet } from '@angular/router';
 import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 
@@ -9,7 +16,6 @@ import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } fro
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { SnowComponent } from 'src/fun/snow/snow.component';
 import { AbstractSecurityService, NetworkStatusService, SpreadsheetService } from 'src/services';
-import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 import pak from '../../package.json';
 
@@ -17,7 +23,19 @@ import pak from '../../package.json';
   selector: 'app-root',
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.scss'],
-  imports: [RouterOutlet, RouterLink, UIKitModule, SnowComponent]
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    AsyncPipe,
+    NgClass,
+    MatBadgeModule,
+    MatButtonModule,
+    MatIconModule,
+    MatMenuModule,
+    MatProgressBarModule,
+    MatToolbarModule,
+    SnowComponent
+  ]
 })
 export class AppComponent {
   protected readonly pageState$ = combineLatest({

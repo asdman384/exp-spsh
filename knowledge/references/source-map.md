@@ -39,7 +39,7 @@ sources:
 | `index.html`, `manifest.webmanifest` | shell and PWA manifest | [PWA](../architecture/pwa-and-service-worker.md) |
 | `styles.scss`, `css/fonts.scss` | global styles, self-hosted Roboto woff2 | — |
 | `app/` | `app.component.*`, `app.config.ts`, `app.routes.ts` | [routing](../architecture/routing-and-guards.md) |
-| `@state/` | `app.actions/effects/model/reducers/selectors.ts` | [state](../architecture/state-management.md) |
+| `@state/` | `app.actions/effects/model/reducers/selectors.ts`, `report-failure.ts` | [state](../architecture/state-management.md) |
 | `constants/` | `route.ts`, `UI.ts`, `local-storage-keys.ts`, `spreadsheets.ts` | [configuration](../operations/configuration-and-secrets.md) |
 | `environments/` | prod / dev flags (mostly vestigial) | [configuration](../operations/configuration-and-secrets.md) |
 | `http-interceptors/` | `auth-interceptor.ts` | [interceptor](../interfaces/http-auth-interceptor.md) |
@@ -52,7 +52,6 @@ sources:
 | `shared/helpers/` | `isExpenseEqual` (+ the best-covered spec) | [expense](../domain/expense.md) |
 | `shared/components/expenses-table/` | the shared table | [table contract](../interfaces/expenses-table-component.md) |
 | `shared/components/dialog/` | `ExpDialogComponent`, currently unused | [known issues](../constraints/known-issues.md) |
-| `shared/modules/uikit.module.ts` | Material re-exports + date config | [dependency wiring](../architecture/dependency-wiring.md) |
 | `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/` containers | [flows](../flows/) |
 | `modules/setup/` | shell + `login-page.containers.ts`, `setup-page/` | [initial setup](../flows/initial-setup.md) |
 | `modules/playground/` | unguarded Angular sandbox (own README) | [app system](../systems/exp-spsh-app.md) |
@@ -62,9 +61,10 @@ sources:
 
 # Test files
 
-Ten `.spec.ts` files, co-located. Three are `describe.skip`; the substantive ones are
-`shared/helpers/index.spec.ts` and `services/spreadsheet/spreadsheet.service.spec.ts`.
-See [testing](../operations/testing.md).
+Twelve `.spec.ts` files, co-located. Three are `describe.skip`; the substantive ones are
+`shared/helpers/index.spec.ts`, `services/spreadsheet/spreadsheet.service.spec.ts`,
+`@state/report-failure.spec.ts`, `@state/app.reducers.spec.ts`, and
+`@state/app.effects.spec.ts`. See [testing](../operations/testing.md).
 
 # Branches seen in the repository
 

@@ -55,8 +55,12 @@ Production build:[^ng]
 | any component style | 2 kB | 60 kB |
 
 The 2 kB per-component style warning is easy to trip on a page with a lot of SCSS.
-`StoreDevtools` is deliberately kept behind a runtime flag partly for this reason
-([dependency wiring](../architecture/dependency-wiring.md)).
+`StoreDevtools` is deliberately kept behind both a runtime flag and a dynamic `import()`, so
+it is a separate lazy chunk rather than part of the initial bundle
+([dependency wiring](../architecture/dependency-wiring.md)). Material/CDK modules are
+imported per-component (not through a shared barrel), which keeps datepicker/table/tabs/
+drag-drop inside the lazy `dashboard-routes` chunk instead of the initial one — worth
+knowing if the initial budget above ever looks like it is creeping up.
 
 # Environment constraints
 

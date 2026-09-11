@@ -61,10 +61,10 @@ interface AppState {
 `categories`, and `dataSheets` (upserted through the adapter). `expenses` is never
 persisted; it is always re-fetched.[^reducers]
 
-`metaReducers` is currently an empty array in both dev and prod. `lastError` is a new
-`AppState` field: it is set only by the `operationFailed` reducer branch, is **never**
-hydrated from or written to `LocalStorageService`, and is deliberately kept outside the four
-localStorage-backed keys below — it exists purely as a debugging record, not a display source.
+`metaReducers` is an empty array in both dev and prod. `lastError` is an `AppState` field
+set only by the `operationFailed` reducer branch; it is **never** hydrated from or written
+to `LocalStorageService`, and is deliberately kept outside the four localStorage-backed keys
+below — it exists purely as a debugging record, not a display source.
 
 # Reducer-handled versus effect-only actions
 
@@ -101,32 +101,32 @@ name (`data_<user.name>`) inside `AppComponent`.
 | `showFailureToast$` | — | `{ dispatch: false }`; `ofType(operationFailed)` → `MatSnackBar.open(message, 'Dismiss', { politeness: 'assertive', verticalPosition: 'top' })`, no `duration` (WCAG 2.2.1) |
 
 The 7 remote-calling effects (`loadCategories$`, `addCategory$`, `deleteCategory$`,
-`updateCategoryPosition$`, `addExpense$`, `deleteExpense$`, `loadExpenses$`) now all
-dispatch `operationFailed({ source, message })` on failure, in addition to logging and
-clearing `loading` — 5 of them via the shared `reportFailure(source, store)` helper in
-`src/@state/report-failure.ts` (a plain `catchError` replacement), the 2 optimistic ones
-(`updateCategoryPosition$`, `deleteExpense$`) inline, alongside their bespoke rollback logic.
-`message` is always one of 7 fixed, plain-language strings (`report-failure.ts`'s
-`FAILURE_MESSAGES` table) — the raw error (via `toMessage(e)` in
-`src/shared/helpers/index.ts`) goes only into the `log()` line, never into the toast or
-`lastError`. **A failed remote operation now surfaces to the user as a snackbar**, not just a
-stopped spinner; see [`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md)
-and [`docs/architecture/effect-error-surfacing.md`](../../docs/architecture/effect-error-surfacing.md)
+`updateCategoryPosition$`, `addExpense$`, `deleteExpense$`, `loadExpenses$`) all dispatch
+`operationFailed({ source, message })` on failure, in addition to logging and clearing
+`loading` — 5 of them via the shared `reportFailure(source, store)` helper in
+`src/@state/report-failure.ts` (wraps `catchError`, dispatching `operationFailed` before
+returning `EMPTY`), the 2 optimistic ones (`updateCategoryPosition$`, `deleteExpense$`)
+inline, alongside their bespoke rollback logic. `message` is always one of 7 fixed,
+plain-language strings (`report-failure.ts`'s `FAILURE_MESSAGES` table) — the raw error (via
+`toMessage(e)` in `src/shared/helpers/index.ts`) goes only into the `log()` line, never into
+the toast or `lastError`. **A failed remote operation surfaces to the user as a snackbar**;
+see [`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md) and
+[`docs/architecture/effect-error-surfacing.md`](../../docs/architecture/effect-error-surfacing.md)
 in the repository root for the full design.
 
 The 4 localStorage-only persist effects (`saveSpreadsheetId$`, `saveSheetId$`,
-`saveCategoriesSheetId$`, `saveCategories$`) are **unchanged** — no `catchError`, still
-fully silent on a `LocalStorageService.put` failure (e.g. quota exceeded). This is a
-deliberate, still-open gap (a different failure class — synchronous, non-network); see
+`saveCategoriesSheetId$`, `saveCategories$`) have no `catchError` and are fully silent on a
+`LocalStorageService.put` failure (e.g. quota exceeded). This is a deliberate, open gap (a
+different failure class — synchronous, non-network); see
 [known issues](../constraints/known-issues.md) item 20.
 
-**Caveat:** every effect's `catchError` still sits on the *outer* pipe and returns `EMPTY`,
-which *completes* that effect's stream. NgRx's default effects error handler resubscribes on
-an **error** notification, not on a **completion**, so each of the 7 remote effects still
-goes permanently unresponsive to its trigger action after its first failure of the session —
-the toast now fires for that first failure, but a second failure of the same effect produces
-no toast at all (not because dispatch is broken, but because the effect is no longer
-listening). See [known issues](../constraints/known-issues.md) item 21.
+**Caveat:** every effect's `catchError` sits on the *outer* pipe and returns `EMPTY`, which
+*completes* that effect's stream. NgRx's default effects error handler resubscribes on an
+**error** notification, not on a **completion**, so each of the 7 remote effects goes
+permanently unresponsive to its trigger action after its first failure of the session: the
+toast fires for that first failure, but every failure after it produces no toast, no
+dispatch, and no network call — the effect's stream has completed and no longer reacts to
+its trigger action at all. See [known issues](../constraints/known-issues.md) item 21.
 
 Loading state is managed imperatively: effects call `dispatch(AppActions.loading(...))`
 from inside `tap`/`exhaustMap` rather than emitting it as a mapped action.
@@ -151,7 +151,11 @@ nothing is selected — several call sites assert it non-null with `!`.
 # DevTools
 
 `StoreDevtoolsModule.instrument(...)` is registered **only when the URL carries a `logger`
-query parameter**, keeping it out of the normal bundle path. See
+query parameter**. The `@ngrx/store-devtools` package itself is now dynamically imported
+(`await import('@ngrx/store-devtools')` inside `getAppConfig()`) rather than statically
+imported at the top of `app.config.ts`, so it ships as its own lazy chunk and is fetched
+over the network only when the flag is present, instead of sitting parsed-but-unused in the
+initial bundle. See [dependency wiring](dependency-wiring.md) and
 [build and serve](../operations/build-and-serve.md).
 
 [^model]: AppState / SheetsState interfaces

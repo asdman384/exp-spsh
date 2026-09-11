@@ -11,14 +11,19 @@ import { AppEffects } from 'src/@state/app.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { routes } from './app.routes';
-import { StoreDevtoolsModule } from '@ngrx/store-devtools';
 
-const debug: ImportProvidersSource[] = [];
 const search = window.location.href.split('?')[1];
 const urlParams = new URLSearchParams(search);
 const loggerType = urlParams.get('logger');
-if (loggerType) {
-  debug.push(
+
+// Dynamically imported so @ngrx/store-devtools (and its cost) only ships to the browser
+// when someone actually opens the app with ?logger=, instead of loading on every visit.
+async function getDebugProviders(): Promise<ImportProvidersSource[]> {
+  if (!loggerType) {
+    return [];
+  }
+  const { StoreDevtoolsModule } = await import('@ngrx/store-devtools');
+  return [
     StoreDevtoolsModule.instrument({
       maxAge: 25, // Retains last 25 states
       logOnly: false, // Restrict extension to log-only mode
@@ -27,10 +32,11 @@ if (loggerType) {
       traceLimit: 75, // maximum stack trace frames to be stored (in case trace option was provided as true)
       connectInZone: false // If set to true, the connection is established within the Angular zone
     })
-  );
+  ];
 }
 
-export function getAppConfig(): ApplicationConfig {
+export async function getAppConfig(): Promise<ApplicationConfig> {
+  const debug = await getDebugProviders();
   return {
     providers: [
       withViewTransitions({

@@ -1,5 +1,6 @@
 import { SelectionModel } from '@angular/cdk/collections';
-import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart } from '@angular/cdk/drag-drop';
+import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   ChangeDetectorRef,
@@ -12,9 +13,12 @@ import {
   inject
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTableModule } from '@angular/material/table';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
 import { Expense } from 'src/shared/models';
-import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment', 'isInDebt'];
 const DELETE_THRESHOLD = 100;
@@ -24,7 +28,7 @@ const DELETE_THRESHOLD = 100;
     templateUrl: './expenses-table.component.html',
     styleUrl: './expenses-table.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [UIKitModule]
+    imports: [DatePipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
 })
 export class ExpensesTableComponent implements OnChanges {
   private readonly cdRef = inject(ChangeDetectorRef);

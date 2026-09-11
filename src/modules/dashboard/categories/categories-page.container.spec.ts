@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { CategoriesPageContainer } from './categories-page.container';
 import { Store } from '@ngrx/store';
 import { FormsModule } from '@angular/forms';
-import { UIKitModule } from 'src/shared/modules/uikit.module';
 
 describe('CategoriesPageContainer', () => {
   let component: CategoriesPageContainer;
@@ -11,7 +10,7 @@ describe('CategoriesPageContainer', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [CategoriesPageContainer, FormsModule, UIKitModule],
+      imports: [CategoriesPageContainer, FormsModule],
       providers: [{ provide: Store, useValue: { select: vi.fn(), dispatch: vi.fn() } }]
     }).compileComponents();
 

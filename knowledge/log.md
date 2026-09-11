@@ -1,5 +1,63 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-11 (2)
+
+* **Cleanup**: swept the whole bundle (every file except this log) for prose that narrated
+  *how something used to behave* — dated phrases like "since 2026-09-08", "fixed 2026-09-08",
+  "now all dispatch...", "unchanged", "the old advice still applies", and commit-id citations
+  used as history ("has changed before, commit `cdc85e6`") — and rewrote each as a plain
+  present-tense statement of current behaviour. Concept files should describe only the
+  system as it is now; this log is the only place change history belongs. Touched:
+  [dependency wiring](architecture/dependency-wiring.md),
+  [state management](architecture/state-management.md),
+  [technical constraints](constraints/technical-constraints.md),
+  [code conventions](constraints/code-conventions.md),
+  [known issues](constraints/known-issues.md), [source map](references/source-map.md),
+  [testing](operations/testing.md), [troubleshooting](operations/troubleshooting.md),
+  [CI and deployment](operations/ci-and-deployment.md),
+  [gviz interface](interfaces/gviz-query.md), [add expense](flows/add-expense.md),
+  [delete expense](flows/delete-expense.md), [load expenses](flows/load-expenses.md), and
+  [manage categories](flows/manage-categories.md).
+* **Correction found during the sweep**: [delete expense](flows/delete-expense.md) step 3
+  said a not-found row was "a silent no-op" — actually reading `app.effects.ts` shows
+  `deleteExpense$` **throws** `cannot find expense in the last 100 rows` when the row isn't
+  in the last 100, which step 5's rollback catches (the optimistic removal is reverted and a
+  toast fires). The flow doc and [known issues](constraints/known-issues.md) item 2 now
+  match the code.
+* **Correction found during the sweep**: [source map](references/source-map.md) said "Ten
+  `.spec.ts` files"; twelve currently exist. Corrected the count and named the three
+  `src/@state/*.spec.ts` files among "the substantive ones," and added `report-failure.ts`
+  to the `@state/` row (both existed but weren't listed).
+
+## 2026-09-11
+
+* **Update**: [dependency wiring](architecture/dependency-wiring.md) — `src/shared/modules/`
+  (the `UIKitModule` barrel that re-exported every Material module plus `CommonModule` and
+  CDK `DragDropModule`) was deleted. Every standalone component now imports only the
+  Material/CDK modules and `@angular/common` pipes/directives its own template uses; the
+  `MAT_DATE_LOCALE`/`MAT_DATE_FORMATS` providers moved from the module's `providers` array to
+  `DashboardPageContainer`'s own `@Component({ providers: [...] })`, since it is the only
+  component with a datepicker. Bundle-size motivated: the barrel put Material's
+  datepicker/table/tabs/drag-drop into every component's initial chunk regardless of need.
+* **Update**: `getAppConfig()` (`src/app/app.config.ts`) is now `async` and dynamically
+  imports `@ngrx/store-devtools` (`await import(...)`) only when the URL carries a `logger`
+  query param, instead of statically importing the package at module top-level. `main.ts`
+  now awaits `getAppConfig()` before calling `bootstrapApplication`. `StoreDevtools` is a
+  genuinely separate lazy chunk now, not just conditionally-instantiated dead weight in the
+  initial bundle. Reflected in
+  [dependency wiring](architecture/dependency-wiring.md#material-and-cdk-imports),
+  [state management](architecture/state-management.md), and
+  [technical constraints](constraints/technical-constraints.md).
+* **Update**: [exp-spsh system overview](architecture/overview.md) — the app now authors
+  zero `@NgModule` classes (previously "the only NgModule is `UIKitModule`").
+* **Update**: [code conventions](constraints/code-conventions.md) and
+  [ExpensesTableComponent](interfaces/expenses-table-component.md) updated to describe
+  per-component Material/CDK imports instead of the `UIKitModule` convention.
+* **Update**: [source map](references/source-map.md) — removed the
+  `shared/modules/uikit.module.ts` row (path no longer exists).
+* Not otherwise touched: `ExpDialogComponent` remains unused dead code, just no longer
+  incidentally re-exported through the deleted barrel.
+
 ## 2026-09-08
 
 * **Update**: Reflected the `effect-error-surfacing` feature

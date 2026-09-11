@@ -64,7 +64,7 @@ error).[^ng] This is exactly what CI runs
 | URL | Effect |
 |---|---|
 | `.../#/dashboard` | normal entry (root redirects here) |
-| `...?logger=1#/dashboard` | additionally registers **NgRx StoreDevtools** |
+| `...?logger=1#/dashboard` | additionally fetches and registers **NgRx StoreDevtools** (dynamically imported, so it is otherwise not downloaded at all) |
 | `.../#/playground` | unguarded Angular-features sandbox |
 
 The on-page **log overlay** (the `memory` icon in the corner) is always active regardless of

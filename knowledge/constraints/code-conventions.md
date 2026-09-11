@@ -35,7 +35,7 @@ src/@state/           NgRx store, effects, actions, selectors, model
 src/app/              root component, config, routes
 src/modules/          feature areas (dashboard, setup, playground)
 src/services/         API clients and platform services
-src/shared/           components, guards, helpers, models, modules
+src/shared/           components, guards, helpers, models
 src/constants/        route/UI/storage/spreadsheet constants
 src/environments/     build-time environment flags
 src/http-interceptors/
@@ -51,8 +51,10 @@ src/fun/              seasonal extras
 
 # Components
 
-- **Standalone**, with an `imports: [...]` array; `UIKitModule` is imported wholesale rather
-  than individual Material modules.
+- **Standalone**, with an `imports: [...]` array listing only the specific Material/CDK
+  modules and `@angular/common` pipes/directives (`AsyncPipe`, `DatePipe`, `NgClass`) that
+  component's own template uses — there is no shared UI-kit barrel module (see
+  [dependency wiring](../architecture/dependency-wiring.md)).
 - Templates in separate `.html` files, styles in `.scss` — except very small components
   (`SetupComponent`, `LoginPageContainer`) which inline both.
 - **Constructor injection** with `private readonly` parameter properties is the dominant
@@ -86,7 +88,7 @@ Public service methods carry a JSDoc block whose first lines are **links to the 
 reference pages** they call. Keep that habit — it is the fastest route from code to the
 upstream contract.
 
-Comments are sparse and in English, with a few Russian comments in `main.ts` and
-`app.config.ts` from earlier work.
+Comments are sparse and in English, except a few Russian-language comments in `main.ts` and
+`app.config.ts`.
 
 [^rules]: Code style guidelines

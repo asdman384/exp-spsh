@@ -1,5 +1,8 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
 import { Store } from '@ngrx/store';
 
@@ -8,7 +11,6 @@ import { filter } from 'rxjs';
 import { AppActions } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, AbstractSecurityService } from 'src/services';
-import { UIKitModule } from 'src/shared/modules';
 
 @Component({
   selector: 'login-page',
@@ -42,7 +44,7 @@ import { UIKitModule } from 'src/shared/modules';
       }
     `
   ],
-  imports: [UIKitModule]
+  imports: [AsyncPipe, MatButtonModule, MatIconModule]
 })
 export class LoginPageContainer implements OnInit {
   readonly isOnline$ = this.status.online$;

@@ -47,9 +47,9 @@ test bundle — code under test calls it freely.
 with the standalone component in `imports`, and either a stubbed `Store`
 (`{ select: vi.fn(), dispatch: vi.fn() }`) or a real `StoreModule.forRoot(reducers)`.
 
-**Effects specs** (new as of 2026-09-08, `docs/specs/effect-error-surfacing.md`) are the
-first of their kind in this repo — no prior precedent existed. The pattern established in
-`src/@state/app.effects.spec.ts`: `provideMockActions` from `@ngrx/effects/testing` with a
+**Effects specs** (`docs/specs/effect-error-surfacing.md`) are the only specs of their kind
+in this repo. The pattern, established in `src/@state/app.effects.spec.ts`:
+`provideMockActions` from `@ngrx/effects/testing` with a
 `Subject<Action>`-backed actions stream; a `Store` stub whose `select` returns an
 **observable** (`of(undefined)`, not a bare function — several `AppEffects` fields call
 `this.store.select(...)` during class-field initialization, so a non-observable return
@@ -71,27 +71,26 @@ defined` before the test body runs.**
 
 | Spec | State | Content |
 |---|---|---|
-| `src/shared/helpers/index.spec.ts` | **active, 22 tests** | `isExpenseEqual` (13, every field and date component) + `toMessage` (9, added 2026-09-08) |
+| `src/shared/helpers/index.spec.ts` | **active, 22 tests** | `isExpenseEqual` (13, every field and date component) + `toMessage` (9) |
 | `src/services/spreadsheet/spreadsheet.service.spec.ts` | **active, 8 tests** | URLs, verbs, and serial-date conversion via `HttpTestingController` |
-| `src/@state/report-failure.spec.ts` | **active, new 2026-09-08** | `reportFailure`'s dispatch order/payloads; asserts the dispatched message is never raw error text |
-| `src/@state/app.reducers.spec.ts` | **active, new 2026-09-08** | the `lastError` branch: initial `null`, `id` increments on repeat identical payloads, other `AppState` keys untouched |
-| `src/@state/app.effects.spec.ts` | **active, new 2026-09-08** | `showFailureToast$`: opens exactly once with the right message/config (no `duration`, `politeness: 'assertive'`); two `operationFailed` emissions open the snackbar twice |
+| `src/@state/report-failure.spec.ts` | **active** | `reportFailure`'s dispatch order/payloads; asserts the dispatched message is never raw error text |
+| `src/@state/app.reducers.spec.ts` | **active** | the `lastError` branch: initial `null`, `id` increments on repeat identical payloads, other `AppState` keys untouched |
+| `src/@state/app.effects.spec.ts` | **active** | `showFailureToast$`: opens exactly once with the right message/config (no `duration`, `politeness: 'assertive'`); two `operationFailed` emissions open the snackbar twice |
 | `src/modules/dashboard/categories/...spec.ts` | active, 1 test | creation smoke test with a stubbed store |
 | `src/modules/dashboard/dashboard.component.spec.ts` | active, 1 test | creation smoke test |
 | `src/modules/dashboard/statistics/...spec.ts` | active, 1 test | creation smoke test with a real store |
 | `src/shared/components/expenses-table/...spec.ts` | active, 1 test | creation smoke test |
-| `src/app/app.component.spec.ts` | **`describe.skip`** | also asserts a title string the app no longer renders |
+| `src/app/app.component.spec.ts` | **`describe.skip`** | also asserts a title string absent from the current `app.component.html` |
 | `src/services/storage/local-storage.service.spec.ts` | **`describe.skip`** | — |
 | `src/shared/components/dialog/dialog.component.spec.ts` | **`describe.skip`** | — |
 
-As of 2026-09-08 the meaningful coverage is the expense equality helper, `toMessage`, the
-Sheets service, and — newly — the failure-reporting mechanism (`reportFailure`, the
-`lastError` reducer branch, `showFailureToast$`). **The 7 remote effects' actual production
-logic (the Sheets calls themselves, the optimistic updates/rollbacks, the `store*`
-dispatches) is still untested** — only their shared failure path is. Guards, the
-interceptor, the security services, and the setup flow still have no tests at all. Treat a
-green run as a regression check on those units, not as a safety net for
-[the flows](../flows/).
+The meaningful coverage is the expense equality helper, `toMessage`, the Sheets service, and
+the failure-reporting mechanism (`reportFailure`, the `lastError` reducer branch,
+`showFailureToast$`). **The 7 remote effects' actual production logic (the Sheets calls
+themselves, the optimistic updates/rollbacks, the `store*` dispatches) is untested** — only
+their shared failure path is. Guards, the interceptor, the security services, and the setup
+flow have no tests at all. Treat a green run as a regression check on those units, not as a
+safety net for [the flows](../flows/).
 
 # Rules
 

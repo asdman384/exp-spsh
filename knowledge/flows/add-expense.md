@@ -61,14 +61,13 @@ Two details:
   displayed (for example after picking an older date), the table collapses to that day.
 - `exhaustMap` means a double-tap on **Add Expense** while the first write is in flight is
   dropped, which is the de-facto duplicate guard.
-- A failure logs, clears `loading`, dispatches `operationFailed({ source: 'addExpense$',
+- A failure logs, clears `loading`, and dispatches `operationFailed({ source: 'addExpense$',
   message: "Couldn't save that expense. Please try again." })` (opens a snackbar via
-  `reportFailure`), and returns `EMPTY` — since 2026-09-08 the user sees a toast, not just a
-  stopped spinner. The typed values are already gone from the form because the reset happens
-  optimistically on submit, and this effect's `catchError` cannot restore them. Note also:
-  after the *first* failure of `addExpense$` in a session, the effect's stream is complete
-  and further submits silently do nothing (no toast either) — see
-  [known issues](../constraints/known-issues.md) item 21.
+  `reportFailure`), then returns `EMPTY`. The typed values are already gone from the form
+  because the reset happens optimistically on submit, and this effect's `catchError` cannot
+  restore them. Note also: after the *first* failure of `addExpense$` in a session, the
+  effect's stream is complete and further submits silently do nothing (no toast either) —
+  see [known issues](../constraints/known-issues.md) item 21.
 - The date written is the local wall-clock time; see
   [date encoding](../domain/spreadsheet-layout.md).
 

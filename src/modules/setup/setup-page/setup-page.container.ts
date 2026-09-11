@@ -1,5 +1,11 @@
+import { AsyncPipe } from '@angular/common';
 import { Component } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
+import { MatButtonModule } from '@angular/material/button';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
+import { MatInputModule } from '@angular/material/input';
+import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 
 import { Store } from '@ngrx/store';
@@ -16,7 +22,6 @@ import {
 } from 'src/constants';
 import { AbstractSecurityService, SpreadsheetService } from 'src/services';
 import { Sheet, Userinfo } from 'src/shared/models';
-import { UIKitModule } from 'src/shared/modules';
 
 type State = 'check document' | 'finish';
 
@@ -24,7 +29,7 @@ type State = 'check document' | 'finish';
   selector: 'setup-page',
   templateUrl: './setup-page.container.html',
   styleUrl: './setup-page.container.scss',
-  imports: [FormsModule, UIKitModule]
+  imports: [FormsModule, AsyncPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule]
 })
 export class SettingsPageContainer {
   readonly spreadsheetIdField = SPREADSHEET_ID;

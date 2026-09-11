@@ -27,7 +27,7 @@ the database, and the browser talks to Google APIs directly.[^appcfg]
 |---|---|
 | App name / npm package | `exp-spsh` |
 | Version | `0.7.4` (surfaced in the toolbar menu, read from `package.json`) |
-| Framework | Angular 21, standalone components (the only NgModule is `UIKitModule`) |
+| Framework | Angular 21, fully standalone components — no `@NgModule` is authored in `src/`; `StoreModule`/`EffectsModule`/`ServiceWorkerModule`/`StoreDevtoolsModule` are third-party NgModules wired in via `importProvidersFrom` |
 | State | NgRx 21 (`store`, `effects`, `entity`, `store-devtools`) |
 | UI kit | Angular Material 21, prebuilt `deeppurple-amber` theme |
 | Persistence | Google Sheets (remote) + `localStorage` (config and cache) |

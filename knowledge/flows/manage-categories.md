@@ -52,16 +52,14 @@ The list is a `cdkDropList`. `onDrop` first asks `tryDelete`, and otherwise call
 `updateCategories(...)` -> `values.update` on `categories!A1:B<n>` (RAW), rewriting the whole
 range as `[[name, id], ...]` in the new visual order.
 
-> **Rollback gap — fixed 2026-09-08.** The `catchError` branch's restore line,
-> `AppActions.storeCategories({ categories: this.categoriesBackUp })`, used to be built but
-> **never dispatched**, so a failed reorder left the optimistic order on screen and in
-> localStorage while the sheet kept the old one, until the next `loadCategories`. It is now
-> actually dispatched (`this.store.dispatch(...)`), alongside `loading(false)` and a new
+> **On a failed reorder**, the `catchError` branch dispatches
+> `AppActions.storeCategories({ categories: this.categoriesBackUp })` to restore the
+> pre-reorder order, alongside `loading(false)` and
 > `operationFailed({ source: 'updateCategoryPosition$', message: "Couldn't save the new
-> order. Your categories were put back the way they were." })` that opens a snackbar. See
-> [known issues](../constraints/known-issues.md) item 1 (fixed) and item 10. Note: after the
-> *first* failed reorder in a session, `updateCategoryPosition$`'s stream is complete and
-> further reorders silently do nothing at all — see item 21.
+> order. Your categories were put back the way they were." })`, which opens a snackbar. Note:
+> after the *first* failed reorder in a session, `updateCategoryPosition$`'s stream is
+> complete and further reorders silently do nothing at all — see
+> [known issues](../constraints/known-issues.md) item 21.
 
 # Delete (drag right)
 
