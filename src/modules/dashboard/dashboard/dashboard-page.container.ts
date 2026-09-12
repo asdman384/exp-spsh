@@ -1,6 +1,6 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MAT_DATE_FORMATS, MAT_DATE_LOCALE, MAT_NATIVE_DATE_FORMATS, MatNativeDateModule } from '@angular/material/core';
@@ -24,13 +24,22 @@ import { TIME_FORMAT } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
 
+interface ExpenseFormModel {
+  date: Date;
+  sheet: Sheet | null;
+  amount: number | null;
+  category: string | null;
+  comment: string;
+  isInDebt: boolean;
+}
+
 @Component({
   selector: 'dashboard-page',
   templateUrl: './dashboard-page.container.html',
   styleUrl: './dashboard-page.container.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
+    FormField,
     AsyncPipe,
     DatePipe,
     MatButtonModule,
@@ -69,8 +78,14 @@ export class DashboardPageContainer {
   protected readonly timeFormat = TIME_FORMAT;
 
   protected minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
-  protected sheet?: Sheet;
-  protected expense: Expense = { date: new Date() };
+
+  protected readonly expenseModel = signal<ExpenseFormModel>(this.createExpenseModel());
+  protected readonly expenseForm = form(this.expenseModel, (p) => {
+    required(p.date);
+    required(p.sheet);
+    required(p.amount);
+    required(p.category);
+  });
 
   constructor(private readonly store: Store) {
     this.store.dispatch(AppActions.setTitle({ title: 'Dashboard', icon: 'dashboard' }));
@@ -84,55 +99,59 @@ export class DashboardPageContainer {
           }
         })
       )
-      .subscribe((sheet) => (this.sheet = sheet));
+      .subscribe((sheet) => this.expenseModel.update((model) => ({ ...model, sheet: sheet ?? null })));
   }
 
-  protected onSubmit(form: NgForm): void {
-    if (!form.valid) {
+  protected onSubmit(event: Event): void {
+    event.preventDefault();
+    if (!this.expenseForm().valid()) {
       return;
     }
-    log('DashboardPageContainer::onSubmit', form.value);
-    const sheet = form.value['sheet'] as Sheet;
-    const date = form.value['date'] as Date;
-    this.store.dispatch(AppActions.addExpense({ expense: form.value as Expense, sheetId: sheet.id }));
-    form.resetForm({
-      date,
-      sheet,
-      amount: undefined,
-      category: undefined,
-      comment: undefined,
-      isInDebt: false
+    const value = this.expenseForm().value();
+    log('DashboardPageContainer::onSubmit', value);
+    const sheet = value.sheet as Sheet;
+    this.store.dispatch(AppActions.addExpense({ expense: value as Expense, sheetId: sheet.id }));
+    this.expenseForm().reset({
+      ...this.createExpenseModel(),
+      date: value.date,
+      sheet
     });
   }
 
   protected onSheetChange(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(this.expense.date!) }));
+    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(this.expenseModel().date) }));
   }
 
   protected onDateChange(date: Date): void {
     log('DashboardPageContainer::onDateChange', date);
-    if (!this.sheet) {
+    const sheet = this.expenseModel().sheet;
+    if (!sheet) {
       return;
     }
 
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: this.sheet.id, ...this.getInterval(date) }));
+    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(date) }));
 
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
-    this.expense.date = currentTime;
+    this.expenseModel.update((model) => ({ ...model, date: currentTime }));
   }
 
   protected loadCategories(): void {
     this.store.dispatch(AppActions.loadCategories());
   }
 
+  protected clearComment(): void {
+    this.expenseModel.update((model) => ({ ...model, comment: '' }));
+  }
+
   protected handleDeleteExpense(expense: Expense): void {
-    if (!this.sheet) {
+    const sheet = this.expenseModel().sheet;
+    if (!sheet) {
       return;
     }
 
-    this.store.dispatch(AppActions.deleteExpense({ expense, sheet: this.sheet }));
+    this.store.dispatch(AppActions.deleteExpense({ expense, sheet }));
   }
 
   private getInterval(from: Date): { from: Date; to?: Date } {
@@ -146,5 +165,16 @@ export class DashboardPageContainer {
     const to = new Date(from);
     to.setDate(to.getDate() + 1); // add a day
     return { from, to };
+  }
+
+  private createExpenseModel(): ExpenseFormModel {
+    return {
+      date: new Date(),
+      sheet: null,
+      amount: null,
+      category: null,
+      comment: '',
+      isInDebt: false
+    };
   }
 }

@@ -22,10 +22,24 @@ sources:
 
 # The form
 
-A template-driven `ngForm` with five controls: `date` (Material datepicker, `touchUi`,
-readonly input, `min` = 1 January of the current year), `sheet` (person selector),
-`amount` (number, required), `category` (select over store categories), `comment`
-(autosizing textarea), and an `isInDebt` checkbox.[^html]
+An **experimental Signal Forms** form (`@angular/forms/signals`) with five controls: `date`
+(Material datepicker, `touchUi`, readonly input, `min` = 1 January of the current year),
+`sheet` (person selector), `amount` (number, required), `category` (select over store
+categories), `comment` (autosizing textarea), and an `isInDebt` checkbox.[^html] This is the
+one form in the app that isn't template-driven — see
+[code conventions](../constraints/code-conventions.md).
+
+A single `expenseModel` signal (`{ date, sheet, amount, category, comment, isInDebt }`, with
+`sheet`/`amount`/`category` typed `| null` rather than `| undefined` — Signal Forms'
+`Subfields` mapping treats a value type that includes `undefined` as "the field itself may be
+absent", which breaks `[formField]` binding and `required()`'s path typing) feeds `form()`.
+A schema function calls `required()` on `date`, `sheet`, `amount`, and `category`. Each
+Material control (`mat-select`, `mat-checkbox`, the datepicker input, `matInput`) binds via
+`[formField]`, which drives them through their existing `ControlValueAccessor` — the same
+interop path reactive forms uses. A static `required` attribute cannot coexist with
+`[formField]` on the same element (compiler error `NG8022`), so the asterisk Material used to
+render from that attribute no longer appears; validity itself is unaffected, still driven by
+the schema's `required()` calls.
 
 Two details:
 
@@ -33,13 +47,14 @@ Two details:
   `loadCategories` — categories are not fetched automatically on this page, only on the
   categories page. The cached list from localStorage normally fills it.
 - On submit the form is *reset with the date and sheet preserved*
-  (`form.resetForm({ date, sheet, amount: undefined, ... })`) so a run of entries for the
-  same day and person needs no re-selection.
+  (`expenseForm().reset({ ...blank, date, sheet })`) so a run of entries for the same day and
+  person needs no re-selection.
 
 # Steps
 
-1. `onSubmit(form)` returns early unless `form.valid`, then dispatches
-   `addExpense({ expense: form.value, sheetId: sheet.id })`.[^page]
+1. `onSubmit(event)` prevents the native submit, returns early unless
+   `expenseForm().valid()`, then dispatches
+   `addExpense({ expense: expenseForm().value(), sheetId: sheet.id })`.[^page]
 2. `addExpense$` sets `loading = true` and calls
    `SpreadsheetService.addExpense(sheetId, expense)`.
 3. That issues **one `:batchUpdate`** with two requests:[^svc]

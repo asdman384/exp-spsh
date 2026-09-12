@@ -21,8 +21,20 @@
     flex-grow: 1;
   }
 
+  .submit-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .debt-field {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
   .submit-button {
-    width: 100%;
+    flex-grow: 1;
     height: 56px;
   }
 }

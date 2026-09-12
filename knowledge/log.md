@@ -1,5 +1,16 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-12
+
+* **Update**: `DashboardPageContainer`'s add-expense form migrated from a template-driven
+  `ngForm`/`ngModel` form to the experimental Signal Forms API
+  (`@angular/forms/signals`: `form()`, `required()`, `[formField]`) — the one form in the app
+  that is no longer template-driven. Material controls (`mat-select`, `mat-checkbox`, the
+  datepicker input, `matInput`) bind through `[formField]` via their existing
+  `ControlValueAccessor`. Touched: [add expense](flows/add-expense.md),
+  [code conventions](constraints/code-conventions.md). Bundle-size comparison:
+  [docs/signal-forms-migration.md](../docs/signal-forms-migration.md).
+
 ## 2026-09-11 (3)
 
 * **Update**: `docs/specs/signal-inputs-outputs.md` — `ExpensesTableComponent`'s five

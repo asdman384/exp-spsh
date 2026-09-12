@@ -24,7 +24,8 @@ sources:
 ---
 
 > **This is a judgement, not a description.** Everything here comes from reading the
-> repository at commit `78b5109`; nothing was measured, profiled, or reproduced at runtime.
+> repository at commit `78b5109`; nothing was measured, profiled, or reproduced at runtime,
+> except the token-endpoint probes cited in §4.
 > The descriptive concepts in this bundle are the factual record — this document argues
 > about them. Trust tier: unverified.
 
@@ -119,23 +120,63 @@ would require an additional scope). The local-first answer is to revalidate on v
 change plus an explicit pull-to-refresh, and to accept eventual consistency — which is what
 the architecture already implies but does not yet admit.
 
-## 4. The auth flow is the wrong flow for a browser
+## 4. Long sessions need a refresh token, and Google ties refresh tokens to a secret
 
 `RedirectSecurityService` performs an OAuth **authorization-code exchange from the browser**,
-posting `client_secret` to Google's token endpoint.[^redirect] That is the native-app /
-server-side flow. Its consequence is unavoidable and permanent:
+posting `client_secret` to Google's token endpoint.[^redirect] As a result
 [the client secret is compiled into the published bundle](/constraints/security-posture.md)
-and is readable by anyone who opens the site. It cannot be rotated into safety.
+and is readable by anyone who opens the site.
 
-The fix already exists in the repository. `PopupSecurityService` uses the GIS **token**
-client, needs no client secret, and is what Google's own guidance prescribes for client-only
-web apps.[^popup] Switching is a **one-line provider change** in `app.config.ts` plus removing
-`CLIENT_SECRET` from CI.
+The obvious ways to remove it do not survive contact with Google or with the product:
 
-The trade-off is real and should be weighed rather than waved away: the token model has no
-refresh token, so silent renewal (`prompt: 'none'`) works only while the user's Google session
-is alive; when it is not, they see a sign-in prompt again. That is a modest UX regression in
-exchange for removing a published secret. I would take that trade.
+- **PKCE without a secret is not available.** For a Web application client, Google's token
+  endpoint rejects both the `authorization_code` grant (even with a `code_verifier`) and the
+  `refresh_token` grant when the secret is omitted:
+  `400 invalid_request: "client_secret is missing."` (probed against this project's client
+  id). The secret-less client types — iOS, Android, UWP, Chrome — accept only redirect targets
+  a hosted web page cannot receive.
+- **The GIS token model is not a viable replacement.** `PopupSecurityService` needs no
+  secret,[^popup] but the token model issues no refresh token, supports only a popup, and
+  Google expects renewal "from a user-driven event such as a button press". For a mobile PWA
+  that means an interactive sign-in whenever the app is opened more than about an hour after
+  the last token — unacceptable for the core use case. Renewal triggered from the HTTP
+  interceptor also runs outside a user gesture, which installed iOS PWAs block; the git
+  history suggests this is why the popup flow was replaced by the redirect flow in `6226fc2`.
+
+Sessions that survive between app opens require a refresh token; Google issues one only
+through the code flow; the code flow for a web client requires the secret. **The secret
+stays, so the question is what it is worth to an attacker.** On its own, little: the redirect
+URI allowlist means codes are only ever delivered to this app's own origin. What it does
+enable is redeeming a *stolen* `refresh_token`, because the refresh grant involves no
+redirect at all. The threat to defend is token exfiltration — XSS, a compromised dependency,
+device access — not the secret itself.
+
+Hardening that keeps the current UX:
+
+- build the authorization URL directly instead of through `initCodeClient`, and add PKCE
+  (`code_challenge` / `code_verifier`) to close interception of the code on the redirect
+  page — the GIS code client does not accept PKCE parameters;
+- that also retires the self-hosted copy of the GIS library (`src/scripts/client.js`), which
+  Google states is not a supported use and which receives no security fixes; `revoke` is a
+  plain POST;
+- add a Content Security Policy (a `<meta>` tag, given static hosting) to narrow the XSS path
+  to the refresh token in `localStorage`.
+
+Alternatives weighed and not recommended today:
+
+- **A token-exchange proxy** moves the secret off the client, but on a `*.github.io` origin
+  the refresh token must still be held by the client (a cross-site httpOnly cookie is blocked
+  by Safari), so a stolen token remains redeemable through the proxy. It pays off only with a
+  custom domain that puts app and proxy on the same site.
+- **A silent `response_type=token&prompt=none` redirect** needs neither secret nor refresh
+  token, but Google strongly discourages the implicit flow, and it depends on the Google
+  session surviving inside an installed iOS PWA — unverified.
+- **A Capacitor wrapper with native client types** gives genuine secret-less PKCE with refresh
+  tokens, at the cost of becoming a store-distributed app.
+
+Two console settings bound session length regardless of flow: a consent screen left in
+**Testing** status issues refresh tokens that expire after 7 days, and `spreadsheets` is a
+sensitive scope, so publishing to production for external users requires verification.
 
 Separately, the requested scope is `auth/spreadsheets` — **read and write to every spreadsheet
 the user owns**, to operate on one file they chose. `drive.file` plus the Google Picker
@@ -185,8 +226,9 @@ insurance that gets more expensive to add the longer it is deferred.
 
 A thin proxy (a Cloudflare Worker, say) would hide the client secret and centralise quota. It
 would do nothing for record identity, concurrent edits, offline writes, or schema migration —
-those are all fixed in the client, which is where the work belongs. Adding a server to solve
-§4 alone would be paying an ops bill forever to avoid a one-line provider change.
+those are all fixed in the client, which is where the work belongs. Even for §4 it buys little
+while the app lives on `github.io`, because the refresh token would still sit in the client;
+it becomes worth its ops cost only together with a custom domain.
 
 Google Apps Script bound to the spreadsheet is the interesting middle ground: no server you
 operate, runs as the user, and could express compound operations closer to atomically. The
@@ -210,7 +252,7 @@ Effort is a rough order of magnitude, not an estimate.
 | # | Change | Fixes | Effort |
 |---|---|---|---|
 | 1 | **Id column + id-based delete** (§1) | 3 known issues at once: the 100-row limit, wrong-row deletion, duplicate ambiguity | S |
-| 3 | **Switch to `PopupSecurityService`, delete `CLIENT_SECRET`** (§4) | a published client secret | XS |
+| 3 | **Harden the redirect flow: hand-built auth URL with PKCE, drop self-hosted GIS, add CSP** (§4) | code interception, an unsupported GIS copy, the XSS path to the refresh token | S |
 
 ## P1 — architecture, medium effort, high leverage
 

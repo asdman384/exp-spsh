@@ -64,8 +64,10 @@ src/fun/              seasonal extras
 - `ChangeDetectionStrategy.OnPush` on `DashboardPageContainer` and `ExpensesTableComponent`
   only; other containers use default change detection.
 - Control flow uses the **new block syntax** (`@if`, `@for`, `@empty`) with explicit `track`.
-- Forms are **template-driven** (`FormsModule`, `ngModel`, `#form="ngForm"`) throughout —
-  there is no reactive-forms usage anywhere.
+- Forms are **template-driven** (`FormsModule`, `ngModel`, `#form="ngForm"`) everywhere
+  except the dashboard add-expense form, which uses the experimental **Signal Forms** API
+  (`@angular/forms/signals`: `form()`, `required()`, `[formField]`) — see
+  [add-expense](../flows/add-expense.md).
 
 # RxJS idioms
 
