@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, viewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,9 +20,11 @@ const PADDINGS = 76;
   selector: 'exp-statistics-container',
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
-  imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent]
+  imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatisticsContainer implements AfterViewInit {
+  private readonly store = inject(Store);
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
@@ -51,10 +53,7 @@ export class StatisticsContainer implements AfterViewInit {
   protected selectedCategory?: string;
   protected total = 0;
 
-  constructor(
-    private readonly cd: ChangeDetectorRef,
-    private readonly store: Store
-  ) {
+  constructor() {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
     combineLatest([this.store.select(sheetsSelector), this.store.select(currentSheetSelector)])
       .pipe(take(1))
@@ -102,7 +101,6 @@ export class StatisticsContainer implements AfterViewInit {
 
   protected onSelection(data: ReadonlyArray<Expense>): void {
     this.total = data.reduce((p, c) => p + Number(c.amount), 0);
-    this.cd.detectChanges();
   }
 
   protected unCategory(): void {
@@ -117,7 +115,6 @@ export class StatisticsContainer implements AfterViewInit {
       transitionHelper(() => {
         subscriber.next(data);
         subscriber.complete();
-        this.cd.detectChanges();
       });
     });
   }
@@ -176,8 +173,7 @@ function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
   return result;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-function -- no-op default when the caller doesn't need a completion callback
-function transitionHelper(updateDOM = () => {}): void {
+function transitionHelper(updateDOM: () => void): void {
   if (!document.startViewTransition) {
     updateDOM();
     console.warn('View transitions unsupported');

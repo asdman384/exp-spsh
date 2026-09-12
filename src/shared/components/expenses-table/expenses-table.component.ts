@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, output } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
@@ -15,15 +15,13 @@ const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comme
 const DELETE_THRESHOLD = 100;
 
 @Component({
-    selector: 'expenses-table',
-    templateUrl: './expenses-table.component.html',
-    styleUrl: './expenses-table.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DatePipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
+  selector: 'expenses-table',
+  templateUrl: './expenses-table.component.html',
+  styleUrl: './expenses-table.component.scss',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
 })
 export class ExpensesTableComponent {
-  private readonly cdRef = inject(ChangeDetectorRef);
-
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected readonly selection = new SelectionModel<Expense>(true, []);
@@ -105,12 +103,10 @@ export class ExpensesTableComponent {
     } else {
       this.selection.select(...this.dataSource());
     }
-    this.cdRef.detectChanges();
   }
 
   protected toggleRow(row: Expense): void {
     this.selection.toggle(row);
-    this.cdRef.detectChanges();
   }
 
   protected isAllSelected(): boolean {
