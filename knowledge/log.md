@@ -1,5 +1,15 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-11 (3)
+
+* **Update**: `docs/specs/signal-inputs-outputs.md` — `ExpensesTableComponent`'s five
+  `@Input()`s and three `@Output()`s (`EventEmitter`s) became `input()` / `output()` /
+  `outputFromObservable()` signals, `ngOnChanges`/`OnChanges`/`SimpleChanges` were removed, and
+  `columns` became a `computed()`; `StatisticsContainer`'s two `@ViewChild()`s became
+  `viewChild()` (`summaryTable`, optional) and `viewChild.required()` (`monthSelector`).
+  Touched: [ExpensesTableComponent](interfaces/expenses-table-component.md),
+  [statistics flow](flows/statistics.md), [delete expense flow](flows/delete-expense.md).
+
 ## 2026-09-11 (2)
 
 * **Cleanup**: swept the whole bundle (every file except this log) for prose that narrated

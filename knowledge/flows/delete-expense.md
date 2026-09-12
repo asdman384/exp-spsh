@@ -25,7 +25,7 @@ sources:
 Only on the dashboard, where the table is rendered with `[draggable]="true"`. The user drags
 a row horizontally (`cdkDragLockAxis="x"`); when the drag ends past
 `DELETE_THRESHOLD = 100` px the row is flung off-screen
-(`setFreeDragPosition({ x: window.outerWidth, y: 0 })`) and `onDeleteRow` emits. Below the
+(`setFreeDragPosition({ x: window.outerWidth, y: 0 })`) and `deleteRow` emits. Below the
 threshold the row springs back via `event.source.reset()`. A placeholder showing a delete
 icon tracks the row while dragging.[^table]
 
@@ -66,7 +66,7 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
   comment) match the same index; the first is removed.
 - The whole flow uses `exhaustMap`, so a second swipe during an in-flight delete is dropped —
   which also means the second row stays visually flung off-screen until the next data change
-  resets it (`ngOnChanges` calls `lastDeletedDragRow.reset()`).
+  resets it (a component `effect()` tracking `dataSource()` calls `lastDeletedDragRow.reset()`).
 
 - After the *first* failed delete in a session, `deleteExpense$`'s stream is complete and
   further swipes silently do nothing — no optimistic removal, no toast, no network call. See

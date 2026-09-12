@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,10 +23,8 @@ const PADDINGS = 76;
   imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent]
 })
 export class StatisticsContainer implements AfterViewInit {
-  @ViewChild('summaryTable', { read: ElementRef })
-  private readonly summaryTable!: ElementRef<HTMLElement>;
-  @ViewChild('monthSelector', { read: MatTabGroup })
-  private readonly monthSelector!: MatTabGroup;
+  private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
+  private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
 
   // [Jan Feb ... Dec]
@@ -72,9 +70,9 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   public tableAnimation(direction: 'reverse' | 'straight' | 'none'): void {
-    this.summaryTable?.nativeElement.classList.remove('summary-table-reverse', 'summary-table-straight');
+    this.summaryTable()?.nativeElement.classList.remove('summary-table-reverse', 'summary-table-straight');
     if (direction === 'none') return;
-    this.summaryTable?.nativeElement.classList.add(`summary-table-${direction}`);
+    this.summaryTable()?.nativeElement.classList.add(`summary-table-${direction}`);
   }
 
   protected formChanged(sheetIndex: number, yearIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
@@ -125,10 +123,10 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   private scrollToCurrentMonth(): void {
-    let { width }: { width: number } = this.monthSelector._elementRef.nativeElement.getBoundingClientRect();
+    let { width }: { width: number } = this.monthSelector()._elementRef.nativeElement.getBoundingClientRect();
     width -= PADDINGS;
     if (width < this.currentMonthIndex * MONTH_BUTTON_WIDTH) {
-      setTimeout(() => (this.monthSelector._tabHeader.scrollDistance = width));
+      setTimeout(() => (this.monthSelector()._tabHeader.scrollDistance = width));
     }
   }
 }

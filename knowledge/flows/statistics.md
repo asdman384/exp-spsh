@@ -52,7 +52,7 @@ Both are pure module-level functions; no aggregation happens server-side.
 
 # Drill-down and back
 
-Clicking a **category** cell emits `onCellClick`; the handler ignores clicks on other
+Clicking a **category** cell emits `cellClick`; the handler ignores clicks on other
 columns and on the literal `TOTAL` category,[^consts] then sets `selectable = false`,
 plays the `straight` animation, records `selectedCategory`, and pushes the filter
 aggregator. The undo button calls `unCategory()`, which restores the grouping aggregator and
@@ -61,7 +61,7 @@ plays the `reverse` animation.
 # Total
 
 The table is rendered with `[selected]="expenses"` (everything preselected) and
-`[selectable]="selectable"`. Its `onSelection` output feeds
+`[selectable]="selectable"`. Its `selectionChange` output feeds
 `total = sum(Number(amount))` followed by an explicit `cd.detectChanges()`. So the **Total
 line reflects the checked rows**, letting the user tick categories off to see a partial sum.
 The label shows `selectedCategory ?? 'Total'`.
@@ -74,8 +74,12 @@ browser supports it, warning `View transitions unsupported` and updating directl
 `summary-table-reverse` on the table element; the route's `canDeactivate` clears them on
 leave ([routing](../architecture/routing-and-guards.md)).
 
-`this.summaryTable` is resolved with `@ViewChild('summaryTable', { read: ElementRef })` and
-accessed optionally (`?.`) because the table sits inside an `@if`.
+`summaryTable` is an optional `viewChild('summaryTable', { read: ElementRef })` signal, read
+with `()?.` because the table sits inside an `@if` and because `tableAnimation` can run before
+the view exists — the `sheetsSelector` subscription in the constructor calls `formChanged`,
+which calls `tableAnimation('none')`, well before `ngAfterViewInit`. `monthSelector` is a
+required `viewChild.required('monthSelector', { read: MatTabGroup })` signal, read only in
+`scrollToCurrentMonth()`, which `ngAfterViewInit` calls once the view is guaranteed to exist.
 
 [^statshtml]: Statistics template
 [^stats]: StatisticsContainer

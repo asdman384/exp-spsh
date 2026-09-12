@@ -1,4 +1,4 @@
-<table mat-table class="exp-table" [dataSource]="dataSource">
+<table mat-table class="exp-table" [dataSource]="dataSource()">
   <!-- Checkbox col. -->
   <ng-container matColumnDef="select">
     <th mat-header-cell *matHeaderCellDef>
@@ -61,13 +61,13 @@
     </td>
   </ng-container>
 
-  <tr class="non-selectable" mat-header-row *matHeaderRowDef="columns"></tr>
+  <tr class="non-selectable" mat-header-row *matHeaderRowDef="columns()"></tr>
   <tr
     mat-row
-    *matRowDef="let row; columns: columns"
+    *matRowDef="let row; columns: columns()"
     cdkDrag
     cdkDragLockAxis="x"
-    [cdkDragDisabled]="!draggable"
+    [cdkDragDisabled]="!draggable()"
     [cdkDragData]="row"
     (cdkDragMoved)="cdkDragMoved($event)"
     (cdkDragEnded)="cdkDragEnded($event)"
