@@ -268,7 +268,6 @@ Effort is a rough order of magnitude, not an estimate.
 |---|---|---|---|
 | 8 | **Write outbox draining on `online$`** (§5) | the core use case in poor signal | M |
 | 9 | **`drive.file` + Picker instead of full `spreadsheets` scope** (§4) | consent-screen trust, if this is ever public | M |
-| 10 | **Tests at the sheet-mapping boundary** | the index arithmetic and date conversion that everything depends on, currently barely covered | S |
 
 # The through-line
 

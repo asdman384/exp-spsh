@@ -2,7 +2,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { Expense } from 'src/shared/models';
+import { CATEGORIES_SHEET_TITLE } from 'src/constants';
+import { Category, Expense } from 'src/shared/models';
 
 import { SpreadsheetService } from './spreadsheet.service';
 
@@ -252,6 +253,93 @@ describe('SpreadsheetService', () => {
 
       expect(thrown).toBeUndefined();
       expect(result[0].date).toBeUndefined();
+    });
+  });
+
+  describe('deleteSheetRow() — sheet-row index arithmetic', () => {
+    it('should_send_deleteDimension_request_with_startIndex_0_endIndex_1_for_index_0', () => {
+      service.deleteSheetRow(SHEET_ID, 0).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'POST' && request.url.endsWith(':batchUpdate'));
+      const deleteDimension = req.request.body.requests[0].deleteDimension;
+
+      expect(deleteDimension).toEqual({
+        range: { sheetId: SHEET_ID, dimension: 'ROWS', startIndex: 0, endIndex: 1 }
+      });
+
+      req.flush({});
+    });
+
+    it('should_send_deleteDimension_request_with_correct_start_and_end_index_for_a_mid_range_index', () => {
+      service.deleteSheetRow(SHEET_ID, 17).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'POST' && request.url.endsWith(':batchUpdate'));
+      const deleteDimension = req.request.body.requests[0].deleteDimension;
+
+      expect(deleteDimension.range.startIndex).toBe(17);
+      expect(deleteDimension.range.endIndex).toBe(18);
+      expect(deleteDimension.range.dimension).toBe('ROWS');
+
+      req.flush({});
+    });
+
+    it('should_thread_the_given_sheetId_into_the_deleteDimension_range_rather_than_a_hardcoded_one', () => {
+      const otherSheetId = 12345;
+
+      service.deleteSheetRow(otherSheetId, 3).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'POST' && request.url.endsWith(':batchUpdate'));
+      const deleteDimension = req.request.body.requests[0].deleteDimension;
+
+      expect(deleteDimension.range.sheetId).toBe(otherSheetId);
+
+      req.flush({});
+    });
+  });
+
+  describe('updateCategories() — range and value mapping', () => {
+    it('should_PUT_to_the_A1_B_N_range_where_N_is_categories_length', () => {
+      const categories: Array<Category> = [
+        { name: 'Food', id: 0 },
+        { name: 'Transport', id: 1 },
+        { name: 'Bills', id: 2 }
+      ];
+
+      service.updateCategories(categories).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'PUT' && request.url.includes('/values/'));
+      expect(decodeURIComponent(req.request.url)).toContain(`${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`);
+
+      req.flush({});
+    });
+
+    it('should_map_each_category_to_a_name_id_row_pair_in_the_given_order', () => {
+      const categories: Array<Category> = [
+        { name: 'Food', id: 0 },
+        { name: 'Transport', id: 1 }
+      ];
+
+      service.updateCategories(categories).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'PUT' && request.url.includes('/values/'));
+      expect(req.request.body.values).toEqual([
+        ['Food', 0],
+        ['Transport', 1]
+      ]);
+
+      req.flush({});
+    });
+
+    it('should_use_a_range_length_that_tracks_a_single_category_list_not_a_stale_count', () => {
+      const categories: Array<Category> = [{ name: 'OnlyOne', id: 0 }];
+
+      service.updateCategories(categories).subscribe();
+
+      const req = httpMock.expectOne((request) => request.method === 'PUT' && request.url.includes('/values/'));
+      expect(decodeURIComponent(req.request.url)).toContain(`${CATEGORIES_SHEET_TITLE}!A1:B1`);
+      expect(req.request.body.values).toEqual([['OnlyOne', 0]]);
+
+      req.flush({});
     });
   });
 });

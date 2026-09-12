@@ -37,12 +37,6 @@
         <input type="number" matInput [formField]="expenseForm.amount" autocomplete="off" />
       </mat-form-field>
 
-      <!-- DEBT -->
-      <div class="debt-field">
-        <label class="debt-field__label" for="debt-input">Debt</label>
-        <mat-checkbox id="debt" color="primary" [formField]="expenseForm.isInDebt"></mat-checkbox>
-      </div>
-
       <!-- CATEGORY -->
       <mat-form-field appearance="outline" class="input-category">
         <mat-label>Category</mat-label>
@@ -56,14 +50,22 @@
       </mat-form-field>
     </div>
 
-    <!-- COMMENT -->
-    <mat-form-field appearance="outline" class="full-width">
-      <mat-label>Comment</mat-label>
-      <textarea matInput [formField]="expenseForm.comment" cdkTextareaAutosize></textarea>
-      @if (expenseForm.comment().value()) {
-        <mat-icon matSuffix (click)="clearComment()" aria-label="Clear">close</mat-icon>
-      }
-    </mat-form-field>
+    <div class="submit-row">
+      <!-- COMMENT -->
+      <mat-form-field appearance="outline" class="full-width">
+        <mat-label>Comment</mat-label>
+        <textarea matInput [formField]="expenseForm.comment" cdkTextareaAutosize></textarea>
+        @if (expenseForm.comment().value()) {
+          <mat-icon matSuffix (click)="clearComment()" aria-label="Clear">close</mat-icon>
+        }
+      </mat-form-field>
+    
+      <!-- DEBT -->
+      <div class="debt-field">
+        <label class="debt-field__label" for="debt-input">Debt</label>
+        <mat-checkbox id="debt" color="primary" [formField]="expenseForm.isInDebt"></mat-checkbox>
+      </div>
+    </div>
 
     <div class="submit-row">
       <button
