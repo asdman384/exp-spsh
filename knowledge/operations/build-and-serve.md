@@ -15,6 +15,9 @@ sources:
   - id: ng
     resource: ../../angular.json
     title: Build configurations
+  - id: harness
+    resource: ../../scripts/harness.sh
+    title: Verification harness
 ---
 
 # Prerequisite
@@ -59,6 +62,10 @@ Output: `dist/exp-spsh`, hashed filenames, budgets enforced (initial 2.5 MB warn
 error).[^ng] This is exactly what CI runs
 ([CI and deployment](ci-and-deployment.md)).
 
+`scripts/harness.sh` runs the same production build with
+`--output-path=tmp/harness-dist`, so its output never lands in `dist/exp-spsh` and the harness
+can run while the local loop is up.[^harness]
+
 # Useful runtime flags
 
 | URL | Effect |
@@ -75,6 +82,12 @@ buttons and records every HTTP request through the interceptor.
 
 - **The service worker is enabled in development.** Stale assets after a rebuild are
   expected; unregister the worker in DevTools > Application, or hard-reload.
+- **`npm run build` and `npm run watch` share `dist/exp-spsh`.** A production build while the
+  watcher runs deletes the dev output and writes a production `index.html` that loads hashed
+  bundles (`main-<hash>.js`). The watcher's incremental rebuilds emit only the files it sees
+  as changed — `main.js`, never `index.html` — so the page keeps loading the production
+  bundle and source edits never appear. Restart `watch` to get a full dev build; restarting
+  `serve` changes nothing.
 - Google OAuth requires `http://localhost:4200/exp-spsh/` to be a registered redirect URI in
   the Cloud console, or login fails with a redirect_uri mismatch.
 - `npm install` re-runs the postinstall patch on `node_modules/@angular/service-worker`;
@@ -82,3 +95,4 @@ buttons and records every HTTP request through the interceptor.
 
 [^pkg]: npm scripts
 [^ng]: Build configurations
+[^harness]: Verification harness

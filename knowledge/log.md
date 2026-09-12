@@ -1,5 +1,14 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-12 (2)
+
+* **Update**: `scripts/harness.sh` builds production into `tmp/harness-dist` instead of
+  `dist/exp-spsh`. Its build shared the dev watcher's output folder, and every harness run
+  left a production `index.html` there that the watcher never rewrote, so the local loop
+  served a stale bundle until `watch` was restarted. `npm run build` and CI are unchanged
+  and still produce `dist/exp-spsh`. Touched: [build and serve](operations/build-and-serve.md),
+  [troubleshooting](operations/troubleshooting.md).
+
 ## 2026-09-12
 
 * **Update**: `DashboardPageContainer`'s add-expense form migrated from a template-driven

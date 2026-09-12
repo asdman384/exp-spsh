@@ -28,6 +28,9 @@ open **http://localhost:4200/exp-spsh/**. The `exp-spsh` path segment is require
 roots at `dist/` while the build writes to `dist/exp-spsh`, and the service worker's asset
 globs hard-code that path. The page does not live-reload; refresh after a rebuild.
 
+`scripts/harness.sh` builds production into `tmp/harness-dist` (gitignored), never
+`dist/exp-spsh`, so running it does not disturb the watch loop.
+
 Run a single test file or a single test:
 
 ```bash

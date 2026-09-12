@@ -12,7 +12,11 @@
 #                *.spec.ts too, which `build` does not compile and which
 #                Vitest's esbuild transpile does not type-check.
 #   build     -- `ng build --configuration=production`. Full Angular AOT
-#                compile of the production bundle.
+#                compile of the production bundle, written to tmp/harness-dist
+#                rather than dist/exp-spsh: a production build into dist/exp-spsh
+#                deletes a running `npm run watch`'s output and leaves a
+#                production index.html that the watcher never rewrites, so the
+#                local dev loop keeps serving the stale production bundle.
 #   test      -- `ng test --watch=false`, Angular's Vitest runner in headless
 #                Chromium.
 #
@@ -103,7 +107,7 @@ fi
 
 if [ "$run_build" -eq 1 ]; then
   echo "=== harness: build (type-check + production bundle) ==="
-  if npx ng build --configuration=production; then
+  if npx ng build --configuration=production --output-path=tmp/harness-dist; then
     build_status="passed"
   else
     build_status="FAILED"
