@@ -33,7 +33,7 @@ the database, and the browser talks to Google APIs directly.[^appcfg]
 | Persistence | Google Sheets (remote) + `localStorage` (config and cache) |
 | Auth | Google Identity Services (OAuth 2.0), redirect flow by default |
 | Hosting | GitHub Pages, served under the `/exp-spsh/` path |
-| Routing | Hash routing (`HashLocationStrategy`), `baseHref` is empty |
+| Routing | Hash routing (`HashLocationStrategy`), `baseHref` is `/exp-spsh/` |
 
 # Layers
 

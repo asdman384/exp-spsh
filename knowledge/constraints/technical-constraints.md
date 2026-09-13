@@ -24,8 +24,9 @@ sources:
 
 | Constraint | Why it exists | What breaks if ignored |
 |---|---|---|
-| The app must be served under **`/exp-spsh/`** | `ngsw-config.json` asset globs are absolute paths[^ngsw] | the app-shell asset group never matches; the PWA stops working offline |
-| **`baseHref: ""` + `HashLocationStrategy`** | GitHub Pages cannot rewrite unknown paths to `index.html`; also allows `file://` serving[^dev] | deep links 404 |
+| The app must be served under **`/exp-spsh/`** | `angular.json` sets `baseHref: "/exp-spsh/"`, which becomes `<base href>` and prefixes every URL in the generated `ngsw.json`[^ng] | assets 404; the service worker caches URLs the page never requests, so the app does not start offline. `file://` serving does not load the bundle |
+| `ngsw-config.json` **globs are relative to the build output** (`/*.js`, not `/exp-spsh/*.js`) | the generator matches globs against output files, then prefixes `baseHref`[^ngsw] | asset groups get empty `urls`; nothing is cached and an offline launch fails |
+| **`HashLocationStrategy`** | GitHub Pages cannot rewrite unknown paths to `index.html`[^dev] | deep links 404 |
 | Spreadsheet **column order A-E is fixed** | hard-coded in `addExpense`, `A1:E{n}` ranges, and `select A,B,C,D,E` | reads and writes silently misalign |
 | Rows are **newest-first** | `addExpense` inserts at index 0; delete derives a row index from array position | deletion removes the wrong row |
 | The **`data_` prefix and `categories` title** are structural | setup discovery filters on them | existing spreadsheets are no longer recognised |

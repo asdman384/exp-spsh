@@ -19,6 +19,7 @@ repository that contains this bundle.
 * [Routing and route guards](architecture/routing-and-guards.md) - The hash-based lazy route tree and the three guards that gate it.
 * [Bootstrap and dependency wiring](architecture/dependency-wiring.md) - Providers, abstraction bindings, and the global `log()` side channel.
 * [PWA, service worker, and caching](architecture/pwa-and-service-worker.md) - Installability, what is cached, the iOS patch, and update delivery.
+* [Write outbox for addExpense](architecture/write-outbox.md) - The offline/retry queue: IndexedDB persistence, the drain loop's triggers and preconditions, error classification, and the failure notice.
 
 # Domain
 

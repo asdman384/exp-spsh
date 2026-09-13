@@ -9,6 +9,9 @@ sources:
   - id: ngsw
     resource: ../../ngsw-config.json
     title: Service worker configuration
+  - id: ng
+    resource: ../../angular.json
+    title: baseHref
   - id: manifest
     resource: ../../src/manifest.webmanifest
     title: Web app manifest
@@ -32,8 +35,8 @@ a `theme-color` of `#673ab7` — note this **differs from the manifest theme col
 
 ```
 assetGroups
-  app     prefetch  /exp-spsh/favicon.ico, index.html, manifest.webmanifest, *.css, *.js
-  assets  lazy + prefetch-on-update  /exp-spsh/assets/**  and  /*.(svg|cur|jpg|...|woff2)
+  app     prefetch  /favicon.ico, /index.html, /manifest.webmanifest, /*.css, /*.js
+  assets  lazy + prefetch-on-update  /assets/**  and  /*.(svg|cur|jpg|...|woff2)
 
 dataGroups
   googleapis  freshness, maxSize 0, maxAge "0u"
@@ -44,10 +47,16 @@ dataGroups
 
 Two things follow.[^ngsw]
 
-1. **The asset globs are hard-coded to the `/exp-spsh/` deployment path.** Serving the app
-   from any other path leaves the app-shell group unmatched. This is coupled to the
-   GitHub Pages project-site URL — see
-   [deployment](../operations/ci-and-deployment.md).
+1. **Globs name build-output files; `baseHref` supplies the deployment path.** The
+   generator matches each `files` glob against paths relative to the output directory
+   (`/index.html`, `/main-<hash>.js`), then prefixes every match with `baseHref`
+   (`/exp-spsh/`, set in `angular.json`) to form the URLs in `ngsw.json`.[^ng] The worker
+   resolves those URLs against its origin, so they must carry `/exp-spsh/` to match what the
+   page requests. A glob written as a deployed URL (`/exp-spsh/*.js`) matches no file, and an
+   empty `baseHref` yields root URLs (`/main.js`) the page never requests; either way nothing
+   is cached and an offline launch fails with `ERR_INTERNET_DISCONNECTED`. Non-empty `urls`
+   and `hashTable` in the generated `ngsw.json` are the check. The path is coupled to the
+   GitHub Pages project-site URL — see [deployment](../operations/ci-and-deployment.md).
 2. **API responses are intentionally never cached** (`maxSize: 0`, `maxAge: "0u"`,
    `strategy: freshness`). The dataGroup exists to *route* those URLs through the worker
    without serving stale expense data. Offline reads therefore fail rather than return
@@ -82,6 +91,7 @@ and is resolved by unregistering the worker or hard-reloading.
 whose handler is simply `location.reload()`.[^appcomp]
 
 [^ngsw]: Service worker configuration
+[^ng]: baseHref
 [^manifest]: Web app manifest
 [^iosfix]: postinstall iOS patch
 [^appcomp]: AppComponent update handling

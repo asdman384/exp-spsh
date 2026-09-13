@@ -17,7 +17,7 @@
         "build": {
           "builder": "@angular/build:application",
           "options": {
-            "baseHref": "",
+            "baseHref": "/exp-spsh/",
             "outputPath": {
               "base": "dist/exp-spsh",
               "browser": ""

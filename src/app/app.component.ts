@@ -12,10 +12,19 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { Store } from '@ngrx/store';
 import { combineLatest, debounceTime, first, map, startWith } from 'rxjs';
 
-import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
+import {
+  AppActions,
+  OutboxActions,
+  failedCountSelector,
+  loadingSelector,
+  pendingCountSelector,
+  spreadsheetIdSelector,
+  titleSelector
+} from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { SnowComponent } from 'src/fun/snow/snow.component';
 import { AbstractSecurityService, NetworkStatusService, SpreadsheetService } from 'src/services';
+import { OutboxStatusComponent } from 'src/shared/components/outbox-status/outbox-status.component';
 
 import pak from '../../package.json';
 
@@ -34,6 +43,7 @@ import pak from '../../package.json';
     MatMenuModule,
     MatProgressBarModule,
     MatToolbarModule,
+    OutboxStatusComponent,
     SnowComponent
   ]
 })
@@ -44,6 +54,8 @@ export class AppComponent {
     loading: this.store.select(loadingSelector),
     headline: this.store.select(titleSelector),
     spreadsheetId: this.store.select(spreadsheetIdSelector),
+    pending: this.store.select(pendingCountSelector),
+    failed: this.store.select(failedCountSelector),
     hasUpdates: this.swUpdate.versionUpdates.pipe(
       map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
       startWith(false)
@@ -79,5 +91,9 @@ export class AppComponent {
 
   update(): void {
     location.reload();
+  }
+
+  protected syncOutbox(): void {
+    this.store.dispatch(OutboxActions.syncRequested());
   }
 }

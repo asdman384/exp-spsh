@@ -52,12 +52,13 @@ A GitHub Pages *project* site is served from `https://<owner>.github.io/<repo>/`
 lives under `/exp-spsh/`. Three places encode that path and must move together if the
 repository is renamed or the site becomes a user site:
 
-1. `ngsw-config.json` asset globs (`/exp-spsh/...`);
+1. `angular.json` `baseHref` (`/exp-spsh/`), which sets `<base href>` in `index.html` and
+   prefixes every URL in the generated `ngsw.json`;
 2. the OAuth authorized redirect URIs in the Google console;
 3. the local serving instructions (`http://localhost:4200/exp-spsh/`).
 
-`baseHref` is empty and routing is hash-based, so `index.html` itself needs no path change —
-which is why this coupling is easy to miss.
+`ngsw-config.json` globs are relative to the build output and contain no path, and routing is
+hash-based, so neither needs a change when the path moves.
 
 # What CI does not do
 

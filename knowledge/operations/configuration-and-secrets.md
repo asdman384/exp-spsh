@@ -67,8 +67,8 @@ All are re-exported from `src/constants/index.ts` and imported as `src/constants
 
 | File | Purpose |
 |---|---|
-| `angular.json` | builders, budgets, assets, test target |
-| `ngsw-config.json` | service worker asset and data groups (hard-codes `/exp-spsh/`) |
+| `angular.json` | builders, budgets, assets, `baseHref` (`/exp-spsh/`), test target |
+| `ngsw-config.json` | service worker asset and data groups (asset globs are relative to the build output) |
 | `tsconfig*.json` | compiler strictness and ambient types |
 | `vitest.config.ts` | test environment |
 | `.prettierrc`, `.editorconfig` | formatting |

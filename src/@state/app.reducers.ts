@@ -8,6 +8,8 @@ import { LocalStorageService } from 'src/services';
 import { Category, Sheet } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { AppState } from './app.model';
+import { OutboxState } from './outbox.model';
+import { outboxReducer } from './outbox.reducers';
 
 export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ selectId: (e) => e.title });
 
@@ -29,7 +31,7 @@ if (initialDataSheets) {
   initialState.dataSheets = sheetsAdapter.upsertMany(initialDataSheets, initialState.dataSheets);
 }
 
-export const reducers: ActionReducerMap<{ app: AppState }> = {
+export const reducers: ActionReducerMap<{ app: AppState; outbox: OutboxState }> = {
   app: createReducer(
     initialState,
     on(AppActions.loading, (state, { loading }) => ({ ...state, loading })),
@@ -50,7 +52,8 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
       ...state,
       lastError: { id: (state.lastError?.id ?? 0) + 1, source, message }
     }))
-  )
+  ),
+  outbox: outboxReducer
 };
 
-export const metaReducers: MetaReducer<{ app: AppState }>[] = isDevMode() ? [] : [];
+export const metaReducers: MetaReducer<{ app: AppState; outbox: OutboxState }>[] = isDevMode() ? [] : [];

@@ -8,6 +8,7 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { metaReducers, reducers } from 'src/@state';
 import { AppEffects } from 'src/@state/app.effects';
+import { OutboxEffects } from 'src/@state/outbox.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { routes } from './app.routes';
@@ -62,7 +63,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
           registrationStrategy: 'registerWhenStable:30000'
         }),
         StoreModule.forRoot(reducers, { metaReducers }),
-        EffectsModule.forRoot(AppEffects),
+        EffectsModule.forRoot([AppEffects, OutboxEffects]),
         ...debug
       ])
     ]

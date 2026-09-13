@@ -47,9 +47,10 @@ Add `?logger=1` to the URL to also get **NgRx DevTools** and see which action st
 | Expense table silently keeps old rows after a reload | a row with an empty category or amount cell threw inside the row mapper | inspect the sheet for blank cells in A or C |
 | Deleted expense reappears | the row was older than the newest 100 and never actually deleted | [delete flow](../flows/delete-expense.md) |
 | Category order reverts after a "Couldn't save the new order" toast | expected behaviour, not a bug: `updateCategoryPosition$` rolls back the optimistic order and shows the toast when the write fails | log overlay for the underlying cause; [known issues](../constraints/known-issues.md) |
-| Retrying an action that already failed once this session does nothing at all — no toast, no spinner, no network call | that effect's stream `catchError`-completed on its first failure and NgRx does not resubscribe on completion, so the effect no longer reacts to its trigger action | reload the page; [known issues](../constraints/known-issues.md) item 21 |
+| Setting the spreadsheet id, sheet id, categories-sheet id, or categories again still updates the app in-session, but after a reload the value reverts to the last one successfully persisted (or is absent if none was), with no toast, ever | after one `LocalStorageService.put` failure, the 4 localStorage-only persist effects put `catchError` on the *outer* pipe and just log, with no toast and no `operationFailed`; a thrown error there completes that effect's stream for the rest of the session, so the reducer keeps applying the action in-session but the localStorage write never runs again | log overlay; [state management](../architecture/state-management.md) |
 | App will not boot at all, blank page | corrupt JSON in a localStorage key throws during store construction | clear site data for the origin |
 | Source edits never appear in dev even though `watch` rebuilds | `npm run build` ran while `watch` was up and left a production `index.html` in `dist/exp-spsh` that the watcher does not rewrite | `dist/exp-spsh/index.html` loads `main-<hash>.js` instead of `main.js`; restart `watch`. See [build and serve](build-and-serve.md) |
+| `ERR_INTERNET_DISCONNECTED` when opening the app offline, although it was opened online before | the generated `ngsw.json` caches nothing: its asset groups have empty `urls` (a glob in `ngsw-config.json` was written as a deployed URL such as `/exp-spsh/*.js`), or its URLs lack `/exp-spsh/` (`baseHref` is not `/exp-spsh/`) | inspect `ngsw.json` in the build output; see [PWA](../architecture/pwa-and-service-worker.md) |
 | Stale UI after a rebuild in dev | the service worker is enabled in development | unregister the worker in DevTools > Application, hard reload |
 | iOS PWA crashes or fails to cache | the postinstall ngsw patch was not applied | re-run `npm install` without `--ignore-scripts`; check the script's regex match output |
 | Times shifted by an hour on old rows | the serial-number reverse conversion uses today's timezone offset | [date encoding](../domain/spreadsheet-layout.md) |
@@ -63,8 +64,7 @@ inspects status codes.[^effects] For the 7 remote-calling effects there is a toa
 Please try again."), never the actual status/message, so **diagnosis of the cause starts
 from the log overlay or the network tab, never from the UI.** The 4 localStorage-only
 persist effects and the setup pipeline are fully silent, with no toast, no error state, and
-no failure action at all. See [known issues](../constraints/known-issues.md) items 1, 10,
-20, 21.
+no failure action at all — the log overlay is the only place to see what happened.
 
 [^logger]: On-page logger
 [^effects]: Effect error handling

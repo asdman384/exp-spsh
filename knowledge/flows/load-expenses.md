@@ -78,10 +78,10 @@ it does not match. Rows map to [`Expense`](../domain/expense.md) with
   `reportFailure('loadExpenses$', ...)` — a "Couldn't load your expenses. Check your
   connection and try again." toast — in addition to the table silently keeping its previous
   contents (the toast's wording assumes a network cause, which is misleading for this
-  particular trigger; the log overlay has the real thrown message). After the *first* such
-  failure in a session, `loadExpenses$`'s stream is complete and no further load succeeds,
-  toast or otherwise, until reload — see [known issues](../constraints/known-issues.md)
-  item 21.
+  particular trigger; the log overlay has the real thrown message). `loadExpenses$`'s
+  `catchError` sits inside its `exhaustMap` projection (see
+  [state management](../architecture/state-management.md)), so this only completes that one
+  attempt's inner observable; the effect keeps responding to further `loadExpenses` actions.
 - There is no paging or row limit; a month with many rows is fetched in full.
 - `loadLastExpenses` (`values.get` on `A1:E<n>`) is a *different* read used only by
   [delete](delete-expense.md).

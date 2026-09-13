@@ -18,6 +18,9 @@ sources:
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
     title: SpreadsheetService.addExpense
+  - id: outbox
+    resource: ../../src/@state/outbox.effects.ts
+    title: OutboxEffects
 ---
 
 # The form
@@ -55,18 +58,28 @@ Two details:
 1. `onSubmit(event)` prevents the native submit, returns early unless
    `expenseForm().valid()`, then dispatches
    `addExpense({ expense: expenseForm().value(), sheetId: sheet.id })`.[^page]
-2. `addExpense$` sets `loading = true` and calls
-   `SpreadsheetService.addExpense(sheetId, expense)`.
-3. That issues **one `:batchUpdate`** with two requests:[^svc]
+2. `addExpense$` decides whether to write live or to queue the expense in
+   [the write outbox](../architecture/write-outbox.md): if `OutboxStorage` is unavailable or no
+   spreadsheet id has been recorded yet, it always writes live. Otherwise it queues while
+   offline, and queues *behind* anything already pending, so a new add never jumps ahead of one
+   still waiting to send.[^outbox]
+3. A live write sets `loading = true` and calls `SpreadsheetService.addExpense(sheetId,
+   expense)`.
+4. That issues **one `:batchUpdate`** with two requests:[^svc]
    - `insertDimension` — ROWS, `startIndex: 0`, `endIndex: 1`, `inheritFromBefore: false`
      (a blank row at the very top, not inheriting formatting from below);
    - `updateCells` — `fields: 'userEnteredValue'` at row 0, writing
      A=`category` (string), B=`comment` (string), C=`amount` (number),
      D=`getSerialNumberFromDate(date)` (number),
      E=`amount` **only when `isInDebt`**, otherwise `undefined`.
-4. On success the effect maps to `loadExpenses({ sheetId, from: expense.date, to: date+1 })`
-   — a **one-day** re-read that replaces the table contents rather than patching state
-   locally. `loading` is cleared by `loadExpenses$`.
+
+   A queued expense is sent through this exact same call, with the same five fields, once the
+   outbox's drain pass reaches it — offline or behind-the-queue routing changes only *when* the
+   request goes out, never its shape.
+5. On a live success the effect maps to `loadExpenses({ sheetId, from: expense.date, to:
+   date+1 })` — a **one-day** re-read that replaces the table contents rather than patching
+   state locally. `loading` is cleared by `loadExpenses$`. A queued expense doesn't appear in
+   the table until it is actually sent and the outbox's own post-drain reload runs.
 
 # Notes and consequences
 
@@ -75,17 +88,22 @@ Two details:
 - The follow-up read narrows to the submitted expense's day. If the user had a wider range
   displayed (for example after picking an older date), the table collapses to that day.
 - `exhaustMap` means a double-tap on **Add Expense** while the first write is in flight is
-  dropped, which is the de-facto duplicate guard.
-- A failure logs, clears `loading`, and dispatches `operationFailed({ source: 'addExpense$',
+  dropped, which is the de-facto duplicate guard for a *live* write.
+- **Loading, by path:** offline or behind-the-queue routing never touches `loading` at all — no
+  spinner for a queue write. A live write that fails `retryable`/`auth` clears `loading` once
+  and queues the expense instead of losing it. A live write that fails for any other reason
+  (`terminal`) logs, clears `loading`, and dispatches `operationFailed({ source: 'addExpense$',
   message: "Couldn't save that expense. Please try again." })` (opens a snackbar via
-  `reportFailure`), then returns `EMPTY`. The typed values are already gone from the form
-  because the reset happens optimistically on submit, and this effect's `catchError` cannot
-  restore them. Note also: after the *first* failure of `addExpense$` in a session, the
-  effect's stream is complete and further submits silently do nothing (no toast either) —
-  see [known issues](../constraints/known-issues.md) item 21.
+  `reportFailure`) — the typed values are already gone from the form because the reset happens
+  optimistically on submit, and nothing restores them. This effect keeps responding to further
+  `addExpense` actions after any of these outcomes; see
+  [state management](../architecture/state-management.md).
 - The date written is the local wall-clock time; see
-  [date encoding](../domain/spreadsheet-layout.md).
+  [date encoding](../domain/spreadsheet-layout.md). A queued expense's date is converted at
+  *send* time, under the device's timezone at that instant — see
+  [known issues](../constraints/known-issues.md) for the residual gap this opens.
 
 [^html]: Dashboard form template
 [^page]: DashboardPageContainer
 [^svc]: SpreadsheetService.addExpense
+[^outbox]: OutboxEffects

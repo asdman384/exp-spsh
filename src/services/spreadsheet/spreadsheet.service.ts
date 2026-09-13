@@ -34,6 +34,10 @@ export class SpreadsheetService {
     this.spreadsheetId = spreadsheetId;
   }
 
+  getSpreadsheetId(): string {
+    return this.spreadsheetId;
+  }
+
   /**
    * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets.values/update
    * @param spreadsheetId

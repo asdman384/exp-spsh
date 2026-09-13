@@ -56,10 +56,10 @@ range as `[[name, id], ...]` in the new visual order.
 > `AppActions.storeCategories({ categories: this.categoriesBackUp })` to restore the
 > pre-reorder order, alongside `loading(false)` and
 > `operationFailed({ source: 'updateCategoryPosition$', message: "Couldn't save the new
-> order. Your categories were put back the way they were." })`, which opens a snackbar. Note:
-> after the *first* failed reorder in a session, `updateCategoryPosition$`'s stream is
-> complete and further reorders silently do nothing at all — see
-> [known issues](../constraints/known-issues.md) item 21.
+> order. Your categories were put back the way they were." })`, which opens a snackbar. Its
+> `catchError` sits inside its `exhaustMap` projection (see
+> [state management](../architecture/state-management.md)), so this only completes that one
+> attempt's inner observable; the effect keeps responding to further reorders.
 
 # Delete (drag right)
 

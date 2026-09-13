@@ -68,9 +68,11 @@ The container forwards it as `deleteExpense({ expense, sheet })` using the **cur
   which also means the second row stays visually flung off-screen until the next data change
   resets it (a component `effect()` tracking `dataSource()` calls `lastDeletedDragRow.reset()`).
 
-- After the *first* failed delete in a session, `deleteExpense$`'s stream is complete and
-  further swipes silently do nothing — no optimistic removal, no toast, no network call. See
-  [known issues](../constraints/known-issues.md) item 21.
+- `deleteExpense$`'s `catchError` sits inside its `exhaustMap` projection (like every other
+  remote effect; see [state management](../architecture/state-management.md)), so a failed
+  delete only completes that one attempt's inner observable — logging, rolling back the
+  optimistic removal, and toasting. The effect keeps responding to further `deleteExpense`
+  actions afterwards.
 
 There is no confirmation dialog; `ExpDialogComponent` exists but is not wired to this flow.
 

@@ -18,6 +18,9 @@ sources:
   - id: effects
     resource: ../../src/@state/app.effects.ts
     title: whenOnline gate
+  - id: outbox
+    resource: ../../src/@state/outbox.effects.ts
+    title: OutboxEffects
 ---
 
 # Detecting connectivity
@@ -35,16 +38,20 @@ toolbar avatar (the avatar is the app's connectivity indicator).
 
 | Capability | Offline |
 |---|---|
-| Open the app, see the shell | yes — the service worker prefetches the app shell |
+| Open the app, see the shell | yes, once an online visit has installed the service worker — it prefetches `index.html` and every JS/CSS bundle, and serves `index.html` for navigations |
 | See categories and the selected person | yes — hydrated from localStorage |
 | See the last loaded expenses | yes, until reload — `expenses` is not persisted |
 | Load expenses | **deferred**: the dispatch parks on `whenOnline` and fires when the network returns |
-| Add / delete an expense, edit categories | no — the request fails and the error is only logged |
+| Add an expense | **queued**: written to IndexedDB and sent automatically once online, see below |
+| Delete an expense, edit categories | no — the request fails and the error is only logged |
 | Categories and Statistics routes | blocked by the `isOnline` guard (redirect to root) |
 | Login / logout / setup | login button and Logout are disabled offline; the setup route itself is *not* guarded |
 
-Note the asymmetry: reads queue, writes do not. There is no outbox or background sync, and
-Google API responses are explicitly never cached
+Reads queue (`whenOnline`), and so does `addExpense` through
+[the write outbox](../architecture/write-outbox.md) — the one write that is safe to replay
+later, because it always inserts at a fixed row. Every other write is attempted directly and
+only logged/toasted on failure. There is no background sync; draining only runs while the app's
+tab is open, and Google API responses are explicitly never cached
 ([service worker](../architecture/pwa-and-service-worker.md)).
 
 # Update delivery
@@ -60,6 +67,16 @@ Google API responses are explicitly never cached
 The version shown at the bottom of the menu is `package.json`'s `version` field, imported
 directly — bumping it is a manual step and is what makes a release visible to users.[^apphtml]
 
+# The outbox toolbar indicator
+
+`OutboxStatusComponent` sits in the toolbar, before the avatar button, whenever the signed-in
+user has a pending or failed queued expense. It renders nothing when the queue is empty. Its
+badge and accessible name report the counts, and activating it dispatches
+`OutboxActions.syncRequested()`, which both starts a drain pass and — if a failed record already
+exists — reopens its failure notice. See [the write outbox](../architecture/write-outbox.md) for
+the full design.[^outbox]
+
 [^net]: NetworkStatusService
 [^appcomp]: AppComponent page state
 [^apphtml]: Toolbar and menu template
+[^outbox]: OutboxEffects

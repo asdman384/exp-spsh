@@ -7,6 +7,7 @@
         <mat-icon>{{ page.headline.icon }}</mat-icon> {{ page.headline.title }}
       </span>
       @if (page.user) {
+        <outbox-status [pending]="page.pending" [failed]="page.failed" (activate)="syncOutbox()"></outbox-status>
         <button
           mat-icon-button
           class="header-menu"

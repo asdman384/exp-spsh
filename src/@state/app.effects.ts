@@ -6,9 +6,11 @@ import {
   EMPTY,
   Observable,
   catchError,
+  combineLatest,
   exhaustMap,
   filter,
   map,
+  of,
   switchMap,
   take,
   tap,
@@ -18,11 +20,13 @@ import {
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
-import { LocalStorageService, NetworkStatusService, SpreadsheetService } from 'src/services';
-import { isExpenseEqual } from 'src/shared/helpers';
-import { Category, Expense } from 'src/shared/models';
+import { LocalStorageService, NetworkStatusService, OutboxStorage, SpreadsheetService } from 'src/services';
+import { classifyWriteError, isExpenseEqual, toMessage } from 'src/shared/helpers';
+import { Category, Expense, OutboxRecord } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, expensesSelector, sheetsSelector } from './app.selectors';
+import { OutboxActions } from './outbox.actions';
+import { pendingCountSelector } from './outbox.selectors';
 import { FAILURE_MESSAGES, reportFailure } from './report-failure';
 
 @Injectable()
@@ -177,23 +181,80 @@ export class AppEffects {
     )
   );
 
-  readonly addExpense$ = createEffect(() =>
-    this.actions$.pipe(
+  readonly addExpense$ = createEffect(() => {
+    // Kept local to this effect's body per docs/specs/write-outbox.md D15/[AC18]: no new class
+    // members, no new field-initialiser `select`.
+    const buildRecord = (
+      action: ReturnType<typeof AppActions.addExpense>,
+      attempts: number,
+      identity: { spreadsheetId: string; enqueuedAt: number } = {
+        spreadsheetId: this.spreadSheetService.getSpreadsheetId(),
+        enqueuedAt: Date.now()
+      },
+      lastError?: string
+    ): OutboxRecord => {
+      const { date, amount, category, comment, isInDebt } = action.expense;
+      return {
+        localId: crypto.randomUUID(),
+        kind: 'addExpense',
+        spreadsheetId: identity.spreadsheetId,
+        payload: { sheetId: action.sheetId, expense: { date, amount, category, comment, isInDebt } },
+        enqueuedAt: identity.enqueuedAt,
+        status: 'pending',
+        attempts,
+        lastError
+      };
+    };
+
+    const sendLive$ = (
+      action: ReturnType<typeof AppActions.addExpense>,
+      queueOnFailure: boolean
+    ): Observable<ReturnType<typeof AppActions.loadExpenses> | ReturnType<typeof OutboxActions.enqueue>> => {
+      // D2/[AC16]: capture the routing-time identity before the request goes out, so a
+      // spreadsheet switch while the request is in flight can't re-target a queued record.
+      const identity = { spreadsheetId: this.spreadSheetService.getSpreadsheetId(), enqueuedAt: Date.now() };
+      this.store.dispatch(AppActions.loading({ loading: true }));
+      return this.spreadSheetService.addExpense(action.sheetId, action.expense).pipe(
+        map(() => {
+          const to = new Date(action.expense.date!);
+          to.setDate(to.getDate() + 1); // add a day
+          return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
+        }),
+        catchError((e) => {
+          if (!queueOnFailure || classifyWriteError(e) === 'terminal') {
+            return reportFailure('addExpense$', this.store)(e);
+          }
+          this.store.dispatch(AppActions.loading({ loading: false }));
+          return of(OutboxActions.enqueue({ record: buildRecord(action, 1, identity, toMessage(e)), drain: false }));
+        })
+      );
+    };
+
+    return this.actions$.pipe(
       ofType(AppActions.addExpense),
       tap<ReturnType<typeof AppActions.addExpense>>(log),
       exhaustMap((action) => {
-        this.store.dispatch(AppActions.loading({ loading: true }));
-        return this.spreadSheetService.addExpense(action.sheetId, action.expense).pipe(
-          map(() => {
-            const to = new Date(action.expense.date!);
-            to.setDate(to.getDate() + 1); // add a day
-            return AppActions.loadExpenses({ sheetId: action.sheetId, from: action.expense.date, to });
-          }),
-          catchError(reportFailure('addExpense$', this.store))
+        const usable = this.outboxStorage.isAvailable() && this.spreadSheetService.getSpreadsheetId() !== '';
+        if (!usable) {
+          return sendLive$(action, false);
+        }
+        return combineLatest([
+          this.status.online$.pipe(take(1)),
+          this.store.select(pendingCountSelector).pipe(take(1))
+        ]).pipe(
+          switchMap(([online, pending]) => {
+            if (!online) {
+              return of(OutboxActions.enqueue({ record: buildRecord(action, 0), drain: false }));
+            }
+            if (pending > 0) {
+              return of(OutboxActions.enqueue({ record: buildRecord(action, 0), drain: true }));
+            }
+            return sendLive$(action, true);
+          })
         );
       })
-    )
-  );
+    );
+  });
 
   private deletedExpenseBackup: { expense: Expense; index: number } | undefined;
   readonly deleteExpense$ = createEffect(() =>
@@ -293,6 +354,7 @@ export class AppEffects {
     private readonly actions$: Actions,
     private readonly status: NetworkStatusService,
     private readonly spreadSheetService: SpreadsheetService,
-    private readonly snackBar: MatSnackBar
+    private readonly snackBar: MatSnackBar,
+    private readonly outboxStorage: OutboxStorage
   ) {}
 }

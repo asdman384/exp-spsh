@@ -29,7 +29,7 @@ sources:
 
 # Build output
 
-`@angular/build:application` builder with `baseHref: ""`, `outputPath.base: dist/exp-spsh`
+`@angular/build:application` builder with `baseHref: "/exp-spsh/"`, `outputPath.base: dist/exp-spsh`
 and an empty `browser` sub-path (files land directly in `dist/exp-spsh`).[^angularjson]
 Global styles are the Material `deeppurple-amber` prebuilt theme plus `src/styles.scss`;
 `src/scripts/client.js` is injected as a global script; assets are `favicon.ico`,
@@ -51,8 +51,8 @@ environments are otherwise identical and the `SCOPES` constant in them is unused
 - **`window.log` exists** — installed by the dynamically imported `src/logger.ts` before
   bootstrap ([dependency wiring](../architecture/dependency-wiring.md)).
 - `localStorage` is available and parseable ([storage](../interfaces/local-storage.md)).
-- Served under `/exp-spsh/`, because the service worker asset globs hard-code that path
-  ([PWA](../architecture/pwa-and-service-worker.md)).
+- Served under `/exp-spsh/`, because `baseHref` is `/exp-spsh/`: asset URLs and the service
+  worker manifest's URLs both carry that prefix ([PWA](../architecture/pwa-and-service-worker.md)).
 - Hash routing, so the app also works when the host cannot rewrite unknown paths to
   `index.html` — which is exactly the GitHub Pages constraint.
 

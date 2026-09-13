@@ -39,7 +39,7 @@ sources:
 | `index.html`, `manifest.webmanifest` | shell and PWA manifest | [PWA](../architecture/pwa-and-service-worker.md) |
 | `styles.scss`, `css/fonts.scss` | global styles, self-hosted Roboto woff2 | — |
 | `app/` | `app.component.*`, `app.config.ts`, `app.routes.ts` | [routing](../architecture/routing-and-guards.md) |
-| `@state/` | `app.actions/effects/model/reducers/selectors.ts`, `report-failure.ts` | [state](../architecture/state-management.md) |
+| `@state/` | `app.actions/effects/model/reducers/selectors.ts`, `report-failure.ts`, `outbox.actions/effects/model/reducers/selectors.ts`, `outbox-messages.ts` | [state](../architecture/state-management.md), [write outbox](../architecture/write-outbox.md) |
 | `constants/` | `route.ts`, `UI.ts`, `local-storage-keys.ts`, `spreadsheets.ts` | [configuration](../operations/configuration-and-secrets.md) |
 | `environments/` | prod / dev flags (mostly vestigial) | [configuration](../operations/configuration-and-secrets.md) |
 | `http-interceptors/` | `auth-interceptor.ts` | [interceptor](../interfaces/http-auth-interceptor.md) |
@@ -47,11 +47,13 @@ sources:
 | `services/spreadsheet/` | `spreadsheet.service.ts` (+ spec) | [Sheets API](../interfaces/google-sheets-api.md) |
 | `services/storage/` | `StorageService` interface + localStorage impl | [storage](../interfaces/local-storage.md) |
 | `services/network-status.service.ts` | online/offline stream | [offline](../flows/offline-and-updates.md) |
-| `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo` | [domain](../domain/) |
+| `services/outbox/` | `OutboxStorage` (abstract, root-bound), `IndexedDbOutboxStorage`, `InMemoryOutboxStorage` (test double), `OutboxDrainLock` | [write outbox](../architecture/write-outbox.md) |
+| `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo`, `OutboxRecord` | [domain](../domain/), [write outbox](../architecture/write-outbox.md) |
 | `shared/guards/` | `isLoggedIn`, `isOnline`, `isSetupReady` | [routing](../architecture/routing-and-guards.md) |
-| `shared/helpers/` | `isExpenseEqual` (+ the best-covered spec) | [expense](../domain/expense.md) |
+| `shared/helpers/` | `isExpenseEqual`, `toMessage`, `classifyWriteError` (+ the best-covered spec) | [expense](../domain/expense.md), [write outbox](../architecture/write-outbox.md) |
 | `shared/components/expenses-table/` | the shared table | [table contract](../interfaces/expenses-table-component.md) |
 | `shared/components/dialog/` | `ExpDialogComponent`, currently unused | [known issues](../constraints/known-issues.md) |
+| `shared/components/outbox-status/`, `shared/components/outbox-failure-notice/` | the toolbar badge and the Retry/Discard/Close snackbar body, not exported from `shared/components/index.ts` | [write outbox](../architecture/write-outbox.md) |
 | `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/` containers | [flows](../flows/) |
 | `modules/setup/` | shell + `login-page.containers.ts`, `setup-page/` | [initial setup](../flows/initial-setup.md) |
 | `modules/playground/` | unguarded Angular sandbox (own README) | [app system](../systems/exp-spsh-app.md) |
@@ -64,7 +66,17 @@ sources:
 Twelve `.spec.ts` files, co-located. Three are `describe.skip`; the substantive ones are
 `shared/helpers/index.spec.ts`, `services/spreadsheet/spreadsheet.service.spec.ts`,
 `@state/report-failure.spec.ts`, `@state/app.reducers.spec.ts`, and
-`@state/app.effects.spec.ts`. See [testing](../operations/testing.md).
+`@state/app.effects.spec.ts`. [The write outbox](../architecture/write-outbox.md) (D17 of
+`docs/specs/write-outbox.md`) adds ten more, all in new files so none of the twelve above are
+touched: `@state/outbox.reducers.spec.ts`, `@state/outbox.selectors.spec.ts`,
+`@state/outbox.effects.spec.ts`, `@state/app.effects.add-expense.spec.ts`,
+`services/outbox/indexed-db-outbox-storage.service.spec.ts`,
+`services/outbox/outbox-drain-lock.service.spec.ts`,
+`services/spreadsheet/spreadsheet.service.replay.spec.ts`,
+`shared/helpers/classify-write-error.spec.ts`,
+`shared/components/outbox-status/outbox-status.component.spec.ts`, and
+`shared/components/outbox-failure-notice/outbox-failure-notice.component.spec.ts`. See
+[testing](../operations/testing.md).
 
 # Branches seen in the repository
 

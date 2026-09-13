@@ -20,6 +20,35 @@ export function toMessage(e: unknown): string {
   return GENERIC_ERROR_MESSAGE;
 }
 
+const RETRYABLE_STATUSES = new Set([408, 429]);
+
+function isRetryableStatus(status: number): boolean {
+  return RETRYABLE_STATUSES.has(status) || (status >= 500 && status <= 599);
+}
+
+/**
+ * Classifies an `addExpense` failure per `docs/specs/write-outbox.md` D3. Rules are checked in
+ * order, first match wins.
+ */
+export function classifyWriteError(e: unknown): 'retryable' | 'auth' | 'terminal' {
+  if (!(e instanceof HttpErrorResponse)) {
+    return 'terminal';
+  }
+  if (e.status === 0) {
+    return 'retryable';
+  }
+  if (e.url?.includes('oauth2.googleapis.com/token')) {
+    return isRetryableStatus(e.status) ? 'retryable' : 'auth';
+  }
+  if (e.status === 401) {
+    return 'auth';
+  }
+  if (isRetryableStatus(e.status)) {
+    return 'retryable';
+  }
+  return 'terminal';
+}
+
 export function isExpenseEqual(e1: Expense, e2: Expense): boolean {
   return (
     e1.comment === e2.comment &&

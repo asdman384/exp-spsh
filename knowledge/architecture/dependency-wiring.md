@@ -15,6 +15,9 @@ sources:
   - id: logger
     resource: ../../src/logger.ts
     title: ExpLogger and the global log()
+  - id: outboxstorage
+    resource: ../../src/services/outbox/outbox-storage.ts
+    title: OutboxStorage root binding
 ---
 
 # Bootstrap order
@@ -42,12 +45,21 @@ Zone.js change detection is still in use; the app has not moved to zoneless.
 | — | `provideHttpClient(withInterceptorsFromDi(), withJsonpSupport())` | DI-style interceptors, JSONP support enabled |
 | — | `provideRouter(routes, withComponentInputBinding())` | [routing](routing-and-guards.md) |
 | — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled unconditionally, including in dev** |
-| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot(AppEffects)` | [state](state-management.md) |
+| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects, OutboxEffects])` | [state](state-management.md) |
 | — | `StoreDevtoolsModule.instrument(...)` | **conditional and code-split**: `getAppConfig()`'s internal `getDebugProviders()` helper runs `await import('@ngrx/store-devtools')` only when the URL has a `logger` query param, so the package ships as its own lazy chunk, fetched only when that flag is present |
 
 `SpreadsheetService`, `NetworkStatusService` are `providedIn: 'root'`;
 `LocalStorageService`, `PopupSecurityService`, `RedirectSecurityService` are plain
 `@Injectable()` classes bound explicitly here.
+
+`OutboxStorage` (`src/services/outbox/outbox-storage.ts`) is **not** bound here, unlike every
+other abstract-class-as-token in this file. It carries its own root default binding —
+`@Injectable({ providedIn: 'root', useFactory: () => inject(IndexedDbOutboxStorage) })` on the
+abstract class itself — so `AppEffects` (which takes `OutboxStorage` as a constructor
+parameter) resolves it from the root injector with no line in `app.config.ts` at all. This
+exists so a `TestBed` that provides no `OutboxStorage` (like the pre-existing
+`app.effects.spec.ts`) can still construct `AppEffects`; see
+[the write outbox](write-outbox.md) and [testing](../operations/testing.md).
 
 # The global `log()` side channel
 

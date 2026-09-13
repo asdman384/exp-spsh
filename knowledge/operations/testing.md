@@ -47,8 +47,9 @@ test bundle — code under test calls it freely.
 with the standalone component in `imports`, and either a stubbed `Store`
 (`{ select: vi.fn(), dispatch: vi.fn() }`) or a real `StoreModule.forRoot(reducers)`.
 
-**Effects specs** (`docs/specs/effect-error-surfacing.md`) are the only specs of their kind
-in this repo. The pattern, established in `src/@state/app.effects.spec.ts`:
+**Effects specs** (`docs/specs/effect-error-surfacing.md`,
+`docs/specs/write-outbox.md`) follow one pattern, established in
+`src/@state/app.effects.spec.ts`:
 `provideMockActions` from `@ngrx/effects/testing` with a
 `Subject<Action>`-backed actions stream; a `Store` stub whose `select` returns an
 **observable** (`of(undefined)`, not a bare function — several `AppEffects` fields call
@@ -66,6 +67,23 @@ around this with a `globalThis.log = () => {}` no-op in `beforeEach`/`afterEach`
 `reportFailure(...)` directly rather than constructing `AppEffects`. **Any new effects spec
 in this codebase needs one of these two, or it fails with `ReferenceError: log is not
 defined` before the test body runs.**
+
+`src/@state/outbox.effects.spec.ts` follows the same pattern, but with `InMemoryOutboxStorage`
+in place of a hand-rolled storage stub (it already satisfies `OutboxStorage`'s contract and
+`structuredClone`s in both directions, so a test can mutate what it gets back without
+corrupting the double's internal state) and a pass-through `OutboxDrainLock` stub (`{ run: (work)
+=> work() }`) so a pass runs without touching real Web Locks. `src/@state/app.effects.add-expense.spec.ts`
+covers `addExpense$`'s routing separately from the rest of `app.effects.spec.ts`, per
+`docs/specs/write-outbox.md` D17, so that file stays untouched.
+
+Two suites in this feature test against the **real** browser API instead of a double, because
+the test runner is headless Chromium (`angular.json`'s unit-test target), not jsdom:
+
+- `src/services/outbox/indexed-db-outbox-storage.service.spec.ts` runs against real IndexedDB,
+  deleting the `exp-spsh-outbox` database before and after each test.
+- `src/services/outbox/outbox-drain-lock.service.spec.ts` runs against the real Web Locks API,
+  including asserting non-overlap between two concurrent `run()` calls and the unlocked
+  fallback via `vi.spyOn(navigator, 'locks', 'get').mockReturnValue(undefined)`.
 
 # What is actually covered
 

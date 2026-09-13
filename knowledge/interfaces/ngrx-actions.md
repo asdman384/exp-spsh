@@ -12,6 +12,9 @@ sources:
   - id: effects
     resource: ../../src/@state/app.effects.ts
     title: AppEffects
+  - id: outboxactions
+    resource: ../../src/@state/outbox.actions.ts
+    title: OutboxActions action group
 ---
 
 All actions live in one `createActionGroup` with `source: 'App shell'`, so DevTools shows
@@ -85,4 +88,30 @@ repository root.
   failure path at all — `LocalStorageService.put` throwing is still fully uncaught
   ([known issues](../constraints/known-issues.md) item 20).
 
+# Outbox
+
+A second, separate action group, `source: 'Outbox'` (DevTools shows `[Outbox] <event>`), for
+[the write outbox](../architecture/write-outbox.md).[^outboxactions]
+
+| Action | Payload | Dispatched by | Consumed by |
+|---|---|---|---|
+| `hydrated` | `{ records: OutboxRecord[] }` | `OutboxEffects` (boot, and the start/end of every drain pass) | reducer (`setAll`) |
+| `enqueue` | `{ record: OutboxRecord; drain: boolean }` | `AppEffects.addExpense$` | `persistEnqueue$` (intent only, no reducer case) |
+| `enqueued` | `{ record: OutboxRecord }` | `persistEnqueue$`, after a successful `storage.add` | reducer (`addOne`) |
+| `drainRequested` | none | a behind-the-queue `enqueue`, or Retry | the drain trigger merge (T4) |
+| `syncRequested` | none | the toolbar outbox button | the drain trigger merge (T5); also reopens the failure notice |
+| `attemptStarted` | `{ localId: string }` | a drain pass, before each send | reducer (`draining: true`) |
+| `succeeded` | `{ localId: string }` | a drain pass, after a successful send | reducer (`removeOne`) |
+| `retryableFailed` | `{ localId, attempts, lastError }` | a drain pass, on a `retryable`/`auth` classification | reducer (stays `pending`, updates `attempts`/`lastError`) |
+| `terminallyFailed` | `{ localId, attempts, lastError, failure }` | a drain pass, on a `terminal` classification or a spreadsheet mismatch | reducer (`status: 'failed'`) |
+| `drainCompleted` | `{ sent, newlyFailed, remainingPending, lastSent }` | a drain pass, once it ends | reducer (`draining: false`); the reload/announce/failure-notice effects |
+| `retry` | `{ localId: string }` | the failure notice's Retry button | `retry$` (intent only) |
+| `discard` | `{ localId: string }` | the failure notice's Discard button | `discard$` (intent only) |
+
+Same intent/result split as `AppActions`: `enqueue`, `drainRequested`, `syncRequested`,
+`retry`, and `discard` are effect-only intents with no reducer case; the rest are results.
+`AppActions.operationFailed({ source: 'outboxDrain$', ... })` is reused, unmodified, for the
+one auth-episode toast a drain pass can raise — no new `FailureSource` was added.
+
+[^outboxactions]: OutboxActions action group
 [^actions]: AppActions action group

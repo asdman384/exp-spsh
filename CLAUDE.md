@@ -25,8 +25,9 @@ npm run test:coverage
 
 **Local loop is two terminals**: `npm run watch` in one, `npm run serve` in the other, then
 open **http://localhost:4200/exp-spsh/**. The `exp-spsh` path segment is required — the server
-roots at `dist/` while the build writes to `dist/exp-spsh`, and the service worker's asset
-globs hard-code that path. The page does not live-reload; refresh after a rebuild.
+roots at `dist/` while the build writes to `dist/exp-spsh`, and `angular.json` sets
+`baseHref: "/exp-spsh/"`, so every asset URL (including those in the generated `ngsw.json`)
+carries that prefix. The page does not live-reload; refresh after a rebuild.
 
 `scripts/harness.sh` builds production into `tmp/harness-dist` (gitignored), never
 `dist/exp-spsh`, so running it does not disturb the watch loop.
@@ -80,13 +81,26 @@ Angular's `HttpClient`.
   overlay is where you debug.
 - **The NgRx entity adapter keys sheets by `title`**, so `selectedSheetId` holds a string;
   `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering *position*, not an id.
+- **`addExpense` may not touch the network at all.** Offline, or while another expense is
+  already queued, `AppEffects.addExpense$` writes the expense into IndexedDB instead of
+  calling Google, and `OutboxEffects` drains that queue serially the next time the app can
+  reach the spreadsheet (see `knowledge/architecture/write-outbox.md`). The store has **two**
+  feature slices (`app`, `outbox`) and **two** effects classes
+  (`EffectsModule.forRoot([AppEffects, OutboxEffects])`). The queue lives in IndexedDB
+  (database `exp-spsh-outbox`), not `localStorage`, and it **survives logout** — reset it via
+  DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. A drain pass holds the Web
+  Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
 - **The service worker is enabled in development too**. Stale assets after a rebuild are
   expected — unregister the worker or hard-reload.
 - `npm install` must run `postinstall`, which patches
   `node_modules/@angular/service-worker/ngsw-worker.js` for iOS. `--ignore-scripts` silently
   produces a broken worker.
 - Deployment is a GitHub Pages project site under `/exp-spsh/`. That path is encoded in
-  `ngsw-config.json` and in the Google OAuth redirect URIs. CI **does not run tests**.
+  `angular.json`'s `baseHref` and in the Google OAuth redirect URIs. CI **does not run tests**.
+- **`ngsw-config.json` `files` globs match paths inside the build output** (`/main.js`), not
+  deployed URLs; `baseHref` adds `/exp-spsh/` when `ngsw.json` is generated. Never put
+  `/exp-spsh/` in a glob — it matches no file, the asset groups come out with empty `urls`, and
+  the app no longer starts offline. Check `ngsw.json` after touching either file.
 
 
 ## Knowledge base
@@ -103,6 +117,7 @@ non-trivial work rather than re-deriving it:
 | What is the sheet layout? | `knowledge/domain/spreadsheet-layout.md` |
 | What is already known to be broken? | `knowledge/constraints/known-issues.md` |
 | Why is it failing? | `knowledge/operations/troubleshooting.md` |
+| How does the offline write queue work? | `knowledge/architecture/write-outbox.md` |
 
 Every concept cites its source files in frontmatter. The bundle is **unverified** — confirm a
 claim against its sources before acting on it irreversibly.

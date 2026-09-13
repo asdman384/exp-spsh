@@ -47,8 +47,8 @@ npx npm run serve
 
 Then open **http://localhost:4200/exp-spsh/** — the `exp-spsh` path segment is required
 because the server roots at `dist/` while the build writes into `dist/exp-spsh`, and because
-the service worker's asset globs assume that path
-([PWA](../architecture/pwa-and-service-worker.md)).
+`baseHref` is `/exp-spsh/`, so the page and the service worker manifest request every asset
+under that path ([PWA](../architecture/pwa-and-service-worker.md)).
 
 The page does **not** live-reload. After a rebuild, refresh manually.
 
