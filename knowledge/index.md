@@ -4,7 +4,7 @@ okf_version: "0.2"
 
 # exp-spsh knowledge bundle
 
-An OKF v0.2 knowledge bundle for **exp-spsh** — an Angular 21 PWA that records personal
+An OKF v0.2 knowledge bundle for **exp-spsh** — an Angular 22 PWA that records personal
 expenses directly into a user-owned Google Spreadsheet, with no backend of its own.
 
 Start with [the system overview](architecture/overview.md), then follow whichever section

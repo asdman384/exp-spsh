@@ -4,7 +4,7 @@ title: exp-spsh system overview
 description: Single-page Angular PWA that records personal expenses directly into a user-owned Google Spreadsheet, with no backend of its own.
 tags: [architecture, overview, pwa, angular]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-sonnet-5, at: 2026-09-15T00:00:00Z }
 sources:
   - id: pkg
     resource: ../../package.json
@@ -19,17 +19,17 @@ sources:
 
 # What it is
 
-`exp-spsh` (version `0.7.4`) is an Angular **21** standalone-component PWA for tracking
+`exp-spsh` (version `0.8.0`) is an Angular **22** standalone-component PWA for tracking
 day-to-day expenses. It has **no server of its own**: the user's own Google Spreadsheet is
 the database, and the browser talks to Google APIs directly.[^appcfg]
 
 | Property | Value |
 |---|---|
 | App name / npm package | `exp-spsh` |
-| Version | `0.7.4` (surfaced in the toolbar menu, read from `package.json`) |
-| Framework | Angular 21, fully standalone components — no `@NgModule` is authored in `src/`; `StoreModule`/`EffectsModule`/`ServiceWorkerModule`/`StoreDevtoolsModule` are third-party NgModules wired in via `importProvidersFrom` |
-| State | NgRx 21 (`store`, `effects`, `entity`, `store-devtools`) |
-| UI kit | Angular Material 21, prebuilt `deeppurple-amber` theme |
+| Version | `0.8.0` (surfaced in the toolbar menu, read from `package.json`) |
+| Framework | Angular 22, fully standalone components — no `@NgModule` is authored in `src/`; `StoreModule`/`EffectsModule`/`ServiceWorkerModule`/`StoreDevtoolsModule` are third-party NgModules wired in via `importProvidersFrom` |
+| State | NgRx 22 (`store`, `effects`, `entity`, `store-devtools`) |
+| UI kit | Angular Material 22, prebuilt `deeppurple-amber` theme |
 | Persistence | Google Sheets (remote) + `localStorage` (config and cache) |
 | Auth | Google Identity Services (OAuth 2.0), redirect flow by default |
 | Hosting | GitHub Pages, served under the `/exp-spsh/` path |

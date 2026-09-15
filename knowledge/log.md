@@ -1,5 +1,43 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-15
+
+Upgraded the project from Angular 21 to Angular 22 via `ng update`, continuing the
+19 -> 20 -> 21 chain already noted in [toolchain](systems/toolchain.md).
+
+* **Update**: `ng update @angular/cli @angular/core angular-eslint`, then
+  `ng update @angular/material`, then `ng update @ngrx/store @ngrx/effects @ngrx/entity
+  @ngrx/store-devtools`, each committed separately (`ng update` requires a clean tree).
+  TypeScript moved to `6.0.3` (Angular 22's compiler-cli requires `>=6.0 <6.1`).
+* **Update**: raised the active Node.js version to `22.23.2` (via the existing `nvm4w`
+  install) — Angular CLI 22 requires Node.js `>= 22.22.3` / `>= 24.15.0` / `>= 26.0.0` and
+  the repo's prior `22.12.0` no longer qualifies.
+* **Update**: the core migration added `withXhr()` to both `provideHttpClient()` call sites
+  (`src/app/app.config.ts`, one spec) since `HttpXhrBackend` (used for upload progress) is no
+  longer implied by default; wrapped one template optional-chaining expression in
+  `$safeNavigationMigration()` (`src/modules/setup/setup-page/setup-page.container.html`) now
+  that the compiler's optional-chaining diagnostics are stricter; and pinned
+  `ChangeDetectionStrategy` on ten components that had never set it explicitly, since
+  Angular 22 changed the implicit default from the old check-always strategy to `OnPush`.
+  The migration chose `Eager` (preserving each component's exact pre-upgrade behavior) on
+  all ten; manually switched all ten to `OnPush` instead, matching this project's own
+  component convention — every one of them only mutates template-bound state through the
+  async pipe or a template event handler, so the switch is behavior-preserving.
+* **Update**: `tsconfig.json` gained `"ignoreDeprecations": "6.0"` to silence TS5101
+  (`baseUrl` deprecated as of TypeScript 6.0) — `baseUrl` itself stays, since the project's
+  dominant absolute-from-root import style (`src/shared/models`, no `paths` map) depends on
+  it; `tsconfig.app.json`/`tsconfig.spec.json` gained
+  `extendedDiagnostics.checks: { nullishCoalescingNotNullable: suppress,
+  optionalChainNotNullable: suppress }` from the same migration, avoiding a wave of new
+  template diagnostics unrelated to this upgrade.
+* **Update**: [toolchain](systems/toolchain.md), [overview](architecture/overview.md),
+  [knowledge index](index.md), `CLAUDE.md`, and
+  `.claude/rules/development.md` — version numbers and the `ng update` history line.
+* Not touched: `.claude/agents/*.md` and `.claude/commands/orchestrate.md` still say
+  "Angular 21" — `CLAUDE.md`'s own "Subagents" section already flags those files as
+  describing a nonexistent backend/frontend layout that needs verifying before use, so their
+  version mentions were left alone rather than partially patched.
+
 ## 2026-09-13 (3)
 
 Offline launch fix: the generated `ngsw.json` listed no asset URLs, so the service worker

@@ -65,7 +65,7 @@ file is a build-time module-resolution failure. CI writes it from repository sec
 
 ## Architecture
 
-Angular 21 standalone PWA + NgRx 21. **There is no backend**: the user's own Google
+Angular 22 standalone PWA + NgRx 22. **There is no backend**: the user's own Google
 Spreadsheet is the database and the browser calls Google APIs directly. The `gapi` client
 library is never loaded — only its TypeScript types are used; all traffic goes through
 Angular's `HttpClient`.

@@ -4,8 +4,8 @@ title: Development toolchain
 description: Pinned framework and tooling versions, the builders behind each npm script, and the local platform assumptions.
 tags: [system, toolchain, dependencies, versions]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
-stale_after: 2026-12-05T00:00:00Z
+generated: { by: claude_code/claude-sonnet-5, at: 2026-09-15T00:00:00Z }
+stale_after: 2026-12-15T00:00:00Z
 sources:
   - id: pkg
     resource: ../../package.json
@@ -22,19 +22,25 @@ sources:
 
 | Area | Package | Version range |
 |---|---|---|
-| Framework | `@angular/*` | `^21.2.13` (CDK/Material `^21.2.11`) |
-| State | `@ngrx/store`, `effects`, `entity`, `store-devtools` | `^21.1.0` |
+| Framework | `@angular/*` | `^22.1.6` (CDK/Material `^22.1.6`) |
+| State | `@ngrx/store`, `effects`, `entity`, `store-devtools` | `^22.0.1` |
 | Reactive | `rxjs` | `~7.8.2` |
 | Zones | `zone.js` | `~0.15.0` |
-| Build | `@angular/build`, `@angular/cli` | `^21.2.11` |
-| Language | `typescript` | `~5.9.3` |
+| Build | `@angular/build`, `@angular/cli` | `^22.1.8` |
+| Language | `typescript` | `~6.0.3` |
 | Test | `vitest`, `@vitest/browser-playwright` | `^4.1.7` |
 | Test env | `jsdom` | `^27.0.1` |
 | Types | `@types/gapi`, `gapi.client.sheets-v4`, `gapi.client.oauth2-v2`, `gapi.client.discovery-v1`, `google.accounts`, `node` | various |
 | Dev server | `http-server` | `^14.1.1` |
 
 Angular and NgRx major versions move together; this repo has already gone through
-`ng update` 19 -> 20 -> 21 (commits `6fda6a8`, `4424e0f`).[^pkg]
+`ng update` 19 -> 20 -> 21 -> 22 (commits `6fda6a8`, `4424e0f`, and the 21->22 pass which
+also required Node.js `>= 22.22.3` / `>= 24.15.0` / `>= 26.0.0` — Angular CLI 22 raised its
+minimum).[^pkg]
+
+Angular 22 made `OnPush` the default `changeDetection` for components that don't set it
+explicitly; every component in `src/` sets `ChangeDetectionStrategy.OnPush` explicitly anyway
+(the project's own convention predates this default), so nothing changed behaviorally.
 
 # TypeScript configuration
 
@@ -49,6 +55,10 @@ Angular compiler options: `strictTemplates`, `strictInjectionParameters`,
 
 `baseUrl: "./"` with `rootDir: "."` is why imports are written as absolute-from-root
 (`src/shared/models`) rather than relative — the dominant import style in this codebase.
+TypeScript 6.0 deprecated `baseUrl` (removal planned for 7.0), but this project still relies
+on it for that bare-import style with no `paths` map, so the deprecation is silenced with
+`"ignoreDeprecations": "6.0"` rather than dropping `baseUrl` — removing it breaks every
+absolute-from-root import project-wide.
 
 Ambient `types` are declared globally: `vitest/globals`, the four `gapi`/`google.accounts`
 type packages, and `node`.
