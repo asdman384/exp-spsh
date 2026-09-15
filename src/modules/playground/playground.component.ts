@@ -3,6 +3,7 @@ import { Component, inject, NgZone, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { catchError, debounceTime, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, switchMap, timer } from 'rxjs';
 import { AppActions } from 'src/@state';
+import { TestPerfComponent } from './test-perf/test-perf.component';
 
 interface State<T> {
   items: T[];
@@ -34,13 +35,15 @@ export function retryWithBackoff<T>(max = 3) {
 @Component({
   selector: 'app-playground',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, TestPerfComponent],
   templateUrl: './playground.component.html',
   styleUrls: ['./playground.component.scss']
 })
 export class PlaygroundComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly zone = inject(NgZone);
+
+  protected items: number[] = Array.from({ length: 500 }, () => 1);
 
   private readonly obs = new Subject<string>();
 
