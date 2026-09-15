@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { DatePipe } from '@angular/common';
-import { Component, computed, effect, input, output } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,10 +25,10 @@ export class ExpensesTableComponent {
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected readonly selection = new SelectionModel<Expense>(true, []);
 
-  protected dragPlaceholderY: number = 0;
-  protected dragging: boolean = false;
-  protected isDelete: boolean = false;
-  protected lastDeletedDragRow?: CdkDrag<Expense>;
+  protected readonly dragPlaceholderY = signal(0);
+  protected readonly dragging = signal(false);
+  protected readonly isDelete = signal(false);
+  protected readonly lastDeletedDragRow = signal<CdkDrag<Expense> | undefined>(undefined);
 
   readonly showDateCol = input(true);
   readonly dataSource = input<ReadonlyArray<Expense>>([]);
@@ -64,8 +64,9 @@ export class ExpensesTableComponent {
 
     effect(() => {
       this.dataSource();
-      if (this.lastDeletedDragRow?._dragRef['_rootElement']) {
-        this.lastDeletedDragRow.reset();
+      const row = this.lastDeletedDragRow();
+      if (row?._dragRef['_rootElement']) {
+        row.reset();
       }
     });
   }
@@ -75,20 +76,20 @@ export class ExpensesTableComponent {
   }
 
   protected cdkDragMoved(event: CdkDragMove<Expense>): void {
-    this.isDelete = event.distance.x > DELETE_THRESHOLD;
+    this.isDelete.set(event.distance.x > DELETE_THRESHOLD);
   }
 
   protected cdkDragStarted(event: CdkDragStart<Expense>): void {
-    this.dragPlaceholderY = event.source.element.nativeElement.offsetTop;
-    this.dragging = true;
+    this.dragPlaceholderY.set(event.source.element.nativeElement.offsetTop);
+    this.dragging.set(true);
   }
 
   protected cdkDragEnded(event: CdkDragEnd<Expense>): void {
-    setTimeout(() => (this.dragging = false), 250);
-    this.isDelete = false;
+    setTimeout(() => this.dragging.set(false), 250);
+    this.isDelete.set(false);
 
     if (event.distance.x > DELETE_THRESHOLD) {
-      this.lastDeletedDragRow = event.source;
+      this.lastDeletedDragRow.set(event.source);
       event.source.setFreeDragPosition({ x: window.outerWidth, y: 0 });
       this.deleteRow.emit(event.source.data);
     } else {

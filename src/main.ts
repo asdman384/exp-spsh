@@ -1,4 +1,4 @@
-import { provideZoneChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { AppComponent } from './app/app.component';
 import { getAppConfig } from './app/app.config';
@@ -15,7 +15,7 @@ window.addEventListener('error', (event) => {
 import('./logger')
   .then(() => getAppConfig())
   .then((appConfig) =>
-    bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), appConfig.providers] })
+    bootstrapApplication(AppComponent, { providers: [provideZonelessChangeDetection(), appConfig.providers] })
   )
   .catch((err) => {
     console.error(err);

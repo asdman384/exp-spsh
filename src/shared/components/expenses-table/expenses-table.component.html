@@ -75,8 +75,8 @@
   ></tr>
 </table>
 
-@if (dragging) {
-<div [style.top.px]="dragPlaceholderY" class="cdk-drag__drag-placeholder">
-  @if (isDelete) { <mat-icon>delete</mat-icon> Delete }
+@if (dragging()) {
+<div [style.top.px]="dragPlaceholderY()" class="cdk-drag__drag-placeholder">
+  @if (isDelete()) { <mat-icon>delete</mat-icon> Delete }
 </div>
 }
