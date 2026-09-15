@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -44,7 +44,6 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
       }
     `
   ],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe, MatButtonModule, MatIconModule]
 })
 export class LoginPageContainer implements OnInit {

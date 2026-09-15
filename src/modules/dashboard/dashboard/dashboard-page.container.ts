@@ -1,5 +1,5 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -37,7 +37,6 @@ interface ExpenseFormModel {
   selector: 'dashboard-page',
   templateUrl: './dashboard-page.container.html',
   styleUrl: './dashboard-page.container.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     FormField,
     AsyncPipe,

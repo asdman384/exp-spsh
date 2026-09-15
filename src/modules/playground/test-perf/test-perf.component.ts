@@ -1,13 +1,12 @@
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-test-perf',
   imports: [],
   templateUrl: './test-perf.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './test-perf.component.scss',
 })
-export class TestPerfComponent {
+export class TestPerfComponent implements OnInit {
   items: number[] = [];
 
   ngOnInit() {

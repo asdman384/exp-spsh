@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_SNACK_BAR_DATA,
@@ -22,7 +22,6 @@ export interface OutboxFailureNoticeData {
  */
 @Component({
   selector: 'outbox-failure-notice',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, MatButtonModule, MatSnackBarAction, MatSnackBarActions, MatSnackBarLabel],
   template: `
     <span matSnackBarLabel>

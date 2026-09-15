@@ -1,6 +1,6 @@
 import { CdkDragDrop, CdkDragMove, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { AsyncPipe } from '@angular/common';
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+import { Component } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -20,7 +20,6 @@ const MOVE_THRESHOLD = 23;
   selector: 'categories-page',
   templateUrl: './categories-page.container.html',
   styleUrl: './categories-page.container.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, AsyncPipe, DragDropModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule]
 })
 export class CategoriesPageContainer {

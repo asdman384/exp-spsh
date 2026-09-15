@@ -2,9 +2,10 @@
 {
   "compileOnSave": false,
   "compilerOptions": {
-    "ignoreDeprecations": "6.0",
-    "baseUrl": "./",
     "rootDir": ".",
+    "paths": {
+      "*": ["./*"]
+    },
     "outDir": "./dist/out-tsc",
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,

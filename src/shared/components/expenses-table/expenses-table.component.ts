@@ -1,7 +1,7 @@
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, input, output } from '@angular/core';
+import { Component, computed, effect, input, output } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,7 +18,6 @@ const DELETE_THRESHOLD = 100;
   selector: 'expenses-table',
   templateUrl: './expenses-table.component.html',
   styleUrl: './expenses-table.component.scss',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
 })
 export class ExpensesTableComponent {

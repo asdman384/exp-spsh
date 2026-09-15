@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -11,7 +11,6 @@ import { MatIconModule } from '@angular/material/icon';
  */
 @Component({
   selector: 'outbox-status',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [MatBadgeModule, MatButtonModule, MatIconModule],
   template: `
     @if (total() > 0) {

@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, inject, viewChild } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -21,7 +21,6 @@ const PADDINGS = 76;
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
   imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatisticsContainer implements AfterViewInit {
   private readonly store = inject(Store);
