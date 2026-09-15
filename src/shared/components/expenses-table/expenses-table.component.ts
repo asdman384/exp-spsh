@@ -121,6 +121,11 @@ export class ExpensesTableComponent {
     if (!exps || exps.length === 0) {
       return false;
     }
+
+    if (field === 'isInDebt') {
+      return exps.some((e) => e[field] === true);
+    }
+
     return exps.some((e) => e[field] !== undefined);
   }
 }

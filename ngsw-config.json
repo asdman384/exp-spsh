@@ -23,8 +23,7 @@
       "name": "googleapis",
       "urls": [
         "https://content-sheets.googleapis.com/*",
-        "https://content.googleapis.com/*",
-        "https://docs.google.com/a/google.com/spreadsheets/*"
+        "https://content.googleapis.com/*"
       ],
       "cacheConfig": {
         "maxSize": 0,
