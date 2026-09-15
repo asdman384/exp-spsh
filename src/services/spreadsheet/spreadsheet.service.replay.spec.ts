@@ -1,4 +1,4 @@
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
@@ -11,7 +11,7 @@ describe('[AC13] SpreadsheetService.getSpreadsheetId', () => {
   let service: SpreadsheetService;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(withXhr()), provideHttpClientTesting()] });
     service = TestBed.inject(SpreadsheetService);
   });
 
@@ -32,7 +32,7 @@ describe('[AC14] SpreadsheetService.addExpense replay is byte-identical to the l
   let httpMock: HttpTestingController;
 
   beforeEach(() => {
-    TestBed.configureTestingModule({ providers: [provideHttpClient(), provideHttpClientTesting()] });
+    TestBed.configureTestingModule({ providers: [provideHttpClient(withXhr()), provideHttpClientTesting()] });
     service = TestBed.inject(SpreadsheetService);
     httpMock = TestBed.inject(HttpTestingController);
     service.setSpreadsheetId('replay-spreadsheet-id');

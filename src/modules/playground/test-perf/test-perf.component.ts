@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
   selector: 'app-test-perf',
   imports: [],
   templateUrl: './test-perf.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './test-perf.component.scss',
 })
 export class TestPerfComponent {

@@ -1,5 +1,5 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
-import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withJsonpSupport } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withJsonpSupport, withXhr } from '@angular/common/http';
 import { ApplicationConfig, importProvidersFrom, ImportProvidersSource } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
@@ -53,7 +53,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
       { provide: HTTP_INTERCEPTORS, useClass: ExpAuthInterceptor, multi: true },
       { provide: LocationStrategy, useClass: HashLocationStrategy },
       { provide: StorageService, useClass: LocalStorageService },
-      provideHttpClient(withInterceptorsFromDi(), withJsonpSupport()),
+      provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport()),
       importProvidersFrom([
         BrowserModule,
         ServiceWorkerModule.register('ngsw-worker.js', {

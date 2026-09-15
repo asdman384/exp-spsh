@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, NgForm } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,6 +30,7 @@ type State = 'check document' | 'finish';
   selector: 'setup-page',
   templateUrl: './setup-page.container.html',
   styleUrl: './setup-page.container.scss',
+  changeDetection: ChangeDetectionStrategy.Eager,
   imports: [FormsModule, AsyncPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule]
 })
 export class SettingsPageContainer {

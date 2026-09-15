@@ -5,5 +5,16 @@
     "outDir": "./out-tsc/app",
   },
   "files": ["src/main.ts"],
-  "include": ["src/**/*.d.ts", "src/logger.ts"]
+  "include": [
+    "src/**/*.d.ts",
+    "src/logger.ts"
+  ],
+  "angularCompilerOptions": {
+    "extendedDiagnostics": {
+      "checks": {
+        "nullishCoalescingNotNullable": "suppress",
+        "optionalChainNotNullable": "suppress"
+      }
+    }
+  }
 }

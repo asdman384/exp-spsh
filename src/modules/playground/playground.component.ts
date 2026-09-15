@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, NgZone, OnInit } from '@angular/core';
+import { Component, inject, NgZone, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { Store } from '@ngrx/store';
 import { catchError, debounceTime, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, switchMap, timer } from 'rxjs';
 import { AppActions } from 'src/@state';
@@ -37,6 +37,7 @@ export function retryWithBackoff<T>(max = 3) {
   standalone: true,
   imports: [CommonModule, TestPerfComponent],
   templateUrl: './playground.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrls: ['./playground.component.scss']
 })
 export class PlaygroundComponent implements OnInit {

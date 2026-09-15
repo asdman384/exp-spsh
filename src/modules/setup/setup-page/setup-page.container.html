@@ -23,7 +23,7 @@
 
   <mat-form-field appearance="outline" class="readonly">
     <mat-label>Data Sheet id</mat-label>
-    <input [name]="sheetField" matInput [ngModel]="(sheet$ | async)?.id" readonly />
+    <input [name]="sheetField" matInput [ngModel]="$safeNavigationMigration((sheet$ | async)?.id)" readonly />
     <mat-icon [class]="sheetDone ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
   </mat-form-field>
 

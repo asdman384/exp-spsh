@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'app-snow',
     imports: [],
     templateUrl: './snow.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './snow.component.scss'
 })
 export class SnowComponent {

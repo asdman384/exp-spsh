@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { MatButtonModule } from '@angular/material/button';
 import {
@@ -18,6 +18,7 @@ interface ExpDialogData {
     selector: 'exp-dialog',
     imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './dialog.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrl: './dialog.component.scss'
 })
 export class ExpDialogComponent {
