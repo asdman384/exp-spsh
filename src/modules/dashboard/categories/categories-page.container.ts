@@ -20,7 +20,7 @@ const MOVE_THRESHOLD = 23;
   selector: 'categories-page',
   templateUrl: './categories-page.container.html',
   styleUrl: './categories-page.container.scss',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, AsyncPipe, DragDropModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule]
 })
 export class CategoriesPageContainer {

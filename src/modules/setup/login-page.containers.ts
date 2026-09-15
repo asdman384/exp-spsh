@@ -44,7 +44,7 @@ import { NetworkStatusService, AbstractSecurityService } from 'src/services';
       }
     `
   ],
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [AsyncPipe, MatButtonModule, MatIconModule]
 })
 export class LoginPageContainer implements OnInit {

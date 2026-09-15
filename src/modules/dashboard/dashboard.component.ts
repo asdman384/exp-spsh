@@ -5,7 +5,7 @@ import { RouterOutlet } from '@angular/router';
   selector: 'app-dashboard',
   imports: [RouterOutlet],
   templateUrl: './dashboard.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './dashboard.component.scss'
 })
 export class DashboardComponent {}

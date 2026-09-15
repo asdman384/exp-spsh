@@ -4,7 +4,7 @@ import { Component, ChangeDetectionStrategy } from '@angular/core';
   selector: 'app-test-perf',
   imports: [],
   templateUrl: './test-perf.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './test-perf.component.scss',
 })
 export class TestPerfComponent {

@@ -30,7 +30,7 @@ type State = 'check document' | 'finish';
   selector: 'setup-page',
   templateUrl: './setup-page.container.html',
   styleUrl: './setup-page.container.scss',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [FormsModule, AsyncPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule]
 })
 export class SettingsPageContainer {

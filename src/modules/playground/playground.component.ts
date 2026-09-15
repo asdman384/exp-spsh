@@ -37,7 +37,7 @@ export function retryWithBackoff<T>(max = 3) {
   standalone: true,
   imports: [CommonModule, TestPerfComponent],
   templateUrl: './playground.component.html',
-  changeDetection: ChangeDetectionStrategy.Eager,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrls: ['./playground.component.scss']
 })
 export class PlaygroundComponent implements OnInit {

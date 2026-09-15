@@ -18,7 +18,7 @@ interface ExpDialogData {
     selector: 'exp-dialog',
     imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
     templateUrl: './dialog.component.html',
-    changeDetection: ChangeDetectionStrategy.Eager,
+    changeDetection: ChangeDetectionStrategy.OnPush,
     styleUrl: './dialog.component.scss'
 })
 export class ExpDialogComponent {
