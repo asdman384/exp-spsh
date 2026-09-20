@@ -1,6 +1,6 @@
 import { AsyncPipe } from '@angular/common';
-import { Component } from '@angular/core';
-import { FormsModule, NgForm } from '@angular/forms';
+import { Component, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -20,7 +20,7 @@ import {
   ROUTE,
   SPREADSHEET_ID
 } from 'src/constants';
-import { AbstractSecurityService, SpreadsheetService } from 'src/services';
+import { AbstractSecurityService, PickerService, SpreadsheetService } from 'src/services';
 import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
 import { Sheet, Userinfo } from 'src/shared/models';
 
@@ -39,34 +39,42 @@ export class SettingsPageContainer {
   readonly spreadsheetId: Observable<string | undefined> = this.store.select(spreadsheetIdSelector);
   readonly sheet$: Observable<Sheet | undefined> = this.store.select(currentSheetSelector);
   readonly categoriesSheetId: Observable<number | undefined> = this.store.select(categoriesSheetIdSelector);
-  loading: boolean = false;
-  state: State = 'check document';
-  sheetDone: boolean = false;
-  categoriesSheetDone: boolean = false;
+  protected readonly loading = signal<boolean>(false);
+  protected readonly state = signal<State>('check document');
+  protected readonly sheetDone = signal<boolean>(false);
+  protected readonly categoriesSheetDone = signal<boolean>(false);
 
   constructor(
     private readonly router: Router,
     private readonly security: AbstractSecurityService,
     private readonly spreadsheetService: SpreadsheetService,
+    private readonly picker: PickerService,
     private readonly store: Store
   ) {
     this.store.dispatch(AppActions.setTitle({ title: 'Settings', icon: 'settings' }));
   }
 
-  checkSetup(form: NgForm, state: State): void {
+  checkSetup(state: State): void {
     if (state === 'finish') {
       this.finishSetup();
       return;
     }
 
-    if (!form.valid) return;
-    const spreadsheetId: string = this.extractSpreadsheetId(form.value[this.spreadsheetIdField]);
+    this.loading.set(true);
+    log('open Picker...');
 
-    this.loading = true;
-    log('load SpreadSheet...');
-
-    this.loadSpreadSheet(spreadsheetId)
+    this.picker
+      .pickSpreadsheet()
       .pipe(
+        switchMap((spreadsheetId) => {
+          if (!spreadsheetId) {
+            log('Picker: no spreadsheet picked');
+            this.loading.set(false);
+            return EMPTY;
+          }
+          log('load SpreadSheet...');
+          return this.loadSpreadSheet(spreadsheetId);
+        }),
         tap((spreadsheet) => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
         tap((spreadsheet) => this.storeDataSheets(spreadsheet)),
         withLatestFrom(this.security.user$),
@@ -78,13 +86,13 @@ export class SettingsPageContainer {
         ),
         catchError((e) => {
           log(e);
-          this.loading = false;
+          this.loading.set(false);
           return EMPTY;
         })
       )
       .subscribe(() => {
-        this.loading = false;
-        this.state = 'finish';
+        this.loading.set(false);
+        this.state.set('finish');
         this.store.dispatch(AppActions.storeCategories({ categories: [] }));
       });
   }
@@ -109,7 +117,7 @@ export class SettingsPageContainer {
       }),
       tap(() => {
         log('data sheet format adjust finish');
-        this.sheetDone = true;
+        this.sheetDone.set(true);
       })
     );
   }
@@ -123,23 +131,9 @@ export class SettingsPageContainer {
       }),
       tap(() => {
         log('categories sheet format adjust finish');
-        this.categoriesSheetDone = true;
+        this.categoriesSheetDone.set(true);
       })
     );
-  }
-
-  private extractSpreadsheetId(resourceUrl: string): string {
-    let spreadsheetId = new RegExp('/spreadsheets/d/([a-zA-Z0-9-_]+)').exec(resourceUrl);
-    if (spreadsheetId && spreadsheetId[1]) {
-      return spreadsheetId[1];
-    }
-
-    spreadsheetId = new RegExp('([a-zA-Z0-9-_]+)').exec(resourceUrl);
-    if (spreadsheetId && spreadsheetId[1]) {
-      return spreadsheetId[1];
-    }
-    log('cannot read spreadsheet id.', spreadsheetId);
-    throw new Error('cannot read spreadsheet id.');
   }
 
   private loadSpreadSheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {

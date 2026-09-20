@@ -60,8 +60,10 @@ shims run; hence the `npx npm run <script>` form seen in the README.
 ## Prerequisite
 
 `keys.json` must exist at the repo root before the first build (copy `keys.example.json`).
-It holds `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET` and is **imported as a module**, so a missing
-file is a build-time module-resolution failure. CI writes it from repository secrets.
+It holds `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID` and is **imported as a module**, so
+a missing file — or a missing field, such as `APP_ID` — is a build-time module-resolution or
+type-check failure. `APP_ID` is the Google Cloud project number, used by the Picker (see
+below). CI writes the file from repository secrets.
 
 ## Architecture
 
@@ -92,6 +94,11 @@ Angular's `HttpClient`.
   Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
 - **The service worker is enabled in development too**. Stale assets after a rebuild are
   expected — unregister the worker or hard-reload.
+- **OAuth scope is `drive.file`, not `spreadsheets`.** Setup no longer takes a pasted
+  spreadsheet URL — `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
+  loaded lazily, not vendored like `src/scripts/client.js`) and the user's selection is what
+  grants the app access to that one file. A spreadsheet the app never created or the user
+  never picked through Picker is invisible to it, even to someone who pastes its id directly.
 - `npm install` must run `postinstall`, which patches
   `node_modules/@angular/service-worker/ngsw-worker.js` for iOS. `--ignore-scripts` silently
   produces a broken worker.

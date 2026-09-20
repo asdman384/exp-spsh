@@ -30,22 +30,28 @@ persistence tier.
 | `content.googleapis.com` | `oauth2/v2/userinfo` |
 | `oauth2.googleapis.com` | token exchange and refresh |
 | Google Identity Services | the `google.accounts.oauth2` client library |
+| `apis.google.com` | the Google Picker library, loaded lazily by `PickerService` when setup opens it |
 
 The first three are the ones listed in the service worker `dataGroups` with caching disabled.
 
 # Cloud console configuration
 
-The app needs an OAuth 2.0 **Web application** client and an API key in one Google Cloud
-project, delivered to the build as `keys.json`:[^keys]
+The app needs an OAuth 2.0 **Web application** client, an API key, and a Cloud project number
+in one Google Cloud project, delivered to the build as `keys.json`:[^keys]
 
 ```json
-{ "CLIENT_ID": "...apps.googleusercontent.com", "API_KEY": "...", "CLIENT_SECRET": "..." }
+{ "CLIENT_ID": "...apps.googleusercontent.com", "API_KEY": "...", "CLIENT_SECRET": "...", "APP_ID": "..." }
 ```
+
+`APP_ID` is the numeric Cloud **project number** (not the project id string) — it is what
+`PickerService` passes to `PickerBuilder.setAppId()`.
 
 Required project settings:
 
-- **Google Sheets API enabled.**
-- Consent screen with the scopes `.../auth/spreadsheets` and `.../auth/userinfo.profile`.
+- **Google Sheets API and Google Picker API both enabled.**
+- Consent screen with the scopes `.../auth/drive.file` and `.../auth/userinfo.profile`.
+  `drive.file` grants access only to files the user opens through Picker (or that the app
+  creates itself) — not to every spreadsheet the account owns.
 - **Authorized redirect URIs** matching `location.origin + location.pathname` for every
   environment (production Pages URL and `http://localhost:4200/exp-spsh/`).
 - Authorized JavaScript origins for the same hosts.

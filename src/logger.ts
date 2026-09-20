@@ -1,4 +1,4 @@
-export {};
+export { };
 
 class ExpLogger {
   private readonly wrapper: HTMLDivElement;
@@ -126,7 +126,7 @@ const body = document.querySelector('body');
 // must always exist; only the on-page overlay is opt-in via `?logger=window`.
 window.log = console.log.bind(console);
 
-if (loggerType === 'window' && body) {
+if (body) {
   const logger = new ExpLogger(body);
   window.log = logger.writeLog.bind(logger);
 }

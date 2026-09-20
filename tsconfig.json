@@ -23,7 +23,15 @@
     "module": "ES2022",
     "useDefineForClassFields": false,
     "resolveJsonModule": true,
-    "types": ["vitest/globals", "gapi", "gapi.client.oauth2-v2", "gapi.client.sheets-v4", "google.accounts", "node"]
+    "types": [
+      "vitest/globals",
+      "gapi",
+      "gapi.client.oauth2-v2",
+      "gapi.client.sheets-v4",
+      "google.accounts",
+      "google.picker",
+      "node"
+    ]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,

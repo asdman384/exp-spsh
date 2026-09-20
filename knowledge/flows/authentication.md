@@ -36,9 +36,10 @@ protected abstract buildClient(): C       // constructs the GIS client, called i
 ```
 
 Requested scopes are
-`https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile`.
-Note that `environment.ts` also declares a `SCOPES` constant with only the spreadsheets
-scope — **it is unused**; the service constant is the effective one.
+`https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile`.
+`drive.file` only grants access to files the user has opened or created through the app — see
+[Picker](../interfaces/google-oauth.md#picker-flow) for how a spreadsheet gets into that set,
+and [initial setup](initial-setup.md) for where it is invoked.
 
 **"Logged in" means `localStorage.user` exists.** Not a valid token — the profile object.
 `isLoggedIn` guards on `user$`, so a user with an expired, unrefreshable token still passes

@@ -178,11 +178,13 @@ Two console settings bound session length regardless of flow: a consent screen l
 **Testing** status issues refresh tokens that expire after 7 days, and `spreadsheets` is a
 sensitive scope, so publishing to production for external users requires verification.
 
-Separately, the requested scope is `auth/spreadsheets` — **read and write to every spreadsheet
-the user owns**, to operate on one file they chose. `drive.file` plus the Google Picker
-narrows it to the selected document. That is optional for personal use and close to mandatory
-if this is ever published for strangers, because the consent screen is where a "free expense
-app" earns or loses trust.
+Separately, the requested scope **was** `auth/spreadsheets` — read and write to every
+spreadsheet the user owns, to operate on one file they chose. **Resolved (item 9, below):**
+the app now requests `drive.file` and the setup flow picks the file through the Google
+Picker, so the OAuth grant covers only the spreadsheet the user actually selects. This was
+optional for personal use and close to mandatory if the app is ever published for strangers,
+because the consent screen is where a "free expense app" earns or loses trust — it is done
+regardless, since it was cheap once the Picker integration existed.
 
 ## 5. Writes have no offline story
 
@@ -232,7 +234,8 @@ it becomes worth its ops cost only together with a custom domain.
 
 Google Apps Script bound to the spreadsheet is the interesting middle ground: no server you
 operate, runs as the user, and could express compound operations closer to atomically. The
-cost is a per-user deployment step, which would wreck the current "paste a URL and go" setup.
+cost is a per-user deployment step, which would wreck the current "pick a spreadsheet and go"
+setup.
 Not worth it today.
 
 Reconsider the whole question if any of these become true:
@@ -267,7 +270,7 @@ Effort is a rough order of magnitude, not an estimate.
 | # | Change | Fixes | Effort |
 |---|---|---|---|
 | 8 | **Write outbox draining on `online$`** (§5) | the core use case in poor signal | M |
-| 9 | **`drive.file` + Picker instead of full `spreadsheets` scope** (§4) | consent-screen trust, if this is ever public | M |
+| 9 | ~~`drive.file` + Picker instead of full `spreadsheets` scope~~ (§4) — **done** | consent-screen trust, if this is ever public | M |
 
 # The through-line
 

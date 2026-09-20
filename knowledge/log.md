@@ -1,5 +1,36 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-20
+
+Implemented item 9 of [the backend-less assessment](../docs/backend-less-assessment.md):
+narrowed the OAuth scope from the full `auth/spreadsheets` to `auth/drive.file`.
+
+* **Add**: `src/services/picker/picker.service.ts` — lazily loads the Google Picker
+  (`https://apis.google.com/js/api.js`, fetched from Google's CDN at runtime, not vendored
+  like `src/scripts/client.js`) and opens it restricted to `ViewId.SPREADSHEETS`, authenticated
+  with a token from `AbstractSecurityService.refreshToken()` plus `keys.API_KEY` and the new
+  `keys.APP_ID` (the Cloud project number). Added `@types/google.picker` and the
+  `google.picker` entry in `tsconfig.json`'s `types`.
+* **Update**: `AbstractSecurityService.SCOPES` now requests `drive.file` instead of
+  `spreadsheets`. This invalidates every previously stored token — anyone using the app
+  re-consents once.
+* **Update**: setup (`SettingsPageContainer` / its template) no longer takes a pasted
+  spreadsheet URL. `extractSpreadsheetId` (regex URL/id parsing) is deleted; the "Choose
+  spreadsheet" button now opens `PickerService.pickSpreadsheet()` directly, and the id it
+  resolves with feeds the same `loadSpreadSheet` -> tab-discovery -> tab-creation pipeline as
+  before. `drive.file` makes pasting an id mostly pointless anyway: the app has no access to
+  a file it did not create and the user did not pick through Picker.
+* **Update**: `keys.example.json` gained `APP_ID`; anyone with an existing `keys.json` must
+  add it by hand (build/typecheck fail loudly with `TS2339` until they do, same pattern as a
+  missing `keys.json` entirely).
+* **Update**: `knowledge/systems/google-workspace.md`, `knowledge/interfaces/google-oauth.md`,
+  `knowledge/constraints/security-posture.md`, `knowledge/flows/authentication.md`,
+  `knowledge/flows/initial-setup.md`, `CLAUDE.md`, and
+  `docs/backend-less-assessment.md` (item 9 marked done) to describe the new scope and flow.
+* Not touched: `environment.ts`'s already-dead, already-stale `SCOPES` constant (noted as
+  unused before this change) — left alone rather than partially patched, matching the pattern
+  from the 2026-09-15 entry below.
+
 ## 2026-09-15
 
 Upgraded the project from Angular 21 to Angular 22 via `ng update`, continuing the

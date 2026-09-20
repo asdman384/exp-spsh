@@ -10,12 +10,11 @@ import { metaReducers, reducers } from 'src/@state';
 import { AppEffects } from 'src/@state/app.effects';
 import { OutboxEffects } from 'src/@state/outbox.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
+import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { routes } from './app.routes';
 
-const search = window.location.href.split('?')[1];
-const urlParams = new URLSearchParams(search);
-const loggerType = urlParams.get('logger');
+const loggerType = initialUrlParams.get('logger');
 
 // Dynamically imported so @ngrx/store-devtools (and its cost) only ships to the browser
 // when someone actually opens the app with ?logger=, instead of loading on every visit.

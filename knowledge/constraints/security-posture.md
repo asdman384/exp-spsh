@@ -56,12 +56,11 @@ convenience, not an authorization boundary — the real boundary is Google's, en
 request. Nothing sensitive is gated client-side, so this is sound as long as nobody adds
 local-only "protected" data.
 
-# 5. Scope is broad
+# 5. Scope is narrowed to the picked file
 
-The app requests `https://www.googleapis.com/auth/spreadsheets` — **read and write to all of
-the user's spreadsheets**, not just the selected one. Google offers no per-file variant of
-this scope short of the Drive file-picker flow, so narrowing means adopting
-`drive.file` + Picker.
+The app requests `https://www.googleapis.com/auth/drive.file` — access to just the
+spreadsheet the user selects through the Google Picker ([flow](../interfaces/google-oauth.md#picker-flow)),
+not every spreadsheet the account owns.
 
 # What is done well
 

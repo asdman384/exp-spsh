@@ -11,6 +11,7 @@ import { filter } from 'rxjs';
 import { AppActions } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { NetworkStatusService, AbstractSecurityService } from 'src/services';
+import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 
 @Component({
   selector: 'login-page',
@@ -67,9 +68,7 @@ export class LoginPageContainer implements OnInit {
   }
 
   ngOnInit(): void {
-    const search = window.location.href.split('?')[1];
-    const urlParams = new URLSearchParams(search);
-    const state = urlParams.get('state');
+    const state = initialUrlParams.get('state');
 
     if (state?.includes('autologin')) {
       this.login();

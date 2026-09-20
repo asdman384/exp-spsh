@@ -9,7 +9,7 @@ import { StorageService } from './../storage';
 
 export abstract class AbstractSecurityService<C = unknown, T = GoogleToken> {
   protected readonly SCOPES =
-    'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/userinfo.profile';
+    'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile';
   protected isTokenSet: boolean = false;
   protected readonly user = new BehaviorSubject<Userinfo | undefined>(this.storageService.get<Userinfo>(USER));
   protected readonly client: C;

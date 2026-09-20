@@ -12,6 +12,9 @@ sources:
   - id: setuphtml
     resource: ../../src/modules/setup/setup-page/setup-page.container.html
     title: Setup form template
+  - id: picker
+    resource: ../../src/services/picker/picker.service.ts
+    title: PickerService
   - id: guards
     resource: ../../src/shared/guards/index.ts
     title: isSetupReady
@@ -25,13 +28,14 @@ forwards to `settings` once a user exists.[^guards]
 
 # Steps
 
-The form has one editable field (Spreadsheet URL) and two read-only status fields, and a
-button whose label *is* the current state (`check document` then `finish`).[^setuphtml]
+The form has one read-only "Spreadsheet" field, two more read-only status fields, and a
+button whose label *is* the current state (`Choose spreadsheet` then `finish`).[^setuphtml]
+There is no free-text URL entry: under the `drive.file` OAuth scope the app can only ever
+access a file the user explicitly hands it, so picking *is* the id-acquisition step.
 
-1. **Extract the id.** `extractSpreadsheetId` first tries
-   `/spreadsheets/d/([a-zA-Z0-9-_]+)` against the pasted URL; failing that it takes the
-   first `([a-zA-Z0-9-_]+)` match, so a bare id also works. It throws
-   `cannot read spreadsheet id.` when neither matches.
+1. **Pick.** The button opens `PickerService.pickSpreadsheet()`, restricted to
+   `ViewId.SPREADSHEETS`.[^picker] Cancelling resolves with `undefined`, which resets
+   `loading` and leaves the button in its initial state — no error, nothing dispatched.
 2. **Load the spreadsheet.** `getSpreadsheet(id)` with `includeGridData: false`. On success
    the id is dispatched (`AppActions.spreadsheetId`), which the reducer stores and an effect
    persists to localStorage.
@@ -64,14 +68,16 @@ so setup is a one-time action per browser, per spreadsheet.
 
 # Failure behaviour
 
-The pipeline has **no `catchError`**. A thrown `error getting user`, a rejected
-`getSpreadsheet`, or a 403 from `addSheet` leaves `loading = true` and the spinner running
-with nothing shown to the user; the reason appears only in the
+The pipeline has **no `catchError`** past the pick step. A thrown `error getting user`, a
+rejected `getSpreadsheet`, or a 403 from `addSheet` leaves `loading = true` and the spinner
+running with nothing shown to the user; the reason appears only in the
 [on-page log](../architecture/dependency-wiring.md). Prerequisites that commonly cause this:
 
 - the signed-in Google account lacks **edit** rights on the spreadsheet;
-- the URL points at a Docs/Slides file rather than a Sheet;
+- the picked file is a Docs/Slides file rather than a Sheet — excluded by
+  `ViewId.SPREADSHEETS`, but only Picker-side;
 - the app is offline (there is no `isOnline` guard on this route).
 
 [^guards]: isSetupReady
+[^picker]: PickerService
 [^setuphtml]: Setup form template

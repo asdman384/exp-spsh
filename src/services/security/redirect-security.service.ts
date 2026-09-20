@@ -3,6 +3,7 @@ import { Injectable } from '@angular/core';
 
 import { Observable, first, map, of, tap } from 'rxjs';
 
+import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 import { Token } from 'src/shared/models/token';
 import keys from '../../../keys.json';
 import { NetworkStatusService } from './../network-status.service';
@@ -53,6 +54,9 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
       log('RedirectSecurityService: no token, got code, do exchange');
       return this.requestToken(body).pipe(
         tap((resp) => {
+          // one-time use: without this, a later logout + re-login in the same page session
+          // would try to replay this (by then already-consumed) code and fail
+          initialUrlParams.delete('code');
           this.storageService.put(REDIRECT_TOKEN, new Token(resp));
           this.storageService.put(REFRESH_TOKEN, { refresh_token: resp.refresh_token });
         })
@@ -111,8 +115,6 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
   }
 
   private getCode(): string | null {
-    const search = window.location.href.split('?')[1];
-    const urlParams = new URLSearchParams(search);
-    return urlParams.get('code');
+    return initialUrlParams.get('code');
   }
 }
