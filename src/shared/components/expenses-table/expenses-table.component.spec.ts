@@ -102,7 +102,7 @@ describe('ExpensesTableComponent', () => {
     });
 
     it('should_render_all_default_columns_for_full_rows', () => {
-      fixture.componentRef.setInput('dataSource', [fullRow()]);
+      fixture.componentRef.setInput('dataSource', [fullRow({ isInDebt: true })]);
       fixture.detectChanges();
 
       expect(renderedHeaderColumns(fixture)).toEqual(['date', 'category', 'amount', 'comment', 'isInDebt']);

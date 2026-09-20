@@ -49,6 +49,30 @@ export function classifyWriteError(e: unknown): 'retryable' | 'auth' | 'terminal
   return 'terminal';
 }
 
+/**
+ * Memento (GoF): holds at most one snapshot on behalf of an optimistic-update effect. `save`
+ * captures state before the update; `take` returns it and clears it in the same step, so a
+ * rollback consumes its own memento exactly once and a stale snapshot can't leak into a later
+ * pass.
+ */
+export class Memento<T> {
+  private snapshot: T | undefined;
+
+  save(value: T): void {
+    this.snapshot = value;
+  }
+
+  take(): T | undefined {
+    const value = this.snapshot;
+    this.snapshot = undefined;
+    return value;
+  }
+
+  clear(): void {
+    this.snapshot = undefined;
+  }
+}
+
 export function isExpenseEqual(e1: Expense, e2: Expense): boolean {
   return (
     e1.comment === e2.comment &&

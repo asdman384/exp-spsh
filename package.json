@@ -10,7 +10,8 @@
     "test:headed": "ng test --watch=true",
     "test:coverage": "ng test --coverage",
     "postinstall": "node scripts/service-worker-ios-workaround.js",
-    "lint": "ng lint"
+    "lint": "ng lint",
+    "viz": "npx ng build --configuration production --stats-json && npx esbuild-visualizer --metadata ./dist/exp-spsh/stats.json --filename ./dist/exp-spsh/stats.html"
   },
   "private": true,
   "dependencies": {

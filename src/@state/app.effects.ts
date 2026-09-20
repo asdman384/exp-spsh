@@ -21,7 +21,7 @@ import {
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
 import { LocalStorageService, NetworkStatusService, OutboxStorage, SpreadsheetService } from 'src/services';
-import { classifyWriteError, isExpenseEqual, toMessage } from 'src/shared/helpers';
+import { Memento, classifyWriteError, isExpenseEqual, toMessage } from 'src/shared/helpers';
 import { Category, Expense, OutboxRecord } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { categoriesSelector, categoriesSheetIdSelector, expensesSelector, sheetsSelector } from './app.selectors';
@@ -152,21 +152,21 @@ export class AppEffects {
     )
   );
 
-  private categoriesBackUp: Category[] = [];
+  private readonly categoriesMemento = new Memento<Category[]>();
   readonly updateCategoryPosition$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.updateCategoryPosition),
       tap<ReturnType<typeof AppActions.updateCategoryPosition>>(log),
       withLatestFrom(this.store.select(categoriesSelector)),
       exhaustMap(([action, categoriesBackUp]) => {
-        this.categoriesBackUp = categoriesBackUp;
+        this.categoriesMemento.save(categoriesBackUp);
         this.store.dispatch(AppActions.loading({ loading: true }));
         this.store.dispatch(AppActions.storeCategories({ categories: action.categories }));
         return this.spreadSheetService.updateCategories(action.categories).pipe(
           map(() => AppActions.loading({ loading: false })),
           catchError((e) => {
             log(e);
-            this.store.dispatch(AppActions.storeCategories({ categories: this.categoriesBackUp }));
+            this.store.dispatch(AppActions.storeCategories({ categories: this.categoriesMemento.take() ?? [] }));
             this.store.dispatch(AppActions.loading({ loading: false }));
             this.store.dispatch(
               AppActions.operationFailed({
@@ -256,7 +256,7 @@ export class AppEffects {
     );
   });
 
-  private deletedExpenseBackup: { expense: Expense; index: number } | undefined;
+  private readonly deletedExpenseMemento = new Memento<{ expense: Expense; index: number }>();
   readonly deleteExpense$ = createEffect(() =>
     this.actions$.pipe(
       ofType(AppActions.deleteExpense),
@@ -265,12 +265,12 @@ export class AppEffects {
       exhaustMap(([action, oldExpenses]) => {
         const index = oldExpenses.findIndex((e) => isExpenseEqual(e, action.expense));
         if (~index) {
-          this.deletedExpenseBackup = { expense: oldExpenses[index], index };
+          this.deletedExpenseMemento.save({ expense: oldExpenses[index], index });
           const newExpenses = [...oldExpenses];
           newExpenses.splice(index, 1);
           this.store.dispatch(AppActions.storeExpenses({ expenses: newExpenses }));
         } else {
-          this.deletedExpenseBackup = undefined;
+          this.deletedExpenseMemento.clear();
         }
 
         this.store.dispatch(AppActions.loading({ loading: true }));
@@ -283,13 +283,12 @@ export class AppEffects {
             return this.spreadSheetService.deleteSheetRow(action.sheet.id, i);
           }),
           map(() => {
-            this.deletedExpenseBackup = undefined;
+            this.deletedExpenseMemento.clear();
             return AppActions.loading({ loading: false });
           }),
           catchError((e) => {
             log(e);
-            const backup = this.deletedExpenseBackup;
-            this.deletedExpenseBackup = undefined;
+            const backup = this.deletedExpenseMemento.take();
             if (!backup) {
               this.store.dispatch(AppActions.loading({ loading: false }));
               this.store.dispatch(
