@@ -51,6 +51,8 @@ jobs:
           keys+="$API_KEY"
           keys+='", "CLIENT_SECRET": "'
           keys+="$CLIENT_SECRET"
+          keys+='", "APP_ID": "'
+          keys+="$APP_ID"
           keys+='" }'
           echo $keys >keys.json
           npm install

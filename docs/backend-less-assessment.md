@@ -270,7 +270,6 @@ Effort is a rough order of magnitude, not an estimate.
 | # | Change | Fixes | Effort |
 |---|---|---|---|
 | 8 | **Write outbox draining on `online$`** (§5) | the core use case in poor signal | M |
-| 9 | ~~`drive.file` + Picker instead of full `spreadsheets` scope~~ (§4) — **done** | consent-screen trust, if this is ever public | M |
 
 # The through-line
 
