@@ -46,11 +46,13 @@ sources:
 | `services/outbox/` | `OutboxStorage`, `IndexedDbOutboxStorage`, `InMemoryOutboxStorage` (test double), `OutboxDrainLock` | [write outbox](../architecture/write-outbox.md) |
 | `services/storage/` | `StorageService`, `LocalStorageService` | [localStorage](../interfaces/local-storage.md) |
 | `services/network-status.service.ts` | `online$` | [offline](../flows/offline-and-updates.md) |
-| `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo`, `OutboxRecord` | [domain](../domain/) |
+| `services/voice-recorder/` | `VoiceRecorderService` — mic permission, `MediaRecorder` lifecycle, the latest in-memory recording | [voice recording](../flows/voice-recording.md) |
+| `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo`, `OutboxRecord`, `VoiceRecording` | [domain](../domain/) |
 | `shared/guards/` | `isLoggedIn`, `isOnline`, `isSetupReady` | [routing](../architecture/routing-and-guards.md) |
 | `shared/helpers/` | `isExpenseEqual`, `toMessage`, `classifyWriteError`, `Memento`; `initial-url-params.ts` | [expense](../domain/expense.md), [write outbox](../architecture/write-outbox.md) |
 | `shared/components/expenses-table/` | the shared table | [table contract](../interfaces/expenses-table-component.md) |
 | `shared/components/outbox-status/`, `outbox-failure-notice/` | toolbar badge; Retry/Discard/Close snackbar (imported by path, not via the barrel) | [write outbox](../architecture/write-outbox.md) |
+| `shared/components/voice-record-button/` | hold-to-record button (imported by path, not via the barrel) | [voice recording](../flows/voice-recording.md) |
 | `shared/components/dialog/` | `ExpDialogComponent`, unused | — |
 | `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/` | [flows](../flows/) |
 | `modules/setup/` | shell + `login-page.containers.ts`, `setup-page/` | [initial setup](../flows/initial-setup.md) |

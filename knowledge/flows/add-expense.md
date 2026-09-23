@@ -43,6 +43,11 @@ asterisk is not shown.
   dispatches `loadCategories`; normally the list comes from localStorage.
 - After submit the form resets but keeps `date` and `sheet`.
 
+The last `.submit-row`, after the **Add Expense** button, also holds `<voice-record-button>` —
+the [hold-to-record voice note](voice-recording.md) button. It is unrelated to this form: it
+never dispatches `addExpense` or calls `onSubmit`, and its recording is not attached to the
+expense in any way.
+
 # Steps
 
 1. `onSubmit` prevents native submit, returns unless the form is valid, and dispatches

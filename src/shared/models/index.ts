@@ -4,3 +4,4 @@ export * from './outbox-record';
 export * from './sheet';
 export * from './token';
 export * from './user-info';
+export * from './voice-recording';

@@ -23,6 +23,7 @@ import {
 import { TIME_FORMAT } from 'src/constants';
 import { Expense, Sheet } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
+import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-button/voice-record-button.component';
 
 interface ExpenseFormModel {
   date: Date;
@@ -49,7 +50,8 @@ interface ExpenseFormModel {
     MatInputModule,
     MatNativeDateModule,
     MatSelectModule,
-    ExpensesTableComponent
+    ExpensesTableComponent,
+    VoiceRecordButtonComponent
   ],
   providers: [
     { provide: MAT_DATE_LOCALE, useValue: 'en-GB' },

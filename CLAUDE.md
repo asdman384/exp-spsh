@@ -102,6 +102,10 @@ Angular's `HttpClient`.
   Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
 - **The service worker is enabled in development too**. Stale assets after a rebuild are
   expected — unregister the worker or hard-reload.
+- **The hold-to-record voice note lives only in memory.** `VoiceRecorderService`
+  (`src/services/voice-recorder/`) holds the latest `VoiceRecording` in a signal — it is not in
+  the NgRx store (a `Blob` isn't serialisable) and is never persisted. It survives logout
+  (`AppComponent.logout` does not reload) but is lost on an actual page reload.
 - **OAuth scope is `drive.file`.** Setup has no URL field —
   `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
   loaded lazily, not vendored like `src/scripts/client.js`) and the user's selection is what

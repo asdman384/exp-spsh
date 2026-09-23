@@ -6,3 +6,4 @@ export * from './picker/picker.service';
 export * from './security';
 export * from './spreadsheet/spreadsheet.service';
 export * from './storage';
+export * from './voice-recorder/voice-recorder.service';

@@ -1,5 +1,27 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-24 — hold-to-record voice note
+
+* **Creation**: [Hold-to-record voice note](flows/voice-recording.md) — a square 56×56 px
+  button next to Add Expense on the dashboard. Holding it (pointer or Space/Enter) records
+  audio via a new root-provided `VoiceRecorderService`
+  (`src/services/voice-recorder/voice-recorder.service.ts`), which owns the permission-first
+  press (D14: a press without a known grant only triggers the browser prompt and records
+  nothing; the next hold records), the `getUserMedia`/`MediaRecorder` lifecycle, the 60 s cap,
+  and the 1 s minimum. The result is a single in-memory `VoiceRecording`
+  (`src/shared/models/voice-recording.ts`) held in a signal until the app reloads — not in the
+  NgRx store, not persisted anywhere, and not cleared on logout (D12). The gesture, red pulsing
+  indicator, and `LiveAnnouncer` announcements live in a new
+  `VoiceRecordButtonComponent` (`src/shared/components/voice-record-button/`). No file under
+  `src/@state/` changed. Spec: [`docs/specs/hold-to-record-voice.md`](../docs/specs/hold-to-record-voice.md).
+* **Update**: [add expense](flows/add-expense.md) — the form section notes the button now sits
+  in the same `.submit-row`, unrelated to `addExpense`.
+* **Update**: [source map](references/source-map.md) — new rows for `services/voice-recorder/`,
+  `shared/components/voice-record-button/`, and `VoiceRecording`.
+* **Update**: [knowledge index](index.md) — new Flows entry.
+* **Update**: `CLAUDE.md` — "Things that will surprise you" gains a bullet: the recording is
+  held in memory only, is not in the store, and survives logout but not reload.
+
 ## 2026-09-23 — logout revokes the redirect grant
 
 * **Fix (code)**: `logout()` revokes `revocableToken()`, a per-strategy method. The redirect

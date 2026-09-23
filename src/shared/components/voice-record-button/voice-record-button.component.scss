@@ -1,0 +1,37 @@
+:host {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.voice-record-button {
+  width: 56px;
+  height: 56px;
+  padding: 0;
+  border-radius: 4px;
+  touch-action: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+
+  &.recording {
+    background-color: #d32f2f;
+    color: #fff;
+    animation: voice-record-pulse 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes voice-record-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.6);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(211, 47, 47, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .voice-record-button.recording {
+    animation: none;
+  }
+}
