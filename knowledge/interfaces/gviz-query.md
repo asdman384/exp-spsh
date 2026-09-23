@@ -1,15 +1,18 @@
 ---
 type: API Client
 title: Google Visualization Query (gviz/tq) interface
-description: The undocumented-for-this-purpose query endpoint the app uses for all filtered expense reads, its query string, response shape, and parsing rules.
+description: The charting query endpoint the app uses for all filtered expense reads, its query string, response shape, and parsing rules.
 tags: [interface, gviz, query, read-path]
 resource: https://developers.google.com/chart/interactive/docs/querylanguage
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
     title: SpreadsheetService.loadExpenses and ExpensesDTO
+  - id: row
+    resource: ../../src/services/spreadsheet/expense-row.ts
+    title: EXPENSE_GVIZ_COLUMNS, fromExpenseGvizRow
   - id: qlang
     resource: https://developers.google.com/chart/interactive/docs/querylanguage
     title: Visualization API query language reference
@@ -22,22 +25,18 @@ sources:
 
 # Why this endpoint
 
-The Sheets `values.get` API can only return a *range*. Filtering expenses by date range
-would mean fetching the whole tab and filtering client-side. The Visualization Query
-endpoint accepts a SQL-like `tq` parameter and does the filtering server-side, which is why
-the app's main read path bypasses the Sheets REST API entirely.[^qlang]
+`values.get` only returns ranges; filtering by date would mean fetching the whole tab. The
+Visualization Query endpoint filters server-side with a SQL-like `tq`, so the expense table's
+read path uses it instead of the Sheets REST API.[^qlang]
 
 # Request
 
 ```
 GET https://docs.google.com/a/google.com/spreadsheets/d/<spreadsheetId>/gviz/tq
-    ?gid=<Sheet.id>
-    &tq=<query>
-Authorization: Bearer <access_token>     (added by ExpAuthInterceptor)
+    ?gid=<Sheet.id>&tq=<query>
+Authorization: Bearer <access_token>          (ExpAuthInterceptor)
 responseType: text
 ```
-
-The query is built by string concatenation:[^svc]
 
 ```sql
 select A, B, C, D, E
@@ -45,62 +44,43 @@ where D >= date '2026-9-5'
   [and D < date '2026-9-6']
 ```
 
-- Column letters are positional — this is the third place the
-  [column layout](../domain/spreadsheet-layout.md) is hard-coded.
-- Date literals use `getFullYear()`-`getMonth()+1`-`getDate()` with **no zero padding**.
-- `from` defaults to `new Date()` (today) when omitted; the `and D < ...` clause is added
-  only when `to` is provided.
-- The values are interpolated unescaped, but they come from `Date` getters (numbers), so
-  there is no injection surface from user input here.
-- The `/a/google.com/` path segment is a legacy hosted-domain form that still resolves.
+- The column list (`EXPENSE_GVIZ_COLUMNS`) and the date column letter come from
+  `EXPENSE_COLUMNS` in `expense-row.ts`.[^row]
+- Dates are `getFullYear()-(getMonth()+1)-getDate()`, unpadded; values come from `Date`
+  getters, so no user text reaches the query.
+- `from` defaults to today; `and D < …` is added only with `to`.
+- No API `key` parameter is sent.[^svc]
 
 # Response
 
-The endpoint replies with JavaScript, not JSON:
+JavaScript, not JSON:
 
 ```
 /*O_o*/
 google.visualization.Query.setResponse({"version":"0.6", ..., "table":{...}});
 ```
 
-The service requests it as `text` and extracts the payload with the regex
-`/setResponse\(({.*})\)/`, throwing `Invalid response format from Google Sheets API` when it
-does not match. That regex is greedy and single-line — it depends on the response being a
-single line, which it currently is. **A non-JSON error page (auth failure, wrong `gid`) also
-fails this match**, so all such errors surface as the same generic message.
+The payload is extracted with the greedy, single-line regex `/setResponse\(({.*})\)/`; no
+match throws `Invalid response format from Google Sheets API`. An HTML error page (auth
+failure, bad `gid`) fails the same way, so those errors look identical.
 
-Typed as `ExpensesDTO`:
-
-```ts
-{
-  table: {
-    cols: Array<{ id, label, type: 'string'|'number'|'datetime', pattern?: string }>;
-    rows: Array<{ c: Array<{ v: string | number; f?: string }> }>;
-  }
-}
-```
-
-Only `rows` is read; `cols` is declared but unused. Cell access is positional:
-`c[0]` category, `c[1]` comment, `c[2]` amount, `c[3]` date, `c[4]` isInDebt. `c[0]` and
-`c[2]` are dereferenced without a null guard — an empty cell in those columns throws.
-
-Datetime cells arrive as the string `Date(2024,0,16,12,14,23)` (zero-based month) and go
-through `secureParseDate`, which validates with an anchored regex rather than evaluating the
-string. See [date encoding](../domain/spreadsheet-layout.md).
+Only `table.rows[].c[]` (`{ v, f? }` cells) is read. `fromExpenseGvizRow` maps cells by
+`EXPENSE_COLUMN_INDEX`: missing category → `''`, missing amount → `0`, missing date →
+`undefined`, `isInDebt` = cell present. Dates arrive as `Date(2024,0,16,12,14,23)`
+(zero-based month) and go through `secureParseDate` ([date encoding](../domain/spreadsheet-layout.md#date-encoding)).
 
 # Auth and caching
 
-The endpoint accepts the same OAuth bearer token as the Sheets API.[^oauthdoc] It is listed
-in the service worker's `dataGroups` with zero caching
-([service worker](../architecture/pwa-and-service-worker.md)).
+The endpoint accepts the same bearer token as the Sheets API.[^oauthdoc] `docs.google.com` is
+not in the service worker's `dataGroups`, so requests bypass the worker's routing entirely.
 
 # Stability risk
 
-This is a charting endpoint being used as a query API. It is not versioned alongside the
-Sheets API, so its response envelope is not a contract Google guarantees stable for this
-use. Treat a sudden universal read failure as a candidate for an upstream format change
-first ([troubleshooting](../operations/troubleshooting.md)).
+This is a charting endpoint used as a query API; its envelope is not a versioned contract.
+A sudden universal read failure should first be checked against an upstream format change
+([troubleshooting](../operations/troubleshooting.md)).
 
 [^svc]: SpreadsheetService.loadExpenses and ExpensesDTO
+[^row]: EXPENSE_GVIZ_COLUMNS, fromExpenseGvizRow
 [^qlang]: Visualization API query language reference
 [^oauthdoc]: Using OAuth to access gviz/tq

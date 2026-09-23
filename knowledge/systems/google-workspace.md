@@ -5,7 +5,7 @@ description: The external system that stores all application data and authentica
 tags: [system, google, sheets, oauth, dependency]
 resource: https://console.cloud.google.com/
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
@@ -13,66 +13,55 @@ sources:
   - id: keys
     resource: ../../keys.example.json
     title: keys.json template
-  - id: env
-    resource: ../../src/environments/environment.ts
-    title: Environment discovery docs
+  - id: picker
+    resource: ../../src/services/picker/picker.service.ts
+    title: PickerService
 ---
 
-Google is not an integration in this app — it **is** the backend. There is no other
-persistence tier.
+Google is not an integration here — it **is** the backend.
 
 # Hosts contacted at runtime
 
 | Host | Used for |
 |---|---|
-| `content-sheets.googleapis.com` | all Sheets v4 REST calls ([interface](../interfaces/google-sheets-api.md)) |
-| `docs.google.com` | the `gviz/tq` read path ([interface](../interfaces/gviz-query.md)) |
+| `content-sheets.googleapis.com` | Sheets v4 REST ([interface](../interfaces/google-sheets-api.md)) |
+| `docs.google.com` | `gviz/tq` expense reads ([interface](../interfaces/gviz-query.md)) |
 | `content.googleapis.com` | `oauth2/v2/userinfo` |
 | `oauth2.googleapis.com` | token exchange and refresh |
-| Google Identity Services | the `google.accounts.oauth2` client library |
-| `apis.google.com` | the Google Picker library, loaded lazily by `PickerService` when setup opens it |
+| `accounts.google.com` | GIS consent/redirect (library bundled as `src/scripts/client.js`) |
+| `apis.google.com` | Picker library, loaded lazily during setup |
 
-The first three are the ones listed in the service worker `dataGroups` with caching disabled.
+Only the first and third are in the service worker's `dataGroups` (zero caching).
 
-# Cloud console configuration
+# Cloud configuration
 
-The app needs an OAuth 2.0 **Web application** client, an API key, and a Cloud project number
-in one Google Cloud project, delivered to the build as `keys.json`:[^keys]
+One Google Cloud project supplies an OAuth **Web application** client, an API key, and the
+project number, delivered as `keys.json`:[^keys]
 
 ```json
 { "CLIENT_ID": "...apps.googleusercontent.com", "API_KEY": "...", "CLIENT_SECRET": "...", "APP_ID": "..." }
 ```
 
-`APP_ID` is the numeric Cloud **project number** (not the project id string) — it is what
-`PickerService` passes to `PickerBuilder.setAppId()`.
+`APP_ID` is the numeric **project number** (not the project id), passed to
+`PickerBuilder.setAppId()`.[^picker]
 
-Required project settings:
+Required settings:
 
-- **Google Sheets API and Google Picker API both enabled.**
-- Consent screen with the scopes `.../auth/drive.file` and `.../auth/userinfo.profile`.
-  `drive.file` grants access only to files the user opens through Picker (or that the app
-  creates itself) — not to every spreadsheet the account owns.
-- **Authorized redirect URIs** matching `location.origin + location.pathname` for every
-  environment (production Pages URL and `http://localhost:4200/exp-spsh/`).
-- Authorized JavaScript origins for the same hosts.
+- Google Sheets API and Google Picker API enabled.
+- Consent screen scopes `.../auth/drive.file` and `.../auth/userinfo.profile`.
+- Authorized redirect URIs equal to `location.origin + location.pathname` for every
+  environment, and matching JavaScript origins.
 - While the consent screen is in *testing* mode, refresh tokens expire after seven days and
-  every user must be listed as a test user — a common cause of "it logged me out again".
-
-`environment.ts` also lists `SHEETS_DISCOVERY_DOC` and `OAUTH2_DISCOVERY_DOC`; **neither is
-used** — a leftover from a `gapi.client` era.[^env]
+  users must be listed as testers — a common cause of repeated logouts.
 
 # Data ownership
 
-The spreadsheet belongs to the end user, not to the project. Consequences:
-
-- The signed-in account needs **edit** access; read-only access fails at the first
-  `batchUpdate` in setup.
-- Users can (and do) edit rows directly in Google Sheets, which is why several flows re-read
-  before writing, and why row-index-based deletion is fragile
-  ([delete](../flows/delete-expense.md)).
-- Uninstalling the app loses nothing; the data outlives it.
-- Quotas are per project (`API_KEY` / `CLIENT_ID`), so all users of a given deployment share
-  the Sheets API rate limits.
+- The spreadsheet belongs to the user. The signed-in account needs **edit** access; the app
+  sees only files picked through Picker or created by it (`drive.file`).
+- Users edit rows directly in Google Sheets, which is why delete re-reads before acting and
+  why positional deletion is fragile ([delete](../flows/delete-expense.md)).
+- The data outlives the app.
+- Quotas are per Cloud project, shared by every user of a deployment.
 
 [^keys]: keys.json template
-[^env]: Environment discovery docs
+[^picker]: PickerService

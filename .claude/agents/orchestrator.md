@@ -136,8 +136,7 @@ One `<slug>` threads through all of them. Pick it once, kebab-case, and reuse it
 
 ## Repo facts you need
 
-A single Angular 21 + NgRx PWA. `src/` and one `package.json` at the repo root; no
-`backend/` or `frontend/` split. No server — the user's Google Spreadsheet is the datastore.
+A single Angular 21 + NgRx PWA. `src/` and one `package.json` at the repo root. No server — the user's Google Spreadsheet is the datastore.
 Verification is `bash scripts/harness.sh` (build + tests); there is no lint or typecheck
 script. `policy/sprint-window.json` denies writes to `angular.json` and `package.json`, so a
 spec needing either is a human decision, not a delegation. Deeper context is in `CLAUDE.md`

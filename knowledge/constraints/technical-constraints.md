@@ -4,7 +4,7 @@ title: Technical constraints
 description: The non-negotiable technical facts a change has to respect - path coupling, column order, hash routing, strict TypeScript, and bundle budgets.
 tags: [constraints, technical, coupling, invariants]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: ngsw
     resource: ../../ngsw-config.json
@@ -15,66 +15,57 @@ sources:
   - id: tscfg
     resource: ../../tsconfig.json
     title: Strict compiler options
+  - id: row
+    resource: ../../src/services/spreadsheet/expense-row.ts
+    title: EXPENSE_COLUMNS
   - id: dev
-    resource: ../../.github/rules/development.md
+    resource: ../../.claude/rules/development.md
     title: Pitfalls and notes
 ---
 
 # Hard couplings
 
-| Constraint | Why it exists | What breaks if ignored |
+| Constraint | Why | If ignored |
 |---|---|---|
-| The app must be served under **`/exp-spsh/`** | `angular.json` sets `baseHref: "/exp-spsh/"`, which becomes `<base href>` and prefixes every URL in the generated `ngsw.json`[^ng] | assets 404; the service worker caches URLs the page never requests, so the app does not start offline. `file://` serving does not load the bundle |
-| `ngsw-config.json` **globs are relative to the build output** (`/*.js`, not `/exp-spsh/*.js`) | the generator matches globs against output files, then prefixes `baseHref`[^ngsw] | asset groups get empty `urls`; nothing is cached and an offline launch fails |
-| **`HashLocationStrategy`** | GitHub Pages cannot rewrite unknown paths to `index.html`[^dev] | deep links 404 |
-| Spreadsheet **column order A-E is fixed** | hard-coded in `addExpense`, `A1:E{n}` ranges, and `select A,B,C,D,E` | reads and writes silently misalign |
-| Rows are **newest-first** | `addExpense` inserts at index 0; delete derives a row index from array position | deletion removes the wrong row |
-| The **`data_` prefix and `categories` title** are structural | setup discovery filters on them | existing spreadsheets are no longer recognised |
-| **OAuth redirect URI = `origin + pathname`** | built at runtime by both security services | login fails with a redirect_uri mismatch |
-| The global **`log()`** must exist before anything runs | `main.ts` imports `./logger` before bootstrap; specs include it via tsconfig | `ReferenceError` in effects, guards, services |
-| `google.accounts` must be loaded | security services build their client in the constructor | login is impossible |
+| Served under **`/exp-spsh/`** | `baseHref` becomes `<base href>` and prefixes every `ngsw.json` URL[^ng] | assets 404; the app does not start offline |
+| `ngsw-config.json` globs are **build-output paths** (`/*.js`, not `/exp-spsh/*.js`) | the generator matches output files, then adds `baseHref`[^ngsw] | empty asset groups; no offline start |
+| **`HashLocationStrategy`** | GitHub Pages cannot rewrite deep links to `index.html`[^dev] | deep links 404 |
+| Spreadsheet columns **A–E in `EXPENSE_COLUMNS` order** | every expense read and write derives from that list[^row] | reads and writes misalign; changing the list breaks existing spreadsheets |
+| Rows are **newest-first** | `addExpense` inserts at row 0; delete uses array position as row index | deletion removes the wrong row |
+| `data_` prefix and `categories` title | setup discovery filters on them | existing spreadsheets are not recognised |
+| OAuth redirect URI = `origin + pathname` | built at runtime by the redirect strategy | `redirect_uri_mismatch` |
+| Pre-`#` query params read via `initialUrlParams` | the router drops them on its first redirect | OAuth `code`/`state` are lost |
+| Global **`log()`** exists before anything runs | `main.ts` imports `./logger` first; tsconfigs include it; specs install it | `ReferenceError` in effects, guards, services |
+| `google.accounts` loaded | security services build their client in the constructor; provided by `src/scripts/client.js` | login impossible |
+| `keys.json` has all four fields | imported as a typed module | build fails |
 
 # Compiler strictness
 
-`strict: true` plus `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`,
-and **`noPropertyAccessFromIndexSignature`** — the last one is the one that surprises people:
-dynamic property access needs typed keys or bracket notation.[^tscfg] Angular's
-`strictTemplates`, `strictInjectionParameters`, and `strictInputAccessModifiers` are on, so
-templates are type-checked too (this is why `protected` members are used freely in
-containers — templates can read them).
-
-Target/module are ES2022 with `useDefineForClassFields: false`, which is what allows the
-constructor-parameter-property + field-initialiser ordering these components rely on.
+`strict` plus `noImplicitOverride`, `noImplicitReturns`, `noFallthroughCasesInSwitch`, and
+**`noPropertyAccessFromIndexSignature`** (index-signature properties need bracket access).[^tscfg]
+Angular `strictTemplates`, `strictInjectionParameters`, `strictInputAccessModifiers` are on.
+`useDefineForClassFields: false` keeps constructor parameter properties available to field
+initialisers, which many components and effects rely on.
 
 # Bundle budgets
-
-Production build:[^ng]
 
 | Budget | Warning | Error |
 |---|---|---|
 | initial | 2.5 MB | 5 MB |
 | any component style | 2 kB | 60 kB |
 
-The 2 kB per-component style warning is easy to trip on a page with a lot of SCSS.
-`StoreDevtools` is deliberately kept behind both a runtime flag and a dynamic `import()`, so
-it is a separate lazy chunk rather than part of the initial bundle
-([dependency wiring](../architecture/dependency-wiring.md)). Material/CDK modules are
-imported per-component (not through a shared barrel), which keeps datepicker/table/tabs/
-drag-drop inside the lazy `dashboard-routes` chunk instead of the initial one — worth
-knowing if the initial budget above ever looks like it is creeping up.
+StoreDevtools is a lazy chunk behind `?logger=`, and Material/CDK modules are imported
+per component, which keeps datepicker/table/tabs/drag-drop in the lazy dashboard chunk.
 
-# Environment constraints
+# Environment
 
-- **Windows/PowerShell** is the development platform; execution policy must permit npm shims
+- Windows/PowerShell development; npm shims may need an execution-policy change
   ([toolchain](../systems/toolchain.md)).
-- `keys.json` must exist before the first build — the failure mode is a module-resolution
-  error, not a runtime warning.[^dev]
-- The service worker is enabled in development, so caching confusion is a normal part of the
-  local loop.
-- `npm install` must run its `postinstall` script, or the iOS service-worker patch is missing
-  from the build.
+- The service worker is enabled in development.
+- `npm install` must run `postinstall` (iOS worker patch).
 
 [^ngsw]: Service worker path globs
 [^dev]: Pitfalls and notes
 [^tscfg]: Strict compiler options
 [^ng]: baseHref and budgets
+[^row]: EXPENSE_COLUMNS

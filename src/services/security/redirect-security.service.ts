@@ -87,6 +87,18 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
   }
 
   /**
+   * Prefers the refresh token: revoking it revokes the whole grant, and it is still stored after
+   * the access token has expired (`refreshToken()` removes an expired `redirect-token`).
+   * https://developers.google.com/identity/protocols/oauth2/web-server#tokenrevoke
+   */
+  protected override revocableToken(): string | undefined {
+    return (
+      this.storageService.get<RefreshToken>(REFRESH_TOKEN)?.refresh_token ??
+      this.storageService.get<Token>(REDIRECT_TOKEN)?.googleToken.access_token
+    );
+  }
+
+  /**
    * https://developers.google.com/identity/oauth2/web/guides/migration-to-gis#gis-redirect-ux
    */
   protected override buildClient(): google.accounts.oauth2.CodeClient {

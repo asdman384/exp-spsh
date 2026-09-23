@@ -1,10 +1,10 @@
 ---
 type: Architecture Component
 title: NgRx state management
-description: Shape of the `app` and `outbox` feature slices, which actions are reducer-handled versus effect-only, and how each slice is hydrated (localStorage for `app`, IndexedDB for `outbox`).
+description: Shape of the `app` and `outbox` feature slices, which actions are reducer-handled versus effect-only, how each slice is hydrated, and how effects report failure.
 tags: [architecture, ngrx, state, effects]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: model
     resource: ../../src/@state/app.model.ts
@@ -15,6 +15,9 @@ sources:
   - id: effects
     resource: ../../src/@state/app.effects.ts
     title: AppEffects
+  - id: reportfailure
+    resource: ../../src/@state/report-failure.ts
+    title: reportFailure and FAILURE_MESSAGES
   - id: selectors
     resource: ../../src/@state/app.selectors.ts
     title: Selectors
@@ -28,191 +31,121 @@ sources:
 
 # Store shape
 
-Two feature slices are registered through `StoreModule.forRoot`: `app` (spreadsheet, categories,
-expenses, and UI chrome) and `outbox` (the [write outbox](write-outbox.md)'s queue).[^model]
+Two slices: `app` (spreadsheet, categories, expenses, UI chrome) and `outbox` (the
+[write outbox](write-outbox.md) queue).[^model]
 
 ```ts
-interface SheetsState extends EntityState<Sheet> {   // ids are Sheet.title, not Sheet.id
-  selectedSheetId: string | null;
-}
-
-interface AppError {
-  id: number;      // (state.lastError?.id ?? 0) + 1 -- pure, so consecutive identical
-                    // failures still produce distinct objects
-  source: string;   // the effect property name that failed, e.g. 'loadCategories$'
-  message: string;  // fixed, user-facing copy -- never the raw error
+interface SheetsState extends EntityState<Sheet> {   // keyed by Sheet.title, not Sheet.id
+  selectedSheetId: string | null;                    // a title string
 }
 
 interface AppState {
-  loading: boolean;                 // drives the toolbar progress bar
-  title: string;                    // toolbar headline, set per page
-  icon?: string;                    // Material icon name for the headline
+  loading: boolean;                  // toolbar progress bar
+  title: string; icon?: string;      // toolbar headline, set by each page
   spreadsheetId: string | undefined;
-  dataSheets: SheetsState;          // the data_<user> tabs
+  dataSheets: SheetsState;           // the data_<user> tabs
   categoriesSheetId: number | undefined;
   categories: Array<Category>;
-  expenses: Array<Expense>;         // the currently displayed set of expenses
-  lastError: AppError | null;       // written by operationFailed, never read back by any
-                                     // UI -- a debugging record, not a display source
+  expenses: Array<Expense>;          // the currently displayed set
+  lastError: AppError | null;        // { id, source, message }; written by operationFailed, read by no UI
 }
 ```
 
-> **Entity-id gotcha:** `createEntityAdapter<Sheet>({ selectId: (e) => e.title })`. The
-> adapter keys sheets by **title**, while the Sheets API `sheetId` (a number) lives in
-> `Sheet.id`. `selectedSheetId` therefore holds a *title string*, not a numeric id.[^reducers]
+`outbox` is `EntityState<OutboxRecord> & { draining: boolean }`, keyed by `localId` and
+sorted by `(enqueuedAt, localId)`.[^outboxmodel]
 
-`outbox`'s shape is `EntityState<OutboxRecord> & { draining: boolean }`, keyed by
-`OutboxRecord.localId`, with a `sortComparer` on `(enqueuedAt, localId)` so the collection always
-comes out in send order.[^outboxmodel] See [`OutboxRecord`](write-outbox.md) for the record
-shape.
+# Hydration
 
-# Hydration: localStorage for `app`, IndexedDB for `outbox`
-
-`app`'s `initialState` is built synchronously at module load from four
-[localStorage keys](../interfaces/local-storage.md): `spreadsheetId`, `categoriesSheetId`,
-`categories`, and `dataSheets` (upserted through the adapter). `expenses` is never
-persisted; it is always re-fetched.[^reducers]
-
-`metaReducers` is an empty array in both dev and prod. `lastError` is an `AppState` field
-set only by the `operationFailed` reducer branch; it is **never** hydrated from or written
-to `LocalStorageService`, and is deliberately kept outside the four localStorage-backed keys
-below — it exists purely as a debugging record, not a display source.
-
-`outbox`'s `outboxInitialState` is always an empty, literal collection (`draining: false`) —
-nothing synchronous backs it. Real content arrives only via `OutboxEffects.hydrateOnInit$`,
-which reads all of IndexedDB once on `ROOT_EFFECTS_INIT` and dispatches
-`OutboxActions.hydrated({ records })` (`setAll`, replacing the whole collection). A drain pass
-re-dispatches `hydrated` at its start and its end too, so a tab's badge picks up records another
-tab sent or removed. See [the write outbox](write-outbox.md).
+- `app`'s `initialState` is built synchronously at module load from four
+  [localStorage keys](../interfaces/local-storage.md): `spreadsheetId`, `categoriesSheetId`,
+  `categories`, `dataSheets`. `expenses`, `lastError`, and the selected sheet are not
+  persisted; `AppComponent` re-selects `data_<user.name>` at startup.[^reducers]
+- `outbox` starts empty. `OutboxEffects.hydrateOnInit$` reads IndexedDB on
+  `ROOT_EFFECTS_INIT` and dispatches `hydrated` (`setAll`); every drain pass re-hydrates at
+  its start and end.
+- `metaReducers` is empty.
 
 # Reducer-handled versus effect-only actions
 
 | Action | Reducer | Effect |
 |---|---|---|
-| `loading`, `setTitle` | yes | none |
-| `spreadsheetId`, `categoriesSheetId`, `upsertDataSheet` | yes | persists to localStorage |
-| `setCurrentSheet` | yes | none (re-derived at startup) |
-| `storeCategories`, `storeExpenses` | yes | `storeCategories` persists |
+| `loading`, `setTitle`, `setCurrentSheet`, `storeExpenses` | yes | — |
+| `spreadsheetId`, `categoriesSheetId`, `upsertDataSheet`, `storeCategories` | yes | persisted to localStorage |
 | `loadCategories`, `addCategory`, `deleteCategory`, `updateCategoryPosition` | no | remote call, ends in `storeCategories` |
-| `addExpense`, `deleteExpense`, `loadExpenses` | no | remote call, ends in `storeExpenses` (or routes into the outbox, see below) |
-| `operationFailed` | yes (`lastError`) | consumed by `showFailureToast$` (opens a snackbar) |
+| `addExpense`, `deleteExpense`, `loadExpenses` | no | remote call (or outbox enqueue) |
+| `operationFailed` | yes (`lastError`) | `showFailureToast$` opens a snackbar |
 
-The pattern is consistent: **intent actions are effect-only and terminate in a `store*`
-action** that the reducer applies. `setCurrentSheet` is the one selection action with no
-persistence effect — the current sheet is re-derived on startup from the logged-in user's
-name (`data_<user.name>`) inside `AppComponent`.
+Intents are effect-only and terminate in a result action the reducer applies. `OutboxActions`
+follow the same split ([action surface](../interfaces/ngrx-actions.md)).
 
-`OutboxActions` (`src/@state/outbox.actions.ts`, `source: 'Outbox'`) follows the same split:
-`enqueue`, `drainRequested`, `syncRequested`, `retry`, and `discard` are effect-only intents that
-leave `outbox` state unchanged; `hydrated`, `enqueued`, `attemptStarted`, `succeeded`,
-`retryableFailed`, `terminallyFailed`, and `drainCompleted` are the results the reducer applies.
-See [NgRx action surface](../interfaces/ngrx-actions.md) and
-[the write outbox](write-outbox.md).
+# `AppEffects`
 
-# Effects catalogue
-
-| Effect | Dispatches | Notes |
+| Effect | Operator | Result |
 |---|---|---|
-| `saveSpreadsheetId$` | — | writes `spreadsheetId` to localStorage |
-| `saveSheetId$` | — | re-selects all sheets, writes `dataSheets` |
-| `saveCategoriesSheetId$` | — | writes `categoriesSheetId` |
-| `saveCategories$` | — | writes `categories` |
-| `loadCategories$` | `storeCategories` | `exhaustMap` over `getAllCategories()` |
-| `addCategory$` | `storeCategories` | appends to the existing array after the write succeeds |
-| `deleteCategory$` | `storeCategories` | finds the row index by name, then `deleteSheetRow` |
-| `updateCategoryPosition$` | `loading(false)` | **optimistic**: stores the new order before the write |
-| `addExpense$` | `loadExpenses`, or `OutboxActions.enqueue` | live write when usable and not behind the queue; otherwise routes into the outbox — see below |
-| `deleteExpense$` | `loading(false)` or `storeExpenses` | **optimistic** with rollback |
-| `loadExpenses$` | `storeExpenses` | gated on `NetworkStatusService.online$` |
-| `showFailureToast$` | — | `{ dispatch: false }`; `ofType(operationFailed)` → `MatSnackBar.open(message, 'Dismiss', { politeness: 'assertive', verticalPosition: 'top' })`, no `duration` (WCAG 2.2.1) |
+| `saveSpreadsheetId$`, `saveSheetId$`, `saveCategoriesSheetId$`, `saveCategories$` | `tap` | write localStorage (`saveSheetId$` re-writes all sheets on every later sheets change) |
+| `loadCategories$` | `exhaustMap` | `storeCategories` |
+| `addCategory$` | `exhaustMap` | `storeCategories([...current, new])` after the append succeeds |
+| `deleteCategory$` | `exhaustMap` | row index by name, `deleteSheetRow`, `storeCategories` |
+| `updateCategoryPosition$` | `exhaustMap` | **optimistic** `storeCategories`, then write; rollback from a `Memento` on failure |
+| `addExpense$` | `exhaustMap` | live write → `loadExpenses` for that day, or `OutboxActions.enqueue` ([write outbox](write-outbox.md)) |
+| `deleteExpense$` | `exhaustMap` | **optimistic** removal, re-read, delete by index; rollback from a `Memento` on failure |
+| `loadExpenses$` | `switchMap(whenOnline)` → `exhaustMap` | `storeExpenses`; waits for connectivity |
+| `showFailureToast$` | `tap` | `MatSnackBar.open(message, 'Dismiss', { politeness: 'assertive', verticalPosition: 'top' })`, no `duration` |
 
-`OutboxEffects` (`src/@state/outbox.effects.ts`) is a second `@Injectable()` effects class,
-registered alongside `AppEffects` in `EffectsModule.forRoot([AppEffects, OutboxEffects])`. It
-owns everything the outbox needs once `addExpense$` has decided to queue: boot hydration
-(`hydrateOnInit$`), the persist-first enqueue (`persistEnqueue$`), the drain loop and its five
-triggers (`drainOnTrigger$`), the Retry/Discard reactions (`retry$`, `discard$`), the failure
-notice (`failureNoticeOnDrainCompleted$`, `failureNoticeOnSyncRequested$`), the post-drain
-reload (`reloadOnDrainCompleted$`), and the "all sent" announcement (`announceAllSent$`). See
-[the write outbox](write-outbox.md) for the full design.[^outboxeffects]
+`Memento<T>` (`src/shared/helpers`) holds one snapshot; `take()` returns and clears it, so a
+rollback consumes it exactly once.
 
-The 7 remote-calling effects (`loadCategories$`, `addCategory$`, `deleteCategory$`,
-`updateCategoryPosition$`, `addExpense$`, `deleteExpense$`, `loadExpenses$`) all dispatch
-`operationFailed({ source, message })` on failure, in addition to logging and clearing
-`loading` — 5 of them via the shared `reportFailure(source, store)` helper in
-`src/@state/report-failure.ts` (wraps `catchError`, dispatching `operationFailed` before
-returning `EMPTY`), the 2 optimistic ones (`updateCategoryPosition$`, `deleteExpense$`)
-inline, alongside their bespoke rollback logic. `message` is always one of 7 fixed,
-plain-language strings (`report-failure.ts`'s `FAILURE_MESSAGES` table) — the raw error (via
-`toMessage(e)` in `src/shared/helpers/index.ts`) goes only into the `log()` line, never into
-the toast or `lastError`. **A failed remote operation surfaces to the user as a snackbar**;
-see [`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md) and
-[`docs/architecture/effect-error-surfacing.md`](../../docs/architecture/effect-error-surfacing.md)
-in the repository root for the full design.
+`loading` is set imperatively (`store.dispatch(AppActions.loading(...))` inside the effect),
+not emitted as a mapped action. `exhaustMap` drops a second identical intent while the first
+is in flight.
 
-The 7 remote-calling effects each put `catchError` on the *inner* observable built inside
-`exhaustMap`'s projection (`app.effects.ts:109` for `loadCategories$`, `:223` for `addExpense$`'s
-live branch), not on the outer `actions$` pipe. Returning `EMPTY` from that `catchError`
-completes only the inner observable for that one attempt; `exhaustMap` itself is unaffected and
-is ready to project the next matching action into a fresh inner observable. So a remote effect
-keeps responding to its trigger action after a failure — each subsequent
-`addCategory`/`addExpense`/etc. still calls through, still can succeed or fail independently,
-and still shows its own toast on failure.
+# Failure reporting
 
-The 4 localStorage-only persist effects (`saveSpreadsheetId$`, `saveSheetId$`,
-`saveCategoriesSheetId$`, `saveCategories$`) put `catchError` on the *outer* pipe instead
-(`app.effects.ts:46`, `:61`, `:78`, `:92`): each just logs and returns `EMPTY`, with no toast and
-no `operationFailed` dispatch, so a `LocalStorageService.put` failure (e.g. quota exceeded) is
-fully silent to the user. Because the `catchError` sits on the outer pipe rather than inside an
-`exhaustMap` projection, a thrown error completes that effect's stream for the rest of the app's
-lifetime; there is no `exhaustMap` re-arming it for a later action of the same type.
-`defaultEffectsErrorHandler` (`@ngrx/effects`'s `EFFECTS_ERROR_HANDLER` default) wraps each
-effect's stream in its own `catchError` and resubscribes, up to 10 times, only when that stream
-emits an *error* notification. These four effects catch their own error and return `EMPTY`, so
-their stream emits a *complete* notification, which `defaultEffectsErrorHandler` never
-resubscribes. After the first caught throw, that effect's stream stays completed for the rest of
-the session: later dispatches of its trigger action (`spreadsheetId`, `upsertDataSheet`,
-`categoriesSheetId`, `storeCategories`) still update the store through the reducer, because the
-reducer runs independently of the effect, but the effect itself never runs again to write that
-value to localStorage.
+The 7 remote effects dispatch `operationFailed({ source, message })` on failure and clear
+`loading`:[^reportfailure]
 
-Loading state is managed imperatively: effects call `dispatch(AppActions.loading(...))`
-from inside `tap`/`exhaustMap` rather than emitting it as a mapped action.
+- five via `catchError(reportFailure(source, store))`, which logs `toMessage(e)`, dispatches
+  `loading(false)` and `operationFailed`, and returns `EMPTY`;
+- `updateCategoryPosition$` and `deleteExpense$` inline, alongside their rollback.
 
-All effects use `exhaustMap`, so a second identical intent fired while the first is still
-in flight is **dropped, not queued**.
+`message` is one of 7 fixed strings in `FAILURE_MESSAGES`; the raw error only goes to `log()`.
+`OutboxEffects` reuses `operationFailed` with `source: 'outboxDrain$'` for its auth toast, and
+`reportFailure('addExpense$')` when an enqueue cannot be persisted.
+
+Every remote effect's `catchError` sits on the inner observable inside `exhaustMap`, so a
+failure ends only that attempt; the effect keeps handling later actions.
+
+The four localStorage effects put `catchError` on the **outer** pipe: a throwing
+`localStorage.setItem` is logged with no toast, and that effect's stream completes for the
+rest of the session (the reducer still updates in-memory state). See
+[known issues](../constraints/known-issues.md) #28.
+
+# `OutboxEffects`
+
+A second effects class owning everything after `addExpense$` decides to queue: boot
+hydration, persist-first enqueue, the drain loop, Retry/Discard, the failure notice, the
+post-drain reload, and announcements. See [the write outbox](write-outbox.md).[^outboxeffects]
 
 # Selectors
 
-`loadingSelector`, `titleSelector`, `spreadsheetIdSelector`, `currentSheetIdSelector`,
-`sheetsSelector`, `currentSheetSelector`, `byIdSheetSelector(id)`,
-`categoriesSheetIdSelector`, `categoriesSelector`, `expensesSelector`,
-`lastErrorSelector`.[^selectors] `lastErrorSelector` is a flat
-`createSelector(selectAppFeature, (state) => state.lastError)`; nothing in the UI currently
-subscribes to it — `showFailureToast$` listens to the `operationFailed` action stream
-directly, not to this selector, so identical consecutive failures each still open a
-snackbar (the action stream is not deduplicated the way a selector would be).
+`app`: `loadingSelector`, `titleSelector`, `spreadsheetIdSelector`, `lastErrorSelector`,
+`currentSheetIdSelector`, `sheetsSelector`, `currentSheetSelector` (entity by stored title,
+`undefined` when none), `byIdSheetSelector(id)`, `categoriesSheetIdSelector`,
+`categoriesSelector`, `expensesSelector`.[^selectors] `lastErrorSelector`,
+`byIdSheetSelector`, and `isDrainingSelector` have no consumers.
 
-`currentSheetSelector` resolves the entity by the stored title and returns `undefined` when
-nothing is selected — several call sites assert it non-null with `!`.
-
-`src/@state/outbox.selectors.ts` adds `pendingCountSelector` (counts `status === 'pending'`
-only — a `failed` record never counts as pending and never blocks a live add),
-`failedCountSelector`, `oldestFailedSelector` (the earliest `failed` record by the adapter's
-`(enqueuedAt, localId)` order, or `undefined`), and `isDrainingSelector`, all built on
-`createFeatureSelector<OutboxState>('outbox')`.
+`outbox`: `pendingCountSelector` (`status === 'pending'` only), `failedCountSelector`,
+`oldestFailedSelector`, `isDrainingSelector`.
 
 # DevTools
 
-`StoreDevtoolsModule.instrument(...)` is registered **only when the URL carries a `logger`
-query parameter**. The `@ngrx/store-devtools` package itself is now dynamically imported
-(`await import('@ngrx/store-devtools')` inside `getAppConfig()`) rather than statically
-imported at the top of `app.config.ts`, so it ships as its own lazy chunk and is fetched
-over the network only when the flag is present, instead of sitting parsed-but-unused in the
-initial bundle. See [dependency wiring](dependency-wiring.md) and
-[build and serve](../operations/build-and-serve.md).
+`StoreDevtoolsModule.instrument(...)` is registered only when the URL carries `?logger=`;
+`@ngrx/store-devtools` is dynamically imported, so it is not downloaded otherwise
+([dependency wiring](dependency-wiring.md)).
 
 [^model]: AppState / SheetsState interfaces
 [^reducers]: Reducers, entity adapter, initial-state hydration
+[^reportfailure]: reportFailure and FAILURE_MESSAGES
 [^selectors]: Selectors
 [^outboxmodel]: OutboxState
 [^outboxeffects]: OutboxEffects

@@ -1,10 +1,10 @@
 ---
 type: Flow
 title: Manage categories
-description: Add, reorder by drag, and delete-by-swipe on the categories page, including the optimistic reorder and its rollback gap.
+description: Add, reorder by drag, and delete-by-swipe on the categories page, including the optimistic reorder and its rollback.
 tags: [flow, category, drag-drop, optimistic-update]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: page
     resource: ../../src/modules/dashboard/categories/categories-page.container.ts
@@ -17,65 +17,49 @@ sources:
     title: SpreadsheetService category methods
 ---
 
-# Entry
+# Entry and load
 
-Route `#/dashboard/categories`, guarded by `isLoggedIn` **and `isOnline`**. The container
-dispatches `loadCategories` in its constructor, so the page always refreshes from the
-spreadsheet on entry.[^page]
+Route `#/dashboard/categories`, guarded by `isLoggedIn` and `isOnline`. The constructor
+dispatches `loadCategories`, so the page always refreshes on entry.[^page]
 
-# Load
+`loadCategories$` → `values.get` on `categories!A:B` (`UNFORMATTED_VALUE`), mapped
+`([name, position]) => ({ name, id: position })`, `[]` when empty → `storeCategories`, which
+`saveCategories$` persists.[^effects]
 
-`loadCategories$` -> `getAllCategories()` -> `values.get` on `categories!A:B` with
-`valueRenderOption: UNFORMATTED_VALUE`, mapped as `([name, position]) => ({ name, id: position })`.
-A missing `values` array yields `[]`. The result is stored *and* persisted to localStorage by
-`saveCategories$`.[^effects]
+While `loading` is true the Add button and drag-and-drop are disabled.
 
 # Add
 
-The input plus **Add** button calls `addCategory(name, control)`, which:
+`addCategory(name, control)`:
 
-1. takes the current categories once, computes `position = max(id, -1) + 1`;
-2. rejects a duplicate `name` with a log line and no dispatch;
-3. resets the input control and dispatches `addCategory({ newCategory: { name, position } })`.
+1. `position = max(ids, -1) + 1`;
+2. a duplicate `name` is logged and ignored;
+3. reset the input; dispatch `addCategory({ newCategory: { name, id: position } })`.
 
-`addCategory$` calls `values.append` on `categories!A1:B1` with
-`insertDataOption: INSERT_ROWS`, `valueInputOption: RAW`, then appends the new category to
-the in-store array (`[...categories, newCategory]`) — append-at-end, matching the sheet.
+`addCategory$` → `values.append` on `categories!A1:B1` (`INSERT_ROWS`, `RAW`) → store
+`[...categories, newCategory]`.
 
-# Reorder (drag)
+# Reorder
 
-The list is a `cdkDropList`. `onDrop` first asks `tryDelete`, and otherwise calls
-`changePosition`, which `moveItemInArray`s a copy and dispatches `updateCategoryPosition`.
+`onDrop` tries delete first, otherwise moves the item in a copy and dispatches
+`updateCategoryPosition`. The effect is **optimistic**: it saves the old array in a
+`Memento`, stores the new order, then `values.update`s `categories!A1:B<n>` (`RAW`) with
+`[[name, id], …]` in the new order — each row keeps its original `id`.
 
-`updateCategoryPosition$` is **optimistic**: it saves the previous array in a field
-`categoriesBackUp`, dispatches `storeCategories` with the new order immediately, then calls
-`updateCategories(...)` -> `values.update` on `categories!A1:B<n>` (RAW), rewriting the whole
-range as `[[name, id], ...]` in the new visual order.
-
-> **On a failed reorder**, the `catchError` branch dispatches
-> `AppActions.storeCategories({ categories: this.categoriesBackUp })` to restore the
-> pre-reorder order, alongside `loading(false)` and
-> `operationFailed({ source: 'updateCategoryPosition$', message: "Couldn't save the new
-> order. Your categories were put back the way they were." })`, which opens a snackbar. Its
-> `catchError` sits inside its `exhaustMap` projection (see
-> [state management](../architecture/state-management.md)), so this only completes that one
-> attempt's inner observable; the effect keeps responding to further reorders.
+On failure it restores the saved order and shows "Couldn't save the new order. Your
+categories were put back the way they were."
 
 # Delete (drag right)
 
-`tryDelete` fires when the drop **did not change position**
-(`previousIndex === currentIndex`) and the horizontal distance exceeds
-`DELETE_THRESHOLD = 150` px. While dragging, `cdkDragMoved` shows the placeholder text
-"Drop to remove" when `distance.x > 150 && distance.y < MOVE_THRESHOLD (23)`.
+A drop that did not change position and moved more than 150 px right deletes. While dragging,
+the placeholder reads "Drop to remove" when `distance.x > 150` and `distance.y < 23`.
 
-`deleteCategory$` finds the index by name in the store array, throws
-``cannot find category [name]`` if absent, splices a copy, and calls
-`deleteSheetRow(categoriesSheetId, index)`. **The store array index is used directly as the
-sheet row index**, which holds only while the store mirrors the sheet's row order — true
-right after `loadCategories`, and the reason this page reloads on entry.
+`deleteCategory$` finds the index by name (throws `cannot find category [name]` if absent),
+calls `deleteSheetRow(categoriesSheetId, index)`, then stores the array without it. The store
+index is used as the sheet row index, which holds because the page reloads from the sheet on
+entry.
 
-Deleting a category does **not** touch historical expenses that reference it by name; the
-sheet-level `ONE_OF_RANGE` validation only constrains new manual entry.
+Deleting a category leaves historical expenses that reference its name untouched.
 
 [^page]: CategoriesPageContainer
 [^effects]: The four category effects

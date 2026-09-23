@@ -4,7 +4,7 @@ title: CI and deployment
 description: How a change reaches production, what the pipeline does and does not check, and the manual steps around a release.
 tags: [operations, ci, deployment, github-actions, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: wf
     resource: ../../.github/workflows/webpack.yml
@@ -18,50 +18,33 @@ sources:
 
 ```
 push to master (path-filtered)
-  -> build job:  checkout | node 22 | write keys.json from secrets | npm install | npm run build
-                 | upload-pages-artifact  dist/exp-spsh
-  -> deploy job: actions/deploy-pages@v4  ->  github-pages environment
+  -> build:  checkout | node 22 | write keys.json | npm install | npm run build | upload dist/exp-spsh
+  -> deploy: actions/deploy-pages@v4 -> github-pages environment
 ```
 
-Details and the path filter are in [the GitHub system record](../systems/github-pages.md).
+Triggers, the path filter, and secrets are in [the GitHub system record](../systems/github-pages.md).
 
 # Release checklist
 
-1. **Bump `version` in `package.json`.** It is displayed in the toolbar menu and is the only
-   user-visible release marker.[^pkg] Nothing bumps it automatically.
-2. Run `npm test` locally — **CI does not run tests**, so this is the only gate.
-3. Merge to `master`. Confirm the workflow's path filter matches your change; edits confined
-   to `scripts/`, `README.md`, `.github/rules/`, or `keys.example.json` will **not** trigger
-   a deploy.
-4. Watch the `deploy` job and the `github-pages` environment for the published URL.
-5. Verify in the browser: existing installs pick up the new version through
-   `VERSION_READY` and show an update badge
-   ([offline and updates](../flows/offline-and-updates.md)); a hard reload is the fast path.
+1. Bump `version` in `package.json` — the only user-visible release marker.[^pkg]
+2. Run `bash scripts/harness.sh` locally; CI runs no tests or lint.
+3. Merge to `master`; check the change matches the path filter.
+4. Watch the `deploy` job.
+5. Installed PWAs get `VERSION_READY` and show an update badge
+   ([offline and updates](../flows/offline-and-updates.md)); a hard reload is faster.
 
 # Rollback
 
-There is no rollback action. Options, in order of preference:
+No rollback action exists. Revert on `master` and let the workflow redeploy, or re-run an
+older successful run. Installed PWAs switch versions only when their worker fetches the new
+`ngsw.json`, so any deploy propagates gradually.
 
-1. Revert the commit on `master` and let the workflow redeploy.
-2. Re-run an older successful workflow run from the Actions UI to republish its artifact.
+# Gaps
 
-Users on an installed PWA keep the previous version until the worker fetches the new
-`ngsw.json`, so a bad deploy propagates gradually rather than instantly.
-
-# Secrets
-
-`API_KEY`, `CLIENT_ID`, `CLIENT_SECRET` are repository secrets, concatenated into `keys.json`
-at build time. Rotating any of them requires updating the secret **and** re-running the
-workflow, because the values are baked into the bundle
-([configuration and secrets](configuration-and-secrets.md)).
-
-# Gaps to be aware of
-
-- No test, lint, or type-check step in CI. `npm run build` does type-check the app, so a
-  type error still fails the build — but a failing unit test does not.
-- `npm install` (not `npm ci`) means the lockfile is not strictly enforced in CI.
-- Pull requests trigger the `build` job (the path filter includes `pull_request`), but the
-  `deploy` job only makes sense on `master`; it is not branch-guarded, so review the workflow
-  before adding new triggers.
+- No test, lint, or spec type-check in CI; `npm run build` type-checks the app only.
+- `npm install`, not `npm ci`: the lockfile is not strictly enforced.
+- `deploy` is not guarded to `push`/`master`, so pull-request runs also reach it.
+- `APP_ID` is not passed to the build step, so deployed builds have an empty `APP_ID`
+  ([known issues](../constraints/known-issues.md) #29).
 
 [^pkg]: version field

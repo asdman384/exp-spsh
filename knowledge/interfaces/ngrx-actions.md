@@ -1,10 +1,10 @@
 ---
 type: Interface
 title: NgRx action surface
-description: The complete `App shell` action group - payloads, who dispatches each action, and what consumes it.
+description: The `App shell` and `Outbox` action groups - payloads, who dispatches each action, and what consumes it.
 tags: [interface, ngrx, actions, contract]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: actions
     resource: ../../src/@state/app.actions.ts
@@ -17,101 +17,67 @@ sources:
     title: OutboxActions action group
 ---
 
-All actions live in one `createActionGroup` with `source: 'App shell'`, so DevTools shows
-them as `[App shell] <event>`.[^actions] This is the app's internal contract between
-containers and effects.
+Two `createActionGroup`s: `AppActions` (`source: 'App shell'`) and `OutboxActions`
+(`source: 'Outbox'`); DevTools shows `[App shell] <event>` / `[Outbox] <event>`.[^actions]
 
-# General
-
-| Action | Payload | Dispatched by | Consumed by |
-|---|---|---|---|
-| `loading` | `{ loading: boolean }` | every effect, imperatively | reducer -> toolbar progress bar |
-| `setTitle` | `{ title: string; icon?: string }` | each page container's constructor | reducer -> toolbar headline |
-
-Every routed container sets its own title: Dashboard/`dashboard`,
-Spending categories/`category`, Month summary/`query_stats`, Settings/`settings`,
-Login/`login`.
-
-# Setup
+# `AppActions`
 
 | Action | Payload | Dispatched by | Consumed by |
 |---|---|---|---|
-| `spreadsheetId` | `{ spreadsheetId: string \| undefined }` | setup after `getSpreadsheet` | reducer + persist effect |
-| `upsertDataSheet` | `{ dataSheet: Sheet }` | setup (discovery and creation) | reducer (entity upsert) + persist effect |
-| `setCurrentSheet` | `{ sheet: Sheet \| string }` | `AppComponent` on boot, setup after creating the data sheet | reducer only (accepts a title or a whole `Sheet`) |
-| `categoriesSheetId` | `{ categoriesSheetId: number \| undefined }` | setup after creating the categories sheet | reducer + persist effect |
+| `loading` | `{ loading }` | effects, imperatively | reducer → toolbar progress bar |
+| `setTitle` | `{ title, icon? }` | each page's constructor | reducer → toolbar headline |
+| `spreadsheetId` | `{ spreadsheetId: string \| undefined }` | setup, after `getSpreadsheet` | reducer + persist effect |
+| `upsertDataSheet` | `{ dataSheet: Sheet }` | setup (discovery, creation) | reducer (entity upsert) + persist effect |
+| `setCurrentSheet` | `{ sheet: Sheet \| string }` | `AppComponent` at startup, setup | reducer |
+| `categoriesSheetId` | `{ categoriesSheetId: number \| undefined }` | setup | reducer + persist effect |
+| `loadCategories` | — | categories page, dashboard "Click to Load" | `loadCategories$` |
+| `storeCategories` | `{ categories }` | category effects; setup (`[]`) | reducer + persist effect |
+| `addCategory` | `{ newCategory }` | categories page | `addCategory$` |
+| `deleteCategory` | `{ category }` | categories page (drag right) | `deleteCategory$` |
+| `updateCategoryPosition` | `{ categories }` | categories page (reorder) | `updateCategoryPosition$` |
+| `addExpense` | `{ sheetId: number; expense }` | dashboard submit | `addExpense$` |
+| `deleteExpense` | `{ sheet: Sheet; expense }` | dashboard swipe | `deleteExpense$` |
+| `loadExpenses` | `{ sheetId; from?; to? }` | dashboard, statistics, `addExpense$`, `reloadOnDrainCompleted$` | `loadExpenses$` |
+| `storeExpenses` | `{ expenses }` | `loadExpenses$`, `deleteExpense$` | reducer (replaces the array) |
+| `operationFailed` | `{ source: string; message: string }` | remote effects on failure; the outbox | reducer (`lastError`) + `showFailureToast$` |
 
-# Categories
+Page titles: Dashboard/`dashboard`, Spending categories/`category`, Month summary/`query_stats`,
+Settings/`settings`, Login/`login` (the playground sets its own).
+
+`operationFailed.source` is one of the 7 remote effect names (`'loadCategories$'` …) or
+`'outboxDrain$'`; `message` is fixed copy from `FAILURE_MESSAGES` or
+`OUTBOX_MESSAGES.authBlocked`, never raw error text
+([failure reporting](../architecture/state-management.md#failure-reporting)).
+
+# `OutboxActions`
+
+See [the write outbox](../architecture/write-outbox.md).[^outboxactions]
 
 | Action | Payload | Dispatched by | Consumed by |
 |---|---|---|---|
-| `loadCategories` | none | categories page ctor, dashboard "Click to Load" | `loadCategories$` |
-| `storeCategories` | `{ categories: Category[] }` | the four category effects, setup (clears to `[]`) | reducer + persist effect |
-| `addCategory` | `{ newCategory: Category }` | categories page | `addCategory$` |
-| `deleteCategory` | `{ category: Category }` | categories page (drag right) | `deleteCategory$` |
-| `updateCategoryPosition` | `{ categories: Category[] }` | categories page (reorder) | `updateCategoryPosition$` |
-
-# Expenses
-
-| Action | Payload | Dispatched by | Consumed by |
-|---|---|---|---|
-| `addExpense` | `{ sheetId: number; expense: Expense }` | dashboard form submit | `addExpense$` |
-| `deleteExpense` | `{ sheet: Sheet; expense: Expense }` | dashboard row swipe | `deleteExpense$` |
-| `loadExpenses` | `{ sheetId: number; from?: Date; to?: Date }` | dashboard, statistics, `addExpense$` | `loadExpenses$` |
-| `storeExpenses` | `{ expenses: Expense[] }` | `loadExpenses$`, `deleteExpense$` | reducer (replaces the array) |
-
-# Errors
-
-| Action | Payload | Dispatched by | Consumed by |
-|---|---|---|---|
-| `operationFailed` | `{ source: string; message: string }` | `reportFailure(source, store)` (5 effects) or inline in the 2 optimistic effects' `catchError`, on any remote-call failure | reducer (`lastError`) + `showFailureToast$` (opens a `MatSnackBar`) |
-
-`source` is always one of the 7 remote effects' own property names (e.g.
-`'loadCategories$'`); `message` is always one of 7 fixed, plain-language strings from
-`src/@state/report-failure.ts`'s `FAILURE_MESSAGES` table — never the raw error text. See
-[state management](../architecture/state-management.md) and
-[`docs/specs/effect-error-surfacing.md`](../../docs/specs/effect-error-surfacing.md) in the
-repository root.
+| `hydrated` | `{ records }` | `OutboxEffects` (boot, pass start/end, Retry, Discard) | reducer (`setAll`) |
+| `enqueue` | `{ record; drain: boolean }` | `addExpense$` | `persistEnqueue$` |
+| `enqueued` | `{ record }` | `persistEnqueue$` after `storage.add` | reducer (`addOne`) |
+| `drainRequested` | — | behind-the-queue enqueue, Retry | drain trigger T4 |
+| `syncRequested` | — | toolbar outbox button | drain trigger T5; reopens the failure notice |
+| `attemptStarted` | `{ localId }` | drain pass, before each send | reducer (`draining: true`) |
+| `succeeded` | `{ localId }` | drain pass | reducer (`removeOne`) |
+| `retryableFailed` | `{ localId, attempts, lastError }` | drain pass (`retryable`/`auth`) | reducer (stays `pending`) |
+| `terminallyFailed` | `{ localId, attempts, lastError, failure }` | drain pass (`terminal` or spreadsheet mismatch) | reducer (`failed`) |
+| `drainCompleted` | `{ sent, newlyFailed, remainingPending, lastSent }` | drain pass end | reducer (`draining: false`); reload, announce, failure-notice effects |
+| `retry` | `{ localId }` | failure notice | `retry$` |
+| `discard` | `{ localId }` | failure notice | `discard$` |
 
 # Conventions
 
-- **Intent versus result.** `load*`/`add*`/`delete*`/`update*` are intents handled only by
-  effects; `store*` are results handled only by the reducer. Nothing dispatches a `store*`
-  action from a container except setup's deliberate `storeCategories([])` reset.
-- **Payload asymmetry.** `addExpense` takes a `sheetId: number` while `deleteExpense` takes
-  the whole `Sheet` — delete needs both the gid (for `deleteDimension`) and the title (for
-  the `A1:E100` re-read).
-- **Failure is a single shared action, not a pair per intent.** Unlike the `load*`/`store*`
-  split, there is no `loadCategoriesFailure`-style action per effect — all 7 remote effects
-  funnel into one `operationFailed({ source, message })`, distinguished only by `source`. The
-  4 localStorage-only persist effects (`saveSpreadsheetId$` and siblings) still have **no**
-  failure path at all — `LocalStorageService.put` throwing is still fully uncaught
-  ([known issues](../constraints/known-issues.md) item 20).
+- **Intent vs result.** `load*`/`add*`/`delete*`/`update*`, `enqueue`, `drainRequested`,
+  `syncRequested`, `retry`, `discard` are effect-only; `store*` and the other outbox actions
+  are reducer results. Only setup dispatches a `store*` from a container
+  (`storeCategories([])`).
+- **Payload asymmetry.** `addExpense` takes a `sheetId`; `deleteExpense` takes the whole
+  `Sheet` because delete needs the gid and the title.
+- **One shared failure action**, distinguished by `source`, instead of a failure action per
+  intent. The four localStorage persist effects dispatch none.
 
-# Outbox
-
-A second, separate action group, `source: 'Outbox'` (DevTools shows `[Outbox] <event>`), for
-[the write outbox](../architecture/write-outbox.md).[^outboxactions]
-
-| Action | Payload | Dispatched by | Consumed by |
-|---|---|---|---|
-| `hydrated` | `{ records: OutboxRecord[] }` | `OutboxEffects` (boot, and the start/end of every drain pass) | reducer (`setAll`) |
-| `enqueue` | `{ record: OutboxRecord; drain: boolean }` | `AppEffects.addExpense$` | `persistEnqueue$` (intent only, no reducer case) |
-| `enqueued` | `{ record: OutboxRecord }` | `persistEnqueue$`, after a successful `storage.add` | reducer (`addOne`) |
-| `drainRequested` | none | a behind-the-queue `enqueue`, or Retry | the drain trigger merge (T4) |
-| `syncRequested` | none | the toolbar outbox button | the drain trigger merge (T5); also reopens the failure notice |
-| `attemptStarted` | `{ localId: string }` | a drain pass, before each send | reducer (`draining: true`) |
-| `succeeded` | `{ localId: string }` | a drain pass, after a successful send | reducer (`removeOne`) |
-| `retryableFailed` | `{ localId, attempts, lastError }` | a drain pass, on a `retryable`/`auth` classification | reducer (stays `pending`, updates `attempts`/`lastError`) |
-| `terminallyFailed` | `{ localId, attempts, lastError, failure }` | a drain pass, on a `terminal` classification or a spreadsheet mismatch | reducer (`status: 'failed'`) |
-| `drainCompleted` | `{ sent, newlyFailed, remainingPending, lastSent }` | a drain pass, once it ends | reducer (`draining: false`); the reload/announce/failure-notice effects |
-| `retry` | `{ localId: string }` | the failure notice's Retry button | `retry$` (intent only) |
-| `discard` | `{ localId: string }` | the failure notice's Discard button | `discard$` (intent only) |
-
-Same intent/result split as `AppActions`: `enqueue`, `drainRequested`, `syncRequested`,
-`retry`, and `discard` are effect-only intents with no reducer case; the rest are results.
-`AppActions.operationFailed({ source: 'outboxDrain$', ... })` is reused, unmodified, for the
-one auth-episode toast a drain pass can raise — no new `FailureSource` was added.
-
-[^outboxactions]: OutboxActions action group
 [^actions]: AppActions action group
+[^outboxactions]: OutboxActions action group

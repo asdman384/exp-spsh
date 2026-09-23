@@ -5,7 +5,7 @@ description: The build-and-host system - what triggers a deployment, how secrets
 tags: [system, ci, github-actions, github-pages, hosting]
 resource: ../../.github/workflows/webpack.yml
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: wf
     resource: ../../.github/workflows/webpack.yml
@@ -14,55 +14,47 @@ sources:
 
 # The workflow
 
-`.github/workflows/webpack.yml`, named **"build -> deploy gh-pages"** (the filename is a
-leftover; there is no webpack in this project — Angular uses esbuild via
-`@angular/build`).[^wf]
+`.github/workflows/webpack.yml`, named "build -> deploy gh-pages" (the filename is historical;
+the build uses esbuild via `@angular/build`).[^wf]
 
-**Triggers:** `push` and `pull_request` on `master`, **path-filtered** to `src/**`,
+**Triggers:** `push` and `pull_request` on `master`, path-filtered to `src/**`,
 `package.json`, `package-lock.json`, `angular.json`, `tsconfig.json`, `ngsw-config.json`, and
-the workflow file itself.
-
-> A change to `ngsw-config.json` triggers a build, but a change to `scripts/`,
-> `keys.example.json`, or `tsconfig.app.json` does **not** — edits there ship only when
-> something else in the filter changes.
-
-**Jobs:**
+the workflow file. Changes only to `scripts/`, `tsconfig.app.json`, `keys.example.json`, or
+docs do not trigger a build.
 
 | Job | Steps |
 |---|---|
-| `build` | checkout -> setup-node 22.x -> compose `keys.json` from secrets -> `npm install` -> `npm run build` -> `upload-pages-artifact` from `dist/exp-spsh` |
-| `deploy` | needs `build`; `actions/deploy-pages@v4` into the `github-pages` environment with `pages: write` and `id-token: write` |
+| `build` | checkout → Node 22.x → write `keys.json` → `npm install` → `npm run build` → `upload-pages-artifact` from `dist/exp-spsh` |
+| `deploy` | needs `build`; `actions/deploy-pages@v4` to the `github-pages` environment (`pages: write`, `id-token: write`) |
 
-`npm install` (not `ci`) runs the `postinstall` iOS service-worker patch, which is required
-for a correct production bundle ([PWA](../architecture/pwa-and-service-worker.md)).
+`deploy` has no branch or event condition, so a `pull_request` run also attempts to deploy.
+`npm install` (not `npm ci`) runs the `postinstall` iOS service-worker patch
+([PWA](../architecture/pwa-and-service-worker.md)).
 
 # Secrets
 
-`keys.json` is assembled inline by shell string concatenation from three repository secrets:
-`API_KEY`, `CLIENT_ID`, `CLIENT_SECRET`. The file is never committed (it is gitignored) but
-its contents are **compiled into the published bundle** — see
-[security posture](../constraints/security-posture.md).
-
-Rotating a key means updating the GitHub secret and re-running the workflow; there is no
-runtime configuration.
+The build step assembles `keys.json` by shell string concatenation from `CLIENT_ID`,
+`API_KEY`, `CLIENT_SECRET`, and `APP_ID`. Only the first three are mapped into the step's
+`env`, so **`APP_ID` is written as an empty string** in CI builds
+([known issues](../constraints/known-issues.md) #29). The values are compiled into the
+published bundle ([security posture](../constraints/security-posture.md)); rotating one means
+updating the secret and re-running the workflow.
 
 # The URL contract
 
-A GitHub Pages *project* site is served from `https://<owner>.github.io/<repo>/`, so the app
-lives under `/exp-spsh/`. Three places encode that path and must move together if the
-repository is renamed or the site becomes a user site:
+A project site is served from `https://<owner>.github.io/<repo>/`. These must change together
+if the repository is renamed or becomes a user site:
 
-1. `angular.json` `baseHref` (`/exp-spsh/`), which sets `<base href>` in `index.html` and
-   prefixes every URL in the generated `ngsw.json`;
+1. `angular.json` `baseHref` (`/exp-spsh/`) — `<base href>` and every `ngsw.json` URL;
 2. the OAuth authorized redirect URIs in the Google console;
-3. the local serving instructions (`http://localhost:4200/exp-spsh/`).
+3. the local URL `http://localhost:4200/exp-spsh/`.
 
-`ngsw-config.json` globs are relative to the build output and contain no path, and routing is
-hash-based, so neither needs a change when the path moves.
+`ngsw-config.json` globs are relative to the build output and routing is hash-based, so
+neither needs to change.
 
 # What CI does not do
 
-**The workflow never runs tests or a lint step.** `npm test` exists but is not wired into
-CI, so a red test suite still deploys ([testing](../operations/testing.md)).
+No tests, lint, or separate type-check of specs. `npm run build` type-checks the app, so a
+type error fails the deploy; a failing test does not ([testing](../operations/testing.md)).
 
 [^wf]: build -> deploy gh-pages workflow

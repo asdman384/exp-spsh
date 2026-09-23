@@ -67,7 +67,8 @@ below). CI writes the file from repository secrets.
 
 ## Architecture
 
-Angular 22 standalone PWA + NgRx 22. **There is no backend**: the user's own Google
+Angular 22 standalone, zoneless PWA (`provideZonelessChangeDetection`; no `zone.js`) + NgRx 22.
+Components default to `OnPush`. **There is no backend**: the user's own Google
 Spreadsheet is the database and the browser calls Google APIs directly. The `gapi` client
 library is never loaded — only its TypeScript types are used; all traffic goes through
 Angular's `HttpClient`.
@@ -78,9 +79,16 @@ Angular's `HttpClient`.
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
   *before* bootstrap). It is used without import across effects, services, and guards, and
   writes to both the console and an always-on overlay in the page.
-- **Every effect swallows errors**: `catchError -> log(e) -> EMPTY`. No error state, no
-  failure actions, no toast. A failed operation looks like a spinner that stopped. The log
-  overlay is where you debug.
+- **Failures surface as a fixed-text toast, never the real error.** The 7 remote-calling
+  effects catch on their inner observable, dispatch `operationFailed({ source, message })`
+  (via `reportFailure` in `src/@state/report-failure.ts`), and `showFailureToast$` opens a
+  snackbar with one of the `FAILURE_MESSAGES` strings. The raw error goes only to `log()` —
+  the overlay is where you debug. The setup page and the four localStorage persist effects
+  only log, with no toast.
+- **Pre-`#` query params are read once, from `initialUrlParams`**
+  (`src/shared/helpers/initial-url-params.ts`). The router's first redirect drops the query
+  string before the `#`, so OAuth `code`/`state` and `?logger=` must never be re-read from
+  `window.location`.
 - **The NgRx entity adapter keys sheets by `title`**, so `selectedSheetId` holds a string;
   `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering *position*, not an id.
 - **`addExpense` may not touch the network at all.** Offline, or while another expense is
@@ -94,8 +102,8 @@ Angular's `HttpClient`.
   Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
 - **The service worker is enabled in development too**. Stale assets after a rebuild are
   expected — unregister the worker or hard-reload.
-- **OAuth scope is `drive.file`, not `spreadsheets`.** Setup no longer takes a pasted
-  spreadsheet URL — `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
+- **OAuth scope is `drive.file`.** Setup has no URL field —
+  `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
   loaded lazily, not vendored like `src/scripts/client.js`) and the user's selection is what
   grants the app access to that one file. A spreadsheet the app never created or the user
   never picked through Picker is invisible to it, even to someone who pastes its id directly.
@@ -136,7 +144,5 @@ keep it.
 ## Subagents
 
 `.claude/agents/` defines planner, architect, implementer, tester, reviewer, and orchestrator
-roles, plus the `/orchestrate` command. Note that these definitions currently describe a
-`backend/` + `frontend/` Python-and-TypeScript layout with `docs/specs/` outputs, none of
-which exists here — verify their paths and commands against this repository before relying
-on them.
+roles, plus the `/orchestrate` command. They write to `docs/specs/`, `docs/architecture/`,
+`docs/reviews/`, and `docs/dod/`.

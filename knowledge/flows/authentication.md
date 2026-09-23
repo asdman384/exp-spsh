@@ -4,7 +4,7 @@ title: Authentication and token lifecycle
 description: How the redirect OAuth strategy obtains, refreshes, and revokes Google tokens, and how the popup strategy differs.
 tags: [flow, auth, oauth, google]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: abstract
     resource: ../../src/services/security/abstract-security.service.ts
@@ -25,83 +25,82 @@ sources:
 
 # The contract
 
-`AbstractSecurityService` defines what the rest of the app may rely on:[^abstract]
+`AbstractSecurityService`:[^abstract]
 
 ```ts
-user$: Observable<Userinfo | undefined>   // BehaviorSubject seeded from localStorage 'user'
-login(): void                             // GET userinfo, store it, emit it
-logout(): void                            // revoke token, clear user, clear all storage
-abstract refreshToken(): Observable<T>    // returns a token with an access_token
-protected abstract buildClient(): C       // constructs the GIS client, called in the ctor
+abstract class AbstractSecurityService {
+  user$: Observable<Userinfo | undefined>;           // BehaviorSubject seeded from localStorage 'user'
+  login(): void;                                     // GET userinfo, store it, emit it
+  logout(): void;                                    // revoke token, emit undefined, clear localStorage
+  abstract refreshToken(): Observable<T>;            // a token with access_token
+  protected abstract revocableToken(): string | undefined; // what logout() revokes
+  protected abstract buildClient(): C;               // GIS client, built in the constructor
+}
 ```
 
-Requested scopes are
-`https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile`.
-`drive.file` only grants access to files the user has opened or created through the app — see
-[Picker](../interfaces/google-oauth.md#picker-flow) for how a spreadsheet gets into that set,
-and [initial setup](initial-setup.md) for where it is invoked.
+Scopes: `https://www.googleapis.com/auth/drive.file
+https://www.googleapis.com/auth/userinfo.profile`. `drive.file` covers only files the user
+picks through [Picker](../interfaces/google-oauth.md#picker-flow) or the app creates.
 
-**"Logged in" means `localStorage.user` exists.** Not a valid token — the profile object.
-`isLoggedIn` guards on `user$`, so a user with an expired, unrefreshable token still passes
-the guard and fails later at the HTTP layer.
+**"Logged in" means `localStorage.user` exists**, not that a token is valid. A user with an
+unrefreshable token passes `isLoggedIn` and fails later at the HTTP layer.
 
-# Redirect strategy (the wired default)
+# Redirect strategy (wired)
 
-`RedirectSecurityService` uses `google.accounts.oauth2.initCodeClient` with
-`ux_mode: 'redirect'`, `redirect_uri: location.origin + location.pathname`, and
-`state: 'autologin'`.[^redirect] `refreshToken()` is a four-branch decision:
+`initCodeClient` with `ux_mode: 'redirect'`, `redirect_uri: location.origin +
+location.pathname`, `state: 'autologin'`.[^redirect] `refreshToken()`:
 
 | State | Action |
 |---|---|
-| no `redirect-token`, no `?code=` | wait for online, then `client.requestCode()` -> full page redirect to Google |
-| no token, `?code=` present | POST `oauth2.googleapis.com/token` with `grant_type=authorization_code`; store `redirect-token` and `refresh-token` |
-| token present and `Date.now() < expiration` | return it directly (`of(token)`) |
-| token expired | drop `redirect-token`; if a `refresh-token` exists POST `grant_type=refresh_token`, else redirect for a new code |
+| no `redirect-token`, no `code` | when online, `client.requestCode()` → full-page redirect to Google |
+| no token, `code` present | POST `oauth2.googleapis.com/token` (`authorization_code`); store `redirect-token` and `refresh-token`; delete `code` from `initialUrlParams` |
+| token valid (`Date.now() < expiration`) | `of(token)` |
+| token expired | remove `redirect-token`; POST `refresh_token` grant if a refresh token exists, else redirect |
 
-The code exchange sends `client_id`, **`client_secret`**, `redirect_uri`, and `code` as
-`application/x-www-form-urlencoded` — from the browser. See
-[security posture](../constraints/security-posture.md).
+`code` is read from `initialUrlParams`, not from `location`. The exchange posts
+`client_secret` from the browser ([security posture](../constraints/security-posture.md)).
 
-On return from Google, `LoginPageContainer.ngOnInit` reads `state` from the URL and, if it
-contains `autologin`, calls `login()` automatically, which fetches
-`https://content.googleapis.com/oauth2/v2/userinfo` (itself intercepted, so the code
-exchange happens as a side effect of that first request).[^login]
+On return, `LoginPageContainer.ngOnInit` sees `state` containing `autologin` and calls
+`login()`. Its userinfo request passes through the interceptor, which performs the code
+exchange first.[^login] Once `user$` emits, the login page navigates to `setup/settings`.
 
-# Popup strategy (available, not wired)
+# Popup strategy (not wired)
 
-`PopupSecurityService` uses `initTokenClient` and a `ReplaySubject(1)` of token
-responses.[^popup] Differences worth knowing:
+`initTokenClient` plus a `ReplaySubject(1)` of token responses:[^popup]
 
-- No client secret and no refresh token — it re-requests an access token instead.
-- With no stored user it calls `requestAccessToken({})` (full consent).
-- With an expired token it calls `requestAccessToken({ prompt: 'none', login_hint: user.id })`
-  for a silent refresh, and returns `token$.pipe(skip(1))` when a token was already emitted
-  so the caller waits for the *new* one.
-- Token errors push `token.error(...)` and remove the stored `token` key.
+- no client secret, no refresh token — it requests a new access token instead;
+- no stored user → `requestAccessToken({})` (consent);
+- expired token → `requestAccessToken({ prompt: 'none', login_hint: user.id })` when online,
+  returning `skip(1)` if a token was already emitted so callers wait for the new one;
+- a token error removes the stored `token` and errors the subject.
 
-To switch strategies, change the single `{ provide: AbstractSecurityService, useClass: ... }`
-binding in `app.config.ts` ([dependency wiring](../architecture/dependency-wiring.md)).
+Switch strategies by changing the one `AbstractSecurityService` binding in `app.config.ts`.
 
-# Every request refreshes
+# Every request asks for a token
 
-`ExpAuthInterceptor` wraps **all** outgoing requests except the token endpoint itself:[^interceptor]
-
-```
-req --> (url contains 'oauth2.googleapis.com/token') ? passthrough
-     --> security.refreshToken().pipe(take(1)) --> clone with Authorization: Bearer <access_token> --> next
-```
-
-So the token check runs per request; the strategy's caching (a valid stored token returns
-synchronously via `of(...)`) is what keeps this cheap. A failing refresh causes the request
-observable to error, which each effect swallows in its `catchError`.
+`ExpAuthInterceptor` calls `refreshToken().pipe(take(1))` before every request except the
+token endpoint, and adds `Authorization: Bearer …`.[^interceptor] A valid stored token returns
+synchronously. A failed refresh errors the request, which the calling effect reports as a
+toast ([interceptor](../interfaces/http-auth-interceptor.md)).
 
 # Logout
 
-`logout()` revokes the access token through `google.accounts.oauth2.revoke(...)`, clears
-`user$`, and calls `storageService.clear()` — which wipes **all** localStorage, including
-`spreadsheetId`, `dataSheets`, `categoriesSheetId`, and `categories`. Logging out therefore
-resets the app to a state where `isSetupReady` fails and the user must re-run
-[setup](initial-setup.md). `AppComponent.logout()` then navigates to `setup`.
+Menu **Logout** (disabled offline) calls `logout()`: revoke the strategy's `revocableToken()` if any,
+emit `undefined`, and `localStorage.clear()` — wiping `spreadsheetId`, `dataSheets`,
+`categoriesSheetId`, and `categories` too, so [setup](initial-setup.md) must run again.
+`AppComponent` then navigates to `setup`. The IndexedDB outbox is **not** cleared
+([known issues](../constraints/known-issues.md) #25).
+
+`revocableToken()` is per strategy:
+
+| Strategy | Token revoked |
+|---|---|
+| redirect | `refresh-token`'s `refresh_token`, else `redirect-token`'s `access_token` |
+| popup | `token`'s `access_token` |
+
+The redirect strategy prefers the refresh token because revoking it revokes the whole grant,
+and it is still stored after an expired `redirect-token` has been removed. The revoke call is
+fire-and-forget; localStorage is cleared whatever its outcome.
 
 [^abstract]: AbstractSecurityService
 [^redirect]: RedirectSecurityService

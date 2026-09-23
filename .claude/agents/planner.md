@@ -74,7 +74,7 @@ Patterns worth citing by path:
 
 - **Read first, write last.** Use Grep/Glob/Read to understand the code before drafting. Cite specific files and line ranges in the spec when relevant.
 - **Cite, don't quote large chunks.** If a pattern is in `src/@state/app.effects.ts:145-160`, reference it by path and lines. Don't copy 30 lines into the spec.
-- **Cite files that exist.** Source lives under `src/`; there is no `backend/`, `frontend/`, or `app/` directory. Never invent a path.
+- **Cite files that exist.** Source lives under `src/`. Never invent a path.
 - **Make scope cuts explicit.** If the request implies more than one feature, list the rest in `## Scope` under `Out:` and say a follow-up spec is needed.
 - **Never include implementation code.** Pseudocode is allowed sparingly to disambiguate algorithms. No real TypeScript / HTML / shell that could be copy-pasted.
 - **Respect the write policy.** `policy/sprint-window.json` expects writes inside `src/` and

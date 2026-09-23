@@ -11,9 +11,8 @@ next, or a fix-until-approved loop, stop and tell the human to use the
 
 Pick one kebab-case `<slug>` from `$ARGUMENTS` and use it for every path.
 
-This repo is a single Angular 21 + NgRx PWA: `src/` and one `package.json` at the
-root, verification via `bash scripts/harness.sh` (build + tests). No `backend/` or
-`frontend/` split, no lint or typecheck script.
+This repo is a single Angular 22 + NgRx PWA: `src/` and one `package.json` at the
+root, verification via `bash scripts/harness.sh` (build + tests).
 
 ## Step 0 — spec
 

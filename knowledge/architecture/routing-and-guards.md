@@ -4,7 +4,7 @@ title: Routing and route guards
 description: Hash-based lazy route tree, the three guards that gate it, and the redirect targets when a guard fails.
 tags: [architecture, routing, guards, angular]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: routes
     resource: ../../src/app/app.routes.ts
@@ -25,54 +25,48 @@ sources:
 
 # Route tree
 
-All paths come from the `ROUTE` enum, never from string literals.[^routeenum] Location
-strategy is `HashLocationStrategy`, so URLs look like
+Paths come from the `ROUTE` enum.[^routeenum] With `HashLocationStrategy`, URLs look like
 `https://host/exp-spsh/#/dashboard/statistics`.
 
 | Path | Component | Guards | Loading |
 |---|---|---|---|
 | `''` | — | — | redirects to `dashboard` |
-| `dashboard` | `DashboardComponent` | `isLoggedIn`, `isSetupReady` | lazy `loadComponent` + `loadChildren` |
-| `dashboard/''` | `DashboardPageContainer` | inherited | eager within the chunk |
-| `dashboard/categories` | `CategoriesPageContainer` | `isLoggedIn`, `isOnline` | eager within the chunk |
-| `dashboard/statistics` | `StatisticsContainer` | `isLoggedIn`, `isOnline` (+ `canDeactivate`) | eager within the chunk |
-| `setup` | `SetupComponent` | none | lazy |
+| `dashboard` | `DashboardComponent` | `isLoggedIn`, `isSetupReady` | lazy |
+| `dashboard/''` | `DashboardPageContainer` | inherited | in the dashboard chunk |
+| `dashboard/categories` | `CategoriesPageContainer` | `isLoggedIn`, `isOnline` | in the dashboard chunk |
+| `dashboard/statistics` | `StatisticsContainer` | `isLoggedIn`, `isOnline`, `canDeactivate` | in the dashboard chunk |
+| `setup` | `SetupComponent` | — | lazy |
 | `setup/''` | — | — | redirects to `login` |
-| `setup/login` | `LoginPageContainer` | none | eager within the chunk |
-| `setup/settings` | `SettingsPageContainer` | `isLoggedIn` | eager within the chunk |
-| `playground` | `PlaygroundComponent` | **none** | lazy |
+| `setup/login` | `LoginPageContainer` | — | in the setup chunk |
+| `setup/settings` | `SettingsPageContainer` | `isLoggedIn` | in the setup chunk |
+| `playground` | `PlaygroundComponent` | — | lazy |
 
-`provideRouter` is configured `withComponentInputBinding()`, and view transitions are
-enabled via `withViewTransitions(...).ɵproviders` (the callback is currently a no-op used
-for experimentation).
+`provideRouter` uses `withComponentInputBinding()`; view transitions are enabled via
+`withViewTransitions(...).ɵproviders` with a no-op callback.
 
-The `statistics` route declares an inline `canDeactivate` that calls
-`component.tableAnimation('none')` and always returns `true` — it exists to reset a CSS
-animation class on leave, not to block navigation.[^dashroutes]
+The `statistics` `canDeactivate` calls `component.tableAnimation('none')` and returns `true`;
+it resets a CSS class, it never blocks.[^dashroutes]
 
 # Guards
 
-All three guards are functional guards returning `Observable<boolean | UrlTree>`.[^guards]
+Functional guards returning `Observable<boolean | UrlTree>`:[^guards]
 
-| Guard | Passes when | Failure redirect |
+| Guard | Passes when | Otherwise |
 |---|---|---|
-| `isLoggedIn` | `AbstractSecurityService.user$` emits a user | `UrlTree` to `setup` |
-| `isSetupReady` | both `spreadsheetId` **and** `categoriesSheetId` are set in the store | `UrlTree` to `setup` |
-| `isOnline` | `NetworkStatusService.online$` is `true` | `UrlTree` to `[]` (the root route) |
-
-Because guard observables are long-lived (`user$`, `online$` are `BehaviorSubject`-backed),
-they re-emit on state change; Angular only consumes the first emission per activation.
+| `isLoggedIn` | `AbstractSecurityService.user$` holds a user | `UrlTree` to `setup` |
+| `isSetupReady` | `spreadsheetId` **and** `categoriesSheetId` are truthy in the store | `UrlTree` to `setup` |
+| `isOnline` | `NetworkStatusService.online$` is `true` | `UrlTree` to `[]` (root) |
 
 # Navigation conventions
 
-- The toolbar menu links use `queryParamsHandling="preserve"` so the OAuth `state`/`code`
-  parameters and the `logger` flag survive in-app navigation.
-- `finishSetup()` in the settings page navigates to `dashboard` with
-  `queryParams: { state: null, code: null, scope: null }` and `queryParamsHandling: 'merge'`
-  — this is the one place OAuth redirect parameters are deliberately stripped from the URL.
-- `LoginPageContainer` navigates to `setup/settings` with `replaceUrl: true` as soon as
-  `user$` emits, so the login page is not left in history.
+- Toolbar menu links use `queryParamsHandling="preserve"`.
+- `LoginPageContainer` navigates to `setup/settings` (`replaceUrl: true`) as soon as `user$`
+  emits a user.
+- `finishSetup()` navigates to `dashboard` with `queryParams: { state: null, code: null,
+  scope: null }` and `queryParamsHandling: 'merge'`.
 
+OAuth `code`/`state` and `?logger=` sit before the `#` and are read once at startup from
+`initialUrlParams` ([dependency wiring](dependency-wiring.md#pre-hash-query-parameters)).
 See [authentication](../flows/authentication.md) and [initial setup](../flows/initial-setup.md).
 
 [^routeenum]: ROUTE enum

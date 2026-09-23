@@ -5,7 +5,7 @@ description: The deployed artifact itself - what is built, where it runs, and th
 tags: [system, app, pwa, deployment]
 resource: https://github.com/asdman384/exp-spsh
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: angularjson
     resource: ../../angular.json
@@ -22,50 +22,43 @@ sources:
 
 | | |
 |---|---|
-| Repository | `asdman384/exp-spsh` (git remote `origin`, default branch `master`) |
+| Repository | `asdman384/exp-spsh`, default branch `master` |
 | Artifact | static bundle in `dist/exp-spsh` |
 | Public URL | GitHub Pages project site, path `/exp-spsh/` |
 | Version | `package.json` `version`, shown in the toolbar menu |
 
 # Build output
 
-`@angular/build:application` builder with `baseHref: "/exp-spsh/"`, `outputPath.base: dist/exp-spsh`
-and an empty `browser` sub-path (files land directly in `dist/exp-spsh`).[^angularjson]
-Global styles are the Material `deeppurple-amber` prebuilt theme plus `src/styles.scss`;
-`src/scripts/client.js` is injected as a global script; assets are `favicon.ico`,
-`src/assets`, and `manifest.webmanifest`. `stylePreprocessorOptions.includePaths` is the
-repo root, so SCSS can `@use` paths relative to it.
+`@angular/build:application`, `baseHref: "/exp-spsh/"`, output directly in `dist/exp-spsh`
+(empty `browser` sub-path).[^angularjson] Global styles: Material `deeppurple-amber` plus
+`src/styles.scss`. Global script: `src/scripts/client.js` (vendored Google Identity
+Services). Assets: `favicon.ico`, `src/assets`, `manifest.webmanifest`. SCSS include path is
+the repo root.
 
-Production adds `outputHashing: all` and enforces budgets: **initial 2.5 MB warning / 5 MB
-error**, any component style 2 kB / 60 kB. Development flips `optimization` off, enables
-source maps and named chunks, and file-replaces `environment.ts` with
-`environment.development.ts` (the two files differ only in the `production` flag; both
-environments are otherwise identical and the `SCOPES` constant in them is unused).
+- **Production** (default): `outputHashing: all`; budgets initial 2.5 MB warn / 5 MB error,
+  component style 2 kB / 60 kB.
+- **Development**: no optimization, source maps, named chunks, and `environment.ts` replaced
+  by `environment.development.ts`. The two files contain only `{ production: boolean }`, and
+  nothing imports them.
 
 # Runtime assumptions
 
-- **Modern evergreen browser.** Target ES2022, zone.js change detection, and optional use of
-  `document.startViewTransition` (guarded, with a console warning fallback).
-- **The `google.accounts` global exists** before a security service is constructed
-  ([OAuth interface](../interfaces/google-oauth.md)).
-- **`window.log` exists** — installed by the dynamically imported `src/logger.ts` before
-  bootstrap ([dependency wiring](../architecture/dependency-wiring.md)).
-- `localStorage` is available and parseable ([storage](../interfaces/local-storage.md)).
-- Served under `/exp-spsh/`, because `baseHref` is `/exp-spsh/`: asset URLs and the service
-  worker manifest's URLs both carry that prefix ([PWA](../architecture/pwa-and-service-worker.md)).
-- Hash routing, so the app also works when the host cannot rewrite unknown paths to
-  `index.html` — which is exactly the GitHub Pages constraint.
+- Evergreen browser: ES2022, zoneless change detection, optional
+  `document.startViewTransition` (guarded).
+- `google.accounts` exists at startup — provided by the bundled `client.js`
+  ([OAuth](../interfaces/google-oauth.md)).
+- `window.log` exists — installed by `src/logger.ts` before bootstrap
+  ([dependency wiring](../architecture/dependency-wiring.md)).
+- `localStorage` holds parseable JSON ([storage](../interfaces/local-storage.md)); IndexedDB
+  and `crypto.randomUUID` enable the [write outbox](../architecture/write-outbox.md)
+  (without them `addExpense` always writes live).
+- Served under `/exp-spsh/` with hash routing, so no server-side rewrites are needed
+  ([PWA](../architecture/pwa-and-service-worker.md)).
 
-# Seasonal easter egg
+# Non-product code
 
-`SnowComponent` is always in the `AppComponent` template but enables itself only when the
-date is **14 February** (`getMonth() === 1 && getDate() === 14`), rendering 50 randomised
-flakes. Harmless, but it explains an unexpected visual on that day.
-
-# Non-product code shipped in the repo
-
-- `src/modules/playground/**` — an unguarded Angular-features sandbox at `#/playground`,
-  documented in its own README.
-- `test.ts` at the repo root — a scratch iterator experiment, not referenced by any config.
+- `SnowComponent` (`src/fun/snow/`) is always in the `AppComponent` template but renders 50
+  flakes only on **14 February**.
+- `src/modules/playground/**` — an unguarded sandbox at `#/playground`, with its own README.
 
 [^angularjson]: Build configuration

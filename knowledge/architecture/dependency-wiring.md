@@ -4,7 +4,7 @@ title: Bootstrap and dependency wiring
 description: What `main.ts` and `app.config.ts` provide, which abstractions are bound to which implementations, and the global `log()` side channel.
 tags: [architecture, di, bootstrap, angular]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: main
     resource: ../../src/main.ts
@@ -15,6 +15,9 @@ sources:
   - id: logger
     resource: ../../src/logger.ts
     title: ExpLogger and the global log()
+  - id: urlparams
+    resource: ../../src/shared/helpers/initial-url-params.ts
+    title: initialUrlParams
   - id: outboxstorage
     resource: ../../src/services/outbox/outbox-storage.ts
     title: OutboxStorage root binding
@@ -22,17 +25,14 @@ sources:
 
 # Bootstrap order
 
-`main.ts` does three things, in this order:[^main]
+`main.ts`:[^main]
 
-1. Registers `window` handlers for `unhandledrejection` and `error` (they only
-   `console.log`; they do not suppress the default behaviour).
-2. **Dynamically imports `./logger`**, which installs the global `log()` function, and only
-   then calls `getAppConfig()`. Nothing may call `log()` before this resolves.
-3. `getAppConfig()` is **async** — it dynamically imports `@ngrx/store-devtools` itself (see
-   below) before resolving — and only once its `Promise` resolves does `main.ts` call
-   `bootstrapApplication(AppComponent, { providers: [provideZoneChangeDetection(), appConfig.providers] })`.
+1. dynamically imports `./logger`, which installs the global `log()`;
+2. awaits `getAppConfig()` (async — it may dynamically import `@ngrx/store-devtools`);
+3. calls `bootstrapApplication(AppComponent, { providers: [provideZonelessChangeDetection(), appConfig.providers] })`.
 
-Zone.js change detection is still in use; the app has not moved to zoneless.
+A rejection anywhere in the chain is written to `console.error` and `log()`. The app is
+**zoneless**; `zone.js` is not a dependency.
 
 # Providers (`getAppConfig`)
 
@@ -40,65 +40,60 @@ Zone.js change detection is still in use; the app has not moved to zoneless.
 |---|---|---|
 | `AbstractSecurityService` | `RedirectSecurityService` | swap to `PopupSecurityService` here to change the auth UX |
 | `HTTP_INTERCEPTORS` (multi) | `ExpAuthInterceptor` | see [auth interceptor](../interfaces/http-auth-interceptor.md) |
-| `LocationStrategy` | `HashLocationStrategy` | required for the GitHub Pages / `file://` serving model |
-| `StorageService` | `LocalStorageService` | see [local storage](../interfaces/local-storage.md) |
-| — | `provideHttpClient(withInterceptorsFromDi(), withJsonpSupport())` | DI-style interceptors, JSONP support enabled |
-| — | `provideRouter(routes, withComponentInputBinding())` | [routing](routing-and-guards.md) |
-| — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled unconditionally, including in dev** |
+| `LocationStrategy` | `HashLocationStrategy` | GitHub Pages cannot rewrite deep links |
+| `StorageService` | `LocalStorageService` | see [localStorage](../interfaces/local-storage.md) |
+| — | `provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport())` | XHR backend, class-based interceptors |
+| — | `provideRouter(routes, withComponentInputBinding())` + `withViewTransitions(...).ɵproviders` | [routing](routing-and-guards.md) |
+| — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled in development too** |
 | — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects, OutboxEffects])` | [state](state-management.md) |
-| — | `StoreDevtoolsModule.instrument(...)` | **conditional and code-split**: `getAppConfig()`'s internal `getDebugProviders()` helper runs `await import('@ngrx/store-devtools')` only when the URL has a `logger` query param, so the package ships as its own lazy chunk, fetched only when that flag is present |
+| — | `StoreDevtoolsModule.instrument(...)` | only when the URL has a `logger` query param; the package is a lazy chunk fetched only then |
 
-`SpreadsheetService`, `NetworkStatusService` are `providedIn: 'root'`;
-`LocalStorageService`, `PopupSecurityService`, `RedirectSecurityService` are plain
-`@Injectable()` classes bound explicitly here.
+Root-provided (`providedIn: 'root'`): `SpreadsheetService`, `NetworkStatusService`,
+`PickerService`, `IndexedDbOutboxStorage`, `OutboxDrainLock`, and `OutboxStorage`.
 
-`OutboxStorage` (`src/services/outbox/outbox-storage.ts`) is **not** bound here, unlike every
-other abstract-class-as-token in this file. It carries its own root default binding —
-`@Injectable({ providedIn: 'root', useFactory: () => inject(IndexedDbOutboxStorage) })` on the
-abstract class itself — so `AppEffects` (which takes `OutboxStorage` as a constructor
-parameter) resolves it from the root injector with no line in `app.config.ts` at all. This
-exists so a `TestBed` that provides no `OutboxStorage` (like the pre-existing
-`app.effects.spec.ts`) can still construct `AppEffects`; see
-[the write outbox](write-outbox.md) and [testing](../operations/testing.md).
+`OutboxStorage` is an abstract class that binds itself —
+`@Injectable({ providedIn: 'root', useFactory: () => inject(IndexedDbOutboxStorage) })` — so
+it needs no line in `app.config.ts`, and a `TestBed` that does not provide it can still build
+`AppEffects`. See [the write outbox](write-outbox.md).
 
-# The global `log()` side channel
+# Pre-hash query parameters
 
-`src/logger.ts` declares `function log(...args: any[]): void` in the global scope and
-attaches an `ExpLogger` instance to `window.log`.[^logger] It:
+`initialUrlParams` (`src/shared/helpers/initial-url-params.ts`) captures the query string
+before the `#` once, at module load.[^urlparams] The router's first redirect drops that query
+string from the address bar, so anything that needs `code`, `state`, or `logger` reads it from
+here: `RedirectSecurityService`, `LoginPageContainer`, and `app.config.ts`.
 
-- mirrors everything to `console.log`;
-- renders each argument into an on-page `<div class="logger-output">` overlay with
-  copy / clear / toggle buttons (Material icon glyphs `content_copy`, `not_interested`,
-  `memory`);
-- serialises objects with `JSON.stringify(arg, null, 2)` and appends a stack trace for
-  `Error` instances (via the V8-only `Error.captureStackTrace`).
+# The global `log()`
 
-`loggerType` is **hard-coded to `'window'`** — the line that read it from the URL is
-commented out — so the overlay is installed on every load, in every environment. The
-separate `?logger=` URL parameter still gates NgRx DevTools only.
+`src/logger.ts` declares a global `log(...args)` and assigns it to `window.log`:[^logger]
 
-Because `log()` is a global with no import, **it is used freely across effects, services,
-guards and containers**, and any new environment (a test harness, SSR) must provide it or
-those code paths throw. `tsconfig.app.json` and `tsconfig.spec.json` both explicitly
-`include` `src/logger.ts` for this reason.
+- it is first bound to `console.log`, then — whenever `<body>` exists, i.e. always in the
+  browser — replaced by an `ExpLogger` that writes to the console **and** to an on-page
+  overlay;
+- the overlay is always installed, parked off-screen, with a `memory` toggle button plus
+  copy (`content_copy`) and clear (`not_interested`) buttons;
+- objects are serialised with `JSON.stringify(arg, null, 2)`; `Error`s get a stack trace via
+  the V8-only `Error.captureStackTrace`.
+
+`logger.ts` also parses `?logger=` into an unused `loggerType`; that parameter only gates
+DevTools.
+
+`log()` is used without import in effects, services, guards, and containers. Any new
+environment must install it first: `tsconfig.app.json` and `tsconfig.spec.json` both include
+`src/logger.ts`, and effect specs install a stub (see [testing](../operations/testing.md)).
 
 # Material and CDK imports
 
-There is no shared UI-kit module. Each standalone component's `imports: [...]` array lists
-only the specific Material/CDK modules and `@angular/common` pipes/directives (`AsyncPipe`,
-`DatePipe`, `NgClass`) its own template uses, so esbuild puts a module like Material's
-datepicker, table, tabs, or drag-drop only into the chunks of the components that actually
-reference it — e.g. the lazy `dashboard-routes` chunk — rather than the initial bundle.
+There is no shared UI-kit module. Each standalone component imports only the Material/CDK
+modules and `@angular/common` pipes its own template uses, so heavy modules (datepicker,
+table, tabs, drag-drop) stay in the lazy `dashboard` chunk.
 
-`DashboardPageContainer` is the only component with a `<mat-datepicker>`, and provides the
-date configuration — `MAT_DATE_LOCALE = 'en-GB'` and a `MAT_DATE_FORMATS` override whose
-`dateInput` display is `{ year: 'numeric', month: 'short', day: 'numeric' }` — in its own
-`@Component({ providers: [...] })` array. Angular resolves them for the datepicker's
-CDK-overlay popup the same way it resolves any other injected token, since the overlay is
-created through that component's injector.
+`DashboardPageContainer` — the only datepicker host — provides `MAT_DATE_LOCALE = 'en-GB'`
+and a `MAT_DATE_FORMATS` override (`dateInput: { year: 'numeric', month: 'short', day:
+'numeric' }`) in its own `providers`.
 
-`ExpDialogComponent` (`src/shared/components/dialog/`) is unused: nothing in the app opens
-it (no `MatDialog.open()` call, no template reference).
+`ExpDialogComponent` (`src/shared/components/dialog/`) is unused.
 
 [^main]: Bootstrap entry point
 [^logger]: ExpLogger and the global log()
+[^urlparams]: initialUrlParams

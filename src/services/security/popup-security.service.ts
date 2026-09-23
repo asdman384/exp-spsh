@@ -54,6 +54,10 @@ export class PopupSecurityService extends AbstractSecurityService<
     super.logout();
   }
 
+  protected override revocableToken(): string | undefined {
+    return this.storageService.get<Token>(TOKEN)?.googleToken.access_token;
+  }
+
   protected override buildClient(): google.accounts.oauth2.TokenClient {
     const callback = (token: google.accounts.oauth2.TokenResponse) => {
       if (token.error) {

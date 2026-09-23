@@ -117,9 +117,9 @@ declare global {
   function log(...args: any[]): void;
 }
 
-const search = window.location.href.split('?')[1];
-const urlParams = new URLSearchParams(search);
-const loggerType = urlParams.get('logger');
+// const search = window.location.href.split('?')[1];
+// const urlParams = new URLSearchParams(search);
+// const loggerType = urlParams.get('logger');
 const body = document.querySelector('body');
 
 // `log()` is called unconditionally throughout the app (every effect's `catchError`), so it

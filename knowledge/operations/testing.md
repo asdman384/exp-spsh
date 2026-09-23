@@ -1,10 +1,10 @@
 ---
 type: Playbook
 title: Testing
-description: How tests run (Angular's Vitest runner in headless Chromium), what is actually covered, and which suites are skipped.
+description: How tests run (Angular's Vitest runner in headless Chromium), what is covered, and the test-writing gotchas.
 tags: [operations, testing, vitest, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: ng
     resource: ../../angular.json
@@ -13,113 +13,84 @@ sources:
     resource: ../../vitest.config.ts
     title: vitest.config.ts
   - id: rules
-    resource: ../../.github/rules/testing.md
+    resource: ../../.claude/rules/testing.md
     title: Testing conventions
+  - id: harness
+    resource: ../../scripts/harness.sh
+    title: Verification harness
   - id: specs
     resource: ../../src
-    title: The twelve .spec.ts files
+    title: The .spec.ts files
 ---
 
 # How to run
 
 | Command | Behaviour |
 |---|---|
-| `npm test` | one pass, `ng test --watch=false` |
-| `npm run test:headed` | watch mode — **still headless**; the name refers to watching, not to a visible browser |
+| `npm test` | one pass, headless Chromium |
+| `npm run test:headed` | watch mode — **still headless** |
 | `npm run test:coverage` | one pass with coverage |
-| `npx ng test --ui` | Vitest UI for interactive inspection |
+| `npx ng test --watch=false --include <file>` | one spec file |
+| `npx ng test --watch=false --filter "<regex>"` | matching suite/test names |
+| `npx ng test --ui` | Vitest UI |
+| `bash scripts/harness.sh --test [--include <file>]` | the harness's test layer |
 
-The runner is the `@angular/build:unit-test` builder with `runnerConfig: vitest.config.ts`
-and `browsers: ["chromiumHeadless"]`, using `tsconfig.spec.json`.[^ng] `vitest.config.ts`
-sets `globals: true`, `environment: 'jsdom'`, and `browser.screenshotFailures: false` — note
-the browser and jsdom settings coexist; the Angular builder's `browsers` option is what
-decides where the tests actually execute.[^vitest]
+The runner is `@angular/build:unit-test` with `runnerConfig: vitest.config.ts`,
+`browsers: ["chromiumHeadless"]`, and `tsconfig.spec.json`.[^ng] `vitest.config.ts` sets
+`globals: true` and `environment: 'jsdom'`, but the builder's `browsers` option decides where
+tests run: real Chromium, so IndexedDB and Web Locks are real.[^vitest]
 
-Because `globals: true` is set together with `"types": ["vitest/globals"]`, specs use
-`describe`/`it`/`expect`/`vi` without imports.
-
-`tsconfig.spec.json` explicitly includes `src/logger.ts` so the global `log()` exists in the
-test bundle — code under test calls it freely.
+Vitest transpiles without type-checking; `tsc -b tsconfig.app.json tsconfig.spec.json` (the
+harness's `typecheck` layer) is what type-checks specs.
 
 # Conventions
 
-`.spec.ts` co-located with the source file. Component specs use `TestBed.configureTestingModule`
-with the standalone component in `imports`, and either a stubbed `Store`
-(`{ select: vi.fn(), dispatch: vi.fn() }`) or a real `StoreModule.forRoot(reducers)`.
+- `.spec.ts` beside the source file; `describe`/`it`/`expect`/`vi` are globals.
+- Component specs use `TestBed` with the standalone component in `imports`, and either a
+  stubbed `Store` or `StoreModule.forRoot(reducers)`.
+- Suites tied to a spec in `docs/specs/` prefix names with its acceptance-criterion id
+  (`[AC19] …`).
 
-**Effects specs** (`docs/specs/effect-error-surfacing.md`,
-`docs/specs/write-outbox.md`) follow one pattern, established in
-`src/@state/app.effects.spec.ts`:
-`provideMockActions` from `@ngrx/effects/testing` with a
-`Subject<Action>`-backed actions stream; a `Store` stub whose `select` returns an
-**observable** (`of(undefined)`, not a bare function — several `AppEffects` fields call
-`this.store.select(...)` during class-field initialization, so a non-observable return
-throws before any test body runs); stubs for `NetworkStatusService` (needs `online$`) and
-`SpreadsheetService`; and, for `MatSnackBar`, `{ provide: MatSnackBar, useValue: { open:
-vi.fn() } }` — asserted on via the spy, never against real overlay DOM. A second gotcha
-specific to this file: constructing `AppEffects` at all requires the global `log()` to
-already exist, because several effect fields call `tap(log)` at field-init time (evaluated
-synchronously inside `new AppEffects(...)`, before any subscription) — in production
-`main.ts` installs it via a dynamic `import('src/logger.ts')` before bootstrap, but an
-isolated `TestBed` construction has nothing to install it. `app.effects.spec.ts` works
-around this with a `globalThis.log = () => {}` no-op in `beforeEach`/`afterEach`;
-`report-failure.spec.ts` uses a plain `import 'src/logger'` instead, since it calls
-`reportFailure(...)` directly rather than constructing `AppEffects`. **Any new effects spec
-in this codebase needs one of these two, or it fails with `ReferenceError: log is not
-defined` before the test body runs.**
+# Effect specs
 
-`src/@state/outbox.effects.spec.ts` follows the same pattern, but with `InMemoryOutboxStorage`
-in place of a hand-rolled storage stub (it already satisfies `OutboxStorage`'s contract and
-`structuredClone`s in both directions, so a test can mutate what it gets back without
-corrupting the double's internal state) and a pass-through `OutboxDrainLock` stub (`{ run: (work)
-=> work() }`) so a pass runs without touching real Web Locks. `src/@state/app.effects.add-expense.spec.ts`
-covers `addExpense$`'s routing separately from the rest of `app.effects.spec.ts`, per
-`docs/specs/write-outbox.md` D17, so that file stays untouched.
+- Use `provideMockActions` with a `Subject<Action>`; stub `Store` with a `select` that returns
+  an **observable** (effects call `store.select` while their fields initialise), plus
+  `NetworkStatusService` (`online$`), `SpreadsheetService`, and
+  `{ provide: MatSnackBar, useValue: { open: vi.fn() } }`.
+- **Install `log()` first.** Effects call `tap(log)` while the class is constructed, so a spec
+  without it fails with `ReferenceError: log is not defined`. Either `import 'src/logger'` at
+  the top, or set `globalThis.log = () => {}` in `beforeEach` and delete it in `afterEach`
+  (as `app.effects.spec.ts` does).
+- Outbox specs use `InMemoryOutboxStorage` (structured-clones in and out) and a pass-through
+  `OutboxDrainLock` (`{ run: (work) => work() }`); one suite runs the drain against the real
+  IndexedDB storage and lock.
+- Real-API suites: `indexed-db-outbox-storage.service.spec.ts` deletes the
+  `exp-spsh-outbox` database around each test; `outbox-drain-lock.service.spec.ts` checks
+  non-overlap and the fallback via `vi.spyOn(navigator, 'locks', 'get')`.
 
-Two suites in this feature test against the **real** browser API instead of a double, because
-the test runner is headless Chromium (`angular.json`'s unit-test target), not jsdom:
+# Coverage
 
-- `src/services/outbox/indexed-db-outbox-storage.service.spec.ts` runs against real IndexedDB,
-  deleting the `exp-spsh-outbox` database before and after each test.
-- `src/services/outbox/outbox-drain-lock.service.spec.ts` runs against the real Web Locks API,
-  including asserting non-overlap between two concurrent `run()` calls and the unlocked
-  fallback via `vi.spyOn(navigator, 'locks', 'get').mockReturnValue(undefined)`.
+| Area | Specs |
+|---|---|
+| Row mapping and dates | `expense-row.spec.ts`, `spreadsheet.service.spec.ts` (URLs/verbs, column E, serial round-trip, DST, delete and category ranges), `spreadsheet.service.replay.spec.ts` |
+| Helpers | `index.spec.ts` (`isExpenseEqual`, `toMessage`), `classify-write-error.spec.ts` |
+| State | `app.reducers.spec.ts` (`lastError`), `report-failure.spec.ts`, `app.effects.spec.ts` (`showFailureToast$`, delete row-index arithmetic), `app.effects.add-expense.spec.ts` (routing), `outbox.*.spec.ts` |
+| Outbox services | IndexedDB storage, drain lock |
+| Security | `security.service.spec.ts` (which token each strategy's `logout()` revokes; `google` stubbed with `vi.stubGlobal`) |
+| Components | `expenses-table` (inputs/outputs), `statistics.container` (animation, month scroll), `outbox-status`, `outbox-failure-notice`; smoke tests for categories, dashboard shell, dialog, test-perf |
 
-# What is actually covered
+`app.component.spec.ts` is `describe.skip`
+([known issues](../constraints/known-issues.md) #13).
 
-| Spec | State | Content |
-|---|---|---|
-| `src/shared/helpers/index.spec.ts` | **active, 22 tests** | `isExpenseEqual` (13, every field and date component) + `toMessage` (9) |
-| `src/services/spreadsheet/spreadsheet.service.spec.ts` | **active, 8 tests** | URLs, verbs, and serial-date conversion via `HttpTestingController` |
-| `src/@state/report-failure.spec.ts` | **active** | `reportFailure`'s dispatch order/payloads; asserts the dispatched message is never raw error text |
-| `src/@state/app.reducers.spec.ts` | **active** | the `lastError` branch: initial `null`, `id` increments on repeat identical payloads, other `AppState` keys untouched |
-| `src/@state/app.effects.spec.ts` | **active** | `showFailureToast$`: opens exactly once with the right message/config (no `duration`, `politeness: 'assertive'`); two `operationFailed` emissions open the snackbar twice |
-| `src/modules/dashboard/categories/...spec.ts` | active, 1 test | creation smoke test with a stubbed store |
-| `src/modules/dashboard/dashboard.component.spec.ts` | active, 1 test | creation smoke test |
-| `src/modules/dashboard/statistics/...spec.ts` | active, 1 test | creation smoke test with a real store |
-| `src/shared/components/expenses-table/...spec.ts` | active, 1 test | creation smoke test |
-| `src/app/app.component.spec.ts` | **`describe.skip`** | also asserts a title string absent from the current `app.component.html` |
-| `src/services/storage/local-storage.service.spec.ts` | **`describe.skip`** | — |
-| `src/shared/components/dialog/dialog.component.spec.ts` | **`describe.skip`** | — |
-
-The meaningful coverage is the expense equality helper, `toMessage`, the Sheets service, and
-the failure-reporting mechanism (`reportFailure`, the `lastError` reducer branch,
-`showFailureToast$`). **The 7 remote effects' actual production logic (the Sheets calls
-themselves, the optimistic updates/rollbacks, the `store*` dispatches) is untested** — only
-their shared failure path is. Guards, the interceptor, the security services, and the setup
-flow have no tests at all. Treat a green run as a regression check on those units, not as a
-safety net for [the flows](../flows/).
+Not covered: guards, the interceptor, the security services' token acquisition and refresh, `PickerService`, the setup page,
+the dashboard form, and the success paths of the category effects and `loadExpenses$`.
+There is no end-to-end testing.
 
 # Rules
 
-`.github/CLAUDE.md` states two hard rules that apply here: **never delete or overwrite
-working tests without explicit permission**, and **always run tests after any code
-change**.[^rules] See [working agreements](../constraints/working-agreements.md).
-
-CI does not run tests — see [CI and deployment](ci-and-deployment.md).
-
-There is no end-to-end testing configured.
+`CLAUDE.md`: never delete or overwrite working tests without permission, and run
+`bash scripts/harness.sh` after every change ([working agreements](../constraints/working-agreements.md)).
+CI runs no tests ([CI](ci-and-deployment.md)).
 
 [^ng]: test target configuration
 [^vitest]: vitest.config.ts
-[^rules]: Testing conventions

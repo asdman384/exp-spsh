@@ -4,7 +4,7 @@ title: Offline behaviour and app updates
 description: What the app can and cannot do without a network, how online state is detected, and how a new deployment reaches an installed PWA.
 tags: [flow, offline, pwa, updates, network]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: net
     resource: ../../src/services/network-status.service.ts
@@ -25,56 +25,45 @@ sources:
 
 # Detecting connectivity
 
-`NetworkStatusService` seeds a `BehaviorSubject` with `navigator.onLine` and flips it on the
-`window` `online` / `offline` events.[^net] That is the app's only definition of
-connectivity — it reports link state, not reachability, so a captive portal or a blocked
-Google endpoint still reads as "online".
+`NetworkStatusService.online$` is a `BehaviorSubject` seeded with `navigator.onLine` and
+flipped by `window` `online`/`offline` events.[^net] It reports link state, not reachability:
+a captive portal still reads as online.
 
-`online$` feeds four things: the `isOnline` guard, the `whenOnline` gate in `loadExpenses$`,
-the disabled state of menu items and the login button, and a CSS `online` class on the
-toolbar avatar (the avatar is the app's connectivity indicator).
+It drives the `isOnline` guard, `loadExpenses$`'s wait, `addExpense$` routing, the outbox
+drain, disabled menu items and login button, and the avatar's `online` CSS class (the app's
+connectivity indicator).
 
 # What works offline
 
 | Capability | Offline |
 |---|---|
-| Open the app, see the shell | yes, once an online visit has installed the service worker — it prefetches `index.html` and every JS/CSS bundle, and serves `index.html` for navigations |
-| See categories and the selected person | yes — hydrated from localStorage |
-| See the last loaded expenses | yes, until reload — `expenses` is not persisted |
-| Load expenses | **deferred**: the dispatch parks on `whenOnline` and fires when the network returns |
-| Add an expense | **queued**: written to IndexedDB and sent automatically once online, see below |
-| Delete an expense, edit categories | no — the request fails and the error is only logged |
-| Categories and Statistics routes | blocked by the `isOnline` guard (redirect to root) |
-| Login / logout / setup | login button and Logout are disabled offline; the setup route itself is *not* guarded |
+| Open the app | yes, after one online visit installed the service worker |
+| Categories list, selected person | yes — from localStorage |
+| Last loaded expenses | yes, until reload (`expenses` is not persisted) |
+| Load expenses | **deferred** until online ([load expenses](load-expenses.md)) |
+| Add an expense | **queued** in IndexedDB, sent automatically ([write outbox](../architecture/write-outbox.md)) |
+| Delete an expense | no — the request fails, the row is restored, a toast is shown |
+| Categories and Statistics pages | blocked by `isOnline` (menu items disabled; guard redirects to root) |
+| Login, Logout | disabled |
+| Setup | not guarded; fails silently ([initial setup](initial-setup.md)) |
 
-Reads queue (`whenOnline`), and so does `addExpense` through
-[the write outbox](../architecture/write-outbox.md) — the one write that is safe to replay
-later, because it always inserts at a fixed row. Every other write is attempted directly and
-only logged/toasted on failure. There is no background sync; draining only runs while the app's
-tab is open, and Google API responses are explicitly never cached
-([service worker](../architecture/pwa-and-service-worker.md)).
+Draining runs only while a tab is open; there is no background sync. API responses are never
+cached ([service worker](../architecture/pwa-and-service-worker.md)).
+
+# The outbox indicator
+
+While signed in, `OutboxStatusComponent` sits before the avatar and shows the pending +
+failed count. Clicking it dispatches `syncRequested`, which starts a drain pass and reopens
+the failure notice if a failed record exists.[^outbox]
 
 # Update delivery
 
-1. A push to `master` rebuilds and republishes to GitHub Pages
-   ([CI and deployment](../operations/ci-and-deployment.md)).
-2. The installed service worker notices the new `ngsw.json` and emits `VERSION_READY`.
-3. `AppComponent` maps that to `hasUpdates`, which paints a `!` badge on the avatar and adds
-   an **Update** item to the menu.[^appcomp]
-4. `update()` calls `location.reload()`; the worker activates the new version on the next
-   navigation.
+1. A push to `master` rebuilds and republishes ([CI](../operations/ci-and-deployment.md)).
+2. The installed worker sees the new `ngsw.json` and emits `VERSION_READY`.
+3. `AppComponent` sets `hasUpdates`: a `!` badge on the avatar and an **Update** menu item.[^appcomp]
+4. **Update** calls `location.reload()`.
 
-The version shown at the bottom of the menu is `package.json`'s `version` field, imported
-directly — bumping it is a manual step and is what makes a release visible to users.[^apphtml]
-
-# The outbox toolbar indicator
-
-`OutboxStatusComponent` sits in the toolbar, before the avatar button, whenever the signed-in
-user has a pending or failed queued expense. It renders nothing when the queue is empty. Its
-badge and accessible name report the counts, and activating it dispatches
-`OutboxActions.syncRequested()`, which both starts a drain pass and — if a failed record already
-exists — reopens its failure notice. See [the write outbox](../architecture/write-outbox.md) for
-the full design.[^outbox]
+The menu footer shows `package.json`'s `version`; bumping it is manual.[^apphtml]
 
 [^net]: NetworkStatusService
 [^appcomp]: AppComponent page state

@@ -2,8 +2,8 @@ import { HttpClient } from '@angular/common/http';
 
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { TOKEN, USER } from 'src/constants';
-import { GoogleToken, Token, Userinfo } from 'src/shared/models';
+import { USER } from 'src/constants';
+import { GoogleToken, Userinfo } from 'src/shared/models';
 import { NetworkStatusService } from './../network-status.service';
 import { StorageService } from './../storage';
 
@@ -26,6 +26,8 @@ export abstract class AbstractSecurityService<C = unknown, T = GoogleToken> {
 
   protected abstract buildClient(): C;
   abstract refreshToken(): Observable<T>;
+  /** The token `logout()` hands to Google's revoke endpoint, or `undefined` when none is stored. */
+  protected abstract revocableToken(): string | undefined;
 
   login(): void {
     this.http
@@ -39,10 +41,10 @@ export abstract class AbstractSecurityService<C = unknown, T = GoogleToken> {
   }
 
   logout(): void {
-    const token = this.storageService.get<Token>(TOKEN);
+    const token = this.revocableToken();
     if (token) {
       // eslint-disable-next-line @typescript-eslint/no-empty-function -- revoke() requires a callback; we don't need to react to it
-      google.accounts.oauth2.revoke(token.googleToken.access_token, () => {});
+      google.accounts.oauth2.revoke(token, () => {});
     }
     this.user.next(undefined);
     this.isTokenSet = false;

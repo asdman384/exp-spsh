@@ -1,11 +1,11 @@
 ---
 type: API Client
 title: Google Identity and OAuth endpoints
-description: The Google Identity Services client objects and the raw OAuth/userinfo endpoints the app calls, with the exact parameters used.
+description: The Google Identity Services client objects, the Picker, and the raw OAuth/userinfo endpoints the app calls, with the exact parameters used.
 tags: [interface, oauth, gis, google, auth]
 resource: https://developers.google.com/identity/oauth2/web/guides/overview
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: redirect
     resource: ../../src/services/security/redirect-security.service.ts
@@ -19,102 +19,84 @@ sources:
   - id: picker
     resource: ../../src/services/picker/picker.service.ts
     title: PickerService
+  - id: gis
+    resource: ../../src/scripts/client.js
+    title: Vendored Google Identity Services library
   - id: gisdoc
     resource: https://developers.google.com/identity/oauth2/web/guides/migration-to-gis
     title: Migration to Google Identity Services
     author: team:google-identity-docs
 ---
 
-# Library
+# Libraries
 
-`google.accounts.oauth2` from Google Identity Services. The library is loaded by the browser
-before the app uses it; only `@types/google.accounts` appears in `package.json`. There is no
-`<script>` tag for it in `index.html` — the global is expected to exist at the time a
-security service is constructed, which is a latent coupling worth remembering when the app
-is run in an isolated environment (tests stub or skip these paths).
-
-A second, unrelated library — the Google Picker (`google.picker`, typed by
-`@types/google.picker`) — is loaded lazily by `PickerService`
-(`src/services/picker/picker.service.ts`) the first time setup opens it, via a `<script>` tag
-it injects for `https://apis.google.com/js/api.js` followed by `gapi.load('picker', ...)`.
-Unlike `google.accounts.oauth2`, this one is not present unconditionally on every page load,
-and unlike `src/scripts/client.js` (a vendored copy of GIS), it is always fetched from
-Google's own CDN.
+- **Google Identity Services** (`google.accounts.oauth2`) is vendored as
+  `src/scripts/client.js` and injected as a global script by `angular.json`, so the global
+  exists before any security service is constructed.[^gis]
+- **Google Picker** (`google.picker`) is loaded lazily by `PickerService` the first time
+  setup opens it: a `<script>` for `https://apis.google.com/js/api.js`, then
+  `gapi.load('picker')`.[^picker]
 
 # Client objects
 
 | Strategy | Constructor | Config |
 |---|---|---|
-| Redirect | `initCodeClient` | `client_id`, `scope`, `redirect_uri: location.origin + location.pathname`, `ux_mode: 'redirect'`, `state: 'autologin'` |
+| Redirect (wired) | `initCodeClient` | `client_id`, `scope`, `redirect_uri: location.origin + location.pathname`, `ux_mode: 'redirect'`, `state: 'autologin'` |
 | Popup | `initTokenClient` | `client_id`, `scope`, `prompt: ''`, `callback`, `error_callback` |
 
-`scope` is always
-`https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/userinfo.profile`
-(from `AbstractSecurityService.SCOPES`).[^abstract] `drive.file` grants access only to files
-the user has opened or created through the app — see [Picker](#picker-flow) below for how a
-spreadsheet enters that set.
+`scope` is `https://www.googleapis.com/auth/drive.file
+https://www.googleapis.com/auth/userinfo.profile` (`AbstractSecurityService.SCOPES`).[^abstract]
 
-# Raw HTTP endpoints
+# Raw endpoints
 
 | Purpose | Call |
 |---|---|
-| Code exchange | `POST https://oauth2.googleapis.com/token`, form-encoded: `client_id`, `client_secret`, `redirect_uri`, `grant_type=authorization_code`, `code` |
-| Refresh | `POST https://oauth2.googleapis.com/token`, form-encoded: `client_id`, `client_secret`, `grant_type=refresh_token`, `refresh_token` |
-| Profile | `GET https://content.googleapis.com/oauth2/v2/userinfo` (bearer-authenticated) |
-| Revoke | `google.accounts.oauth2.revoke(access_token, cb)` |
+| Code exchange | `POST https://oauth2.googleapis.com/token`, form-encoded `client_id`, `client_secret`, `redirect_uri`, `grant_type=authorization_code`, `code` |
+| Refresh | `POST https://oauth2.googleapis.com/token`, form-encoded `client_id`, `client_secret`, `grant_type=refresh_token`, `refresh_token` |
+| Profile | `GET https://content.googleapis.com/oauth2/v2/userinfo` (bearer) |
+| Revoke | `google.accounts.oauth2.revoke(token, cb)` — the redirect strategy passes the refresh token when stored, else the access token |
 
-Both token calls set `Content-Type: application/x-www-form-urlencoded` explicitly and are
-**excluded from the auth interceptor** by a URL substring check on
-`oauth2.googleapis.com/token`, which prevents an infinite refresh recursion.[^redirect]
+The token calls are excluded from the auth interceptor by a substring match on
+`oauth2.googleapis.com/token`, which prevents refresh recursion.[^redirect]
 
-# Response types
+Token responses (the redirect strategy's `GoogleToken`, or GIS `TokenResponse`) are wrapped in
+[`Token`](../domain/sheet-and-user.md#token). `id_token` is never decoded; identity comes from
+userinfo.
 
-```ts
-// redirect strategy
-interface GoogleToken {
-  access_token: string; expires_in: string; refresh_token?: string;
-  scope: string; token_type: 'Bearer'; id_token: string;
-}
-// popup strategy uses google.accounts.oauth2.TokenResponse
-```
+# Redirect round-trip
 
-Both are wrapped in [`Token`](../domain/sheet-and-user.md), which computes an absolute
-`expiration` with a 60-second safety margin. `id_token` is stored but never validated or
-decoded — identity comes from the userinfo call instead.
+Google returns to `redirect_uri` with `code`, `scope`, and `state` in the query string, before
+the `#`. The router drops that query string on its first redirect, so it is captured once in
+`initialUrlParams`:
 
-# Redirect round-trip parameters
+- `RedirectSecurityService` reads `code` (and deletes it after a successful exchange);
+- `LoginPageContainer` reads `state` and auto-logs-in when it contains `autologin`;
+- `app.config.ts` reads `logger`.
 
-Google returns to `redirect_uri` with `code`, `scope`, and `state` in the **query string**
-(not the hash). Three places read them directly from `window.location`:
-
-- `RedirectSecurityService.getCode()` — reads `code`;
-- `LoginPageContainer.ngOnInit` — reads `state`, auto-logins when it contains `autologin`;
-- `app.config.ts` and `logger.ts` — read `logger`.
-
-They are stripped later by `finishSetup()` ([initial setup](../flows/initial-setup.md)).
-Because the app uses hash routing, these query parameters sit *before* the `#`, which is why
-`queryParamsHandling="preserve"` appears on the toolbar links.
+`finishSetup()` also nulls `state`, `code`, and `scope` when navigating to the dashboard.
 
 # Picker flow
 
-`PickerService.pickSpreadsheet()` (used from [initial setup](../flows/initial-setup.md)) gets
-a current access token from `AbstractSecurityService.refreshToken()`, lazily loads the Picker
-library, and opens a `PickerBuilder` restricted to `ViewId.SPREADSHEETS`, authenticated with
-that token plus `keys.API_KEY` (`setDeveloperKey`) and `keys.APP_ID` (`setAppId`, the Cloud
-project number). Google's Picker UI itself can browse the user's whole Drive for the purpose
-of *selecting* a file — that visibility is separate from, and does not require, the app's own
-OAuth scope. Only once a file is picked does `drive.file` grant the app durable access to it.
-The callback reads `response[Response.ACTION]`: `Action.PICKED` resolves with the selected
-file's id (`response[Response.DOCUMENTS][0][Document.ID]`), `Action.CANCEL` resolves with
-`undefined`.
+`PickerService.pickSpreadsheet()`:[^picker]
+
+1. `security.refreshToken()` for an access token;
+2. load the Picker library (once);
+3. build a `PickerBuilder` with a `DocsView(ViewId.SPREADSHEETS)` in list mode,
+   `setOAuthToken(token)`, `setDeveloperKey(keys.API_KEY)`, `setAppId(keys.APP_ID)`;
+4. on `Action.PICKED` emit `DOCUMENTS[0][Document.ID]`; on `Action.CANCEL` emit `undefined`.
+
+Picking is what grants `drive.file` access to that file; `APP_ID` (the Cloud project number)
+ties the grant to this app.
 
 # Console prerequisites
 
-The Google Cloud project behind `CLIENT_ID` must have: the Sheets API **and** the Picker API
-enabled, the `drive.file` and `userinfo.profile` scopes configured on the consent screen, and
-**every deployment origin plus its exact path registered as an authorized redirect URI** — the
-URI is `location.origin + location.pathname`, so `https://<user>.github.io/exp-spsh/` and
-`http://localhost:4200/exp-spsh/` are distinct entries.
+In the Google Cloud project behind `CLIENT_ID`: the Sheets API and Picker API enabled; the
+`drive.file` and `userinfo.profile` scopes on the consent screen; and every deployment's
+`origin + pathname` registered as an authorized redirect URI —
+`https://<user>.github.io/exp-spsh/` and `http://localhost:4200/exp-spsh/` are separate
+entries.
 
+[^gis]: Vendored Google Identity Services library
 [^abstract]: AbstractSecurityService
 [^redirect]: RedirectSecurityService
+[^picker]: PickerService

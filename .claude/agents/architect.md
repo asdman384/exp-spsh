@@ -77,7 +77,7 @@ Decisions that need a human owner. List, with the owner role.
 
 - **One feature per note.** If the request implies multiple features, list the others under "Open questions" and stop.
 - **Cite, don't paraphrase.** `src/@state/app.effects.ts:160-215` beats "the delete effect."
-- **Cite files that exist.** Source lives under `src/`; there is no `backend/` or `frontend/`. Never invent a path.
+- **Cite files that exist.** Source lives under `src/`;
 - **Read the knowledge base first.** `knowledge/architecture/` and `knowledge/interfaces/`
   already answer most structural questions, and `knowledge/constraints/technical-constraints.md`
   lists the couplings you must not break. Cite a concept rather than re-deriving it.

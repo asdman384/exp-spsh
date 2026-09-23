@@ -1,10 +1,10 @@
 ---
 type: Flow
 title: Add an expense
-description: From the dashboard form to a row inserted at the top of a data sheet, and the targeted re-read that follows.
+description: From the dashboard form to a row inserted at the top of a data sheet (live or via the outbox), and the targeted re-read that follows.
 tags: [flow, expense, write, sheets]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
@@ -25,85 +25,60 @@ sources:
 
 # The form
 
-An **experimental Signal Forms** form (`@angular/forms/signals`) with five controls: `date`
-(Material datepicker, `touchUi`, readonly input, `min` = 1 January of the current year),
-`sheet` (person selector), `amount` (number, required), `category` (select over store
-categories), `comment` (autosizing textarea), and an `isInDebt` checkbox.[^html] This is the
-one form in the app that isn't template-driven — see
-[code conventions](../constraints/code-conventions.md).
+A Signal Forms form (`@angular/forms/signals`) over one `expenseModel` signal
+`{ date, sheet, amount, category, comment, isInDebt }`.[^page] `required()` applies to
+`date`, `sheet`, `amount`, `category`. Controls bind with `[formField]`:[^html]
 
-A single `expenseModel` signal (`{ date, sheet, amount, category, comment, isInDebt }`, with
-`sheet`/`amount`/`category` typed `| null` rather than `| undefined` — Signal Forms'
-`Subfields` mapping treats a value type that includes `undefined` as "the field itself may be
-absent", which breaks `[formField]` binding and `required()`'s path typing) feeds `form()`.
-A schema function calls `required()` on `date`, `sheet`, `amount`, and `category`. Each
-Material control (`mat-select`, `mat-checkbox`, the datepicker input, `matInput`) binds via
-`[formField]`, which drives them through their existing `ControlValueAccessor` — the same
-interop path reactive forms uses. A static `required` attribute cannot coexist with
-`[formField]` on the same element (compiler error `NG8022`), so the asterisk Material used to
-render from that attribute no longer appears; validity itself is unaffected, still driven by
-the schema's `required()` calls.
+- `date` — Material datepicker (`touchUi`, readonly input, `min` = 1 January this year);
+- `sheet` — person select, labelled `title.split('_')[1]`;
+- `amount` — number input; `category` — select over store categories;
+- `comment` — autosizing textarea with a clear icon; `isInDebt` — checkbox.
 
-Two details:
+`sheet`, `amount`, and `category` are typed `| null`, not `| undefined`: Signal Forms treats
+an `undefined`-able value as an optional field, which breaks `[formField]` and `required()`.
+A static `required` attribute cannot coexist with `[formField]` (`NG8022`), so Material's
+asterisk is not shown.
 
-- The category select renders an `@empty` option labelled **"Click to Load"** that dispatches
-  `loadCategories` — categories are not fetched automatically on this page, only on the
-  categories page. The cached list from localStorage normally fills it.
-- On submit the form is *reset with the date and sheet preserved*
-  (`expenseForm().reset({ ...blank, date, sheet })`) so a run of entries for the same day and
-  person needs no re-selection.
+- When the category list is empty, the select shows a **"Click to Load"** option that
+  dispatches `loadCategories`; normally the list comes from localStorage.
+- After submit the form resets but keeps `date` and `sheet`.
 
 # Steps
 
-1. `onSubmit(event)` prevents the native submit, returns early unless
-   `expenseForm().valid()`, then dispatches
-   `addExpense({ expense: expenseForm().value(), sheetId: sheet.id })`.[^page]
-2. `addExpense$` decides whether to write live or to queue the expense in
-   [the write outbox](../architecture/write-outbox.md): if `OutboxStorage` is unavailable or no
-   spreadsheet id has been recorded yet, it always writes live. Otherwise it queues while
-   offline, and queues *behind* anything already pending, so a new add never jumps ahead of one
-   still waiting to send.[^outbox]
-3. A live write sets `loading = true` and calls `SpreadsheetService.addExpense(sheetId,
-   expense)`.
-4. That issues **one `:batchUpdate`** with two requests:[^svc]
-   - `insertDimension` — ROWS, `startIndex: 0`, `endIndex: 1`, `inheritFromBefore: false`
-     (a blank row at the very top, not inheriting formatting from below);
-   - `updateCells` — `fields: 'userEnteredValue'` at row 0, writing
-     A=`category` (string), B=`comment` (string), C=`amount` (number),
-     D=`getSerialNumberFromDate(date)` (number),
-     E=`amount` **only when `isInDebt`**, otherwise `undefined`.
+1. `onSubmit` prevents native submit, returns unless the form is valid, and dispatches
+   `addExpense({ expense, sheetId: sheet.id })`, then resets the form.
+2. `addExpense$` writes live, or queues in the [write outbox](../architecture/write-outbox.md)
+   when offline or when records are already pending.[^effects]
+3. A live write sets `loading`, then `SpreadsheetService.addExpense` sends **one
+   `:batchUpdate`**:[^svc]
+   - `insertDimension` ROWS `[0, 1)`, `inheritFromBefore: false`;
+   - `updateCells` at row 0, `fields: 'userEnteredValue'`, with the five cells from
+     `toExpenseCells` ([row mapping](../domain/expense.md#row-mapping)).
 
-   A queued expense is sent through this exact same call, with the same five fields, once the
-   outbox's drain pass reaches it — offline or behind-the-queue routing changes only *when* the
-   request goes out, never its shape.
-5. On a live success the effect maps to `loadExpenses({ sheetId, from: expense.date, to:
-   date+1 })` — a **one-day** re-read that replaces the table contents rather than patching
-   state locally. `loading` is cleared by `loadExpenses$`. A queued expense doesn't appear in
-   the table until it is actually sent and the outbox's own post-drain reload runs.
+   A queued expense is later sent through the same call.
+4. On live success the effect dispatches `loadExpenses({ sheetId, from: date, to: date + 1 day })`,
+   which replaces the table with that one day. `loadExpenses$` clears `loading`.
 
-# Notes and consequences
+# Outcomes
 
-- Because the write is an insert at row 0, sheets are ordered newest-first, which
-  [delete](delete-expense.md) relies on.
-- The follow-up read narrows to the submitted expense's day. If the user had a wider range
-  displayed (for example after picking an older date), the table collapses to that day.
-- `exhaustMap` means a double-tap on **Add Expense** while the first write is in flight is
-  dropped, which is the de-facto duplicate guard for a *live* write.
-- **Loading, by path:** offline or behind-the-queue routing never touches `loading` at all — no
-  spinner for a queue write. A live write that fails `retryable`/`auth` clears `loading` once
-  and queues the expense instead of losing it. A live write that fails for any other reason
-  (`terminal`) logs, clears `loading`, and dispatches `operationFailed({ source: 'addExpense$',
-  message: "Couldn't save that expense. Please try again." })` (opens a snackbar via
-  `reportFailure`) — the typed values are already gone from the form because the reset happens
-  optimistically on submit, and nothing restores them. This effect keeps responding to further
-  `addExpense` actions after any of these outcomes; see
-  [state management](../architecture/state-management.md).
-- The date written is the local wall-clock time; see
-  [date encoding](../domain/spreadsheet-layout.md). A queued expense's date is converted at
-  *send* time, under the device's timezone at that instant — see
-  [known issues](../constraints/known-issues.md) for the residual gap this opens.
+| Path | `loading` | User sees |
+|---|---|---|
+| live success | on → off | table reloads to that day |
+| offline, or behind the queue | untouched | polite announcement "Expense saved on this device…"; outbox badge |
+| live fails `retryable`/`auth` | on → off | queued as above |
+| live fails `terminal` | on → off | toast "Couldn't save that expense. Please try again." |
+| outbox cannot persist | — | same toast |
+
+The form was already reset, so a failed entry must be retyped. A queued expense appears in
+the table only after it is sent and the post-drain reload runs (only on `/dashboard`).[^outbox]
+
+`exhaustMap` drops a second **Add Expense** while a live write is in flight.
+
+The date is written as local wall-clock time; a queued expense is converted at send time
+([known issues](../constraints/known-issues.md) #27).
 
 [^html]: Dashboard form template
 [^page]: DashboardPageContainer
+[^effects]: addExpense$
 [^svc]: SpreadsheetService.addExpense
 [^outbox]: OutboxEffects

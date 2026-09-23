@@ -1,5 +1,62 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-23 — logout revokes the redirect grant
+
+* **Fix (code)**: `logout()` revokes `revocableToken()`, a per-strategy method. The redirect
+  strategy returns the stored refresh token, else the `redirect-token` access token; the popup
+  strategy returns the `token` access token. Known issue #30 is closed.
+* **Docs**: [authentication](flows/authentication.md), [security posture](constraints/security-posture.md),
+  [OAuth](interfaces/google-oauth.md), [local storage](interfaces/local-storage.md),
+  [known issues](constraints/known-issues.md), [testing](operations/testing.md)
+  (new `security.service.spec.ts`).
+
+## 2026-09-23 — bundle re-validation
+
+Re-validated every concept against the source at commit `6cad020` and rewrote the bundle
+for accuracy and brevity. No code changed.
+
+* **Fix (stale facts)**:
+  - [dependency wiring](architecture/dependency-wiring.md), [toolchain](systems/toolchain.md),
+    [app system](systems/exp-spsh-app.md): the app is zoneless
+    (`provideZonelessChangeDetection`), `zone.js` is not a dependency, and `main.ts` registers
+    no global error handlers. `provideHttpClient` includes `withXhr()`. The log overlay is
+    always installed (not a hard-coded `loggerType`). `PickerService`, `OutboxDrainLock`, and
+    `IndexedDbOutboxStorage` added to the root-provided list; `initialUrlParams` documented.
+  - [PWA](architecture/pwa-and-service-worker.md), [gviz](interfaces/gviz-query.md),
+    [Google backend](systems/google-workspace.md): `docs.google.com` is not in the service
+    worker `dataGroups`.
+  - [spreadsheet layout](domain/spreadsheet-layout.md), [troubleshooting](operations/troubleshooting.md):
+    serial → `Date` uses the offset at the stored instant, so DST no longer shifts old rows.
+    Column order is centralised in `EXPENSE_COLUMNS` (`expense-row.ts`).
+  - [load expenses](flows/load-expenses.md), [gviz](interfaces/gviz-query.md): empty
+    category/amount cells no longer throw (`''` / `0`). Added the outbox reload as a
+    `loadExpenses` caller, and that the latest load re-runs on every reconnect.
+  - [initial setup](flows/initial-setup.md), [troubleshooting](operations/troubleshooting.md):
+    setup has a `catchError` that stops the spinner; removed the pasted-URL symptom.
+  - [local storage](interfaces/local-storage.md): `put` skips only `null`/`undefined`.
+  - [manage categories](flows/manage-categories.md), [delete expense](flows/delete-expense.md):
+    rollback snapshots are `Memento`s, not `categoriesBackUp`/`deletedExpenseBackup` fields.
+  - [statistics](flows/statistics.md), [expenses table](interfaces/expenses-table-component.md):
+    no `detectChanges()` calls; no explicit `OnPush` (Angular 22 default); the Debt column
+    shows only when some row is in debt.
+  - [Sheets API](interfaces/google-sheets-api.md): removed the deleted `append` method.
+  - [OAuth](interfaces/google-oauth.md): GIS is the vendored `src/scripts/client.js`.
+  - [configuration](operations/configuration-and-secrets.md): `keys.json` has `APP_ID`;
+    environment files hold only `production` and are unused; `BACK` constant removed.
+  - [toolchain](systems/toolchain.md): ESLint config exists; `paths` replaces `baseUrl`.
+  - [testing](operations/testing.md): only `app.component.spec.ts` is skipped; coverage
+    table rewritten for the current specs.
+  - [working agreements](constraints/working-agreements.md): rules come from root `CLAUDE.md`
+    and `.claude/rules/`; current `.claude/settings.json` permissions and hooks; the
+    `settings copy.json` variant no longer exists.
+  - [source map](references/source-map.md): removed `test.ts`, `OKF/SPEC.md`, branch list;
+    added `expense-row.ts`, `picker/`, `harness.sh`, `docs/`.
+  - Frontmatter sources pointing at `.github/CLAUDE.md` and `.github/rules/` now point at
+    `CLAUDE.md` and `.claude/rules/`.
+* **Add** [known issues](constraints/known-issues.md): #28 localStorage persist effects fail
+  silently and stop for the session; #29 CI writes an empty `APP_ID`; #30 logout does not
+  revoke the redirect strategy's token; #31 the deploy job is not guarded to `master` pushes.
+
 ## 2026-09-20
 
 Implemented item 9 of [the backend-less assessment](../docs/backend-less-assessment.md):

@@ -4,7 +4,7 @@ title: Troubleshooting
 description: Symptom-to-cause table for the failures this architecture actually produces, and where to look first.
 tags: [operations, troubleshooting, debugging, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: effects
     resource: ../../src/@state/app.effects.ts
@@ -13,58 +13,41 @@ sources:
     resource: ../../src/logger.ts
     title: On-page logger
   - id: dev
-    resource: ../../.github/rules/development.md
+    resource: ../../.claude/rules/development.md
     title: Pitfalls and notes
 ---
 
-# First move, always
+# First move
 
-Open the **on-page log overlay** (the `memory` icon). Every effect's `catchError` calls
-`log(e)` with the full, unredacted error, and the interceptor logs every `METHOD url` — the
-overlay is the only place to see *why* something failed; a snackbar only tells the user
-*that* it failed.[^logger] The 7 remote-calling effects (`loadCategories$`, `addCategory$`,
-`deleteCategory$`, `updateCategoryPosition$`, `addExpense$`, `deleteExpense$`,
-`loadExpenses$`) open a `MatSnackBar` with one of 7 fixed, plain-language strings on
-failure — but that toast never contains the raw error, an HTTP status, or which request
-failed, only a generic "couldn't do X" per effect. The overlay is the only place with the
-actual `HttpErrorResponse`/thrown value. The 4 localStorage-only persist effects and the
-setup pipeline have **no** `catchError` at all and are fully silent — see
-[known issues](../constraints/known-issues.md) items 20 and 9. The overlay has a copy
-button, so a user report can include the trace.
+Open the **log overlay** (the `memory` icon at the bottom).[^logger] It has the raw error
+from every `catchError`, every `METHOD url` from the interceptor, and a copy button for bug
+reports. Toasts only say *that* something failed, with fixed wording; setup failures and
+localStorage write failures show nothing at all.[^effects]
 
-Add `?logger=1` to the URL to also get **NgRx DevTools** and see which action stalled.
+Add `?logger=1` before the `#` to also load NgRx DevTools and see which action stalled.
 
 # Symptoms
 
 | Symptom | Likely cause | Check |
 |---|---|---|
-| Spinner never stops on the setup page | the setup pipeline has no `catchError`; the request failed | log overlay; usually no edit rights on the spreadsheet, or offline |
-| "cannot read spreadsheet id." | the pasted value matched neither regex | paste the full `docs.google.com/spreadsheets/d/<id>/edit` URL |
-| Redirected to `#/setup` on every visit | `isSetupReady` fails: `spreadsheetId` or `categoriesSheetId` missing | localStorage keys; a `logout()` clears **all** storage |
-| Login loops back to Google | redirect URI mismatch, or consent screen in testing mode (7-day refresh tokens) | Cloud console: authorized redirect URI must equal `origin + pathname` |
-| Everything 401s after a while | refresh token revoked or expired | log out and back in; see [authentication](../flows/authentication.md) |
-| "Invalid response format from Google Sheets API" | the gviz endpoint returned a non-JSON page (auth failure, wrong `gid`) or changed its envelope | [gviz interface](../interfaces/gviz-query.md) |
-| Expense table silently keeps old rows after a reload | a row with an empty category or amount cell threw inside the row mapper | inspect the sheet for blank cells in A or C |
-| Deleted expense reappears | the row was older than the newest 100 and never actually deleted | [delete flow](../flows/delete-expense.md) |
-| Category order reverts after a "Couldn't save the new order" toast | expected behaviour, not a bug: `updateCategoryPosition$` rolls back the optimistic order and shows the toast when the write fails | log overlay for the underlying cause; [known issues](../constraints/known-issues.md) |
-| Setting the spreadsheet id, sheet id, categories-sheet id, or categories again still updates the app in-session, but after a reload the value reverts to the last one successfully persisted (or is absent if none was), with no toast, ever | after one `LocalStorageService.put` failure, the 4 localStorage-only persist effects put `catchError` on the *outer* pipe and just log, with no toast and no `operationFailed`; a thrown error there completes that effect's stream for the rest of the session, so the reducer keeps applying the action in-session but the localStorage write never runs again | log overlay; [state management](../architecture/state-management.md) |
-| App will not boot at all, blank page | corrupt JSON in a localStorage key throws during store construction | clear site data for the origin |
-| Source edits never appear in dev even though `watch` rebuilds | `npm run build` ran while `watch` was up and left a production `index.html` in `dist/exp-spsh` that the watcher does not rewrite | `dist/exp-spsh/index.html` loads `main-<hash>.js` instead of `main.js`; restart `watch`. See [build and serve](build-and-serve.md) |
-| `ERR_INTERNET_DISCONNECTED` when opening the app offline, although it was opened online before | the generated `ngsw.json` caches nothing: its asset groups have empty `urls` (a glob in `ngsw-config.json` was written as a deployed URL such as `/exp-spsh/*.js`), or its URLs lack `/exp-spsh/` (`baseHref` is not `/exp-spsh/`) | inspect `ngsw.json` in the build output; see [PWA](../architecture/pwa-and-service-worker.md) |
-| Stale UI after a rebuild in dev | the service worker is enabled in development | unregister the worker in DevTools > Application, hard reload |
-| iOS PWA crashes or fails to cache | the postinstall ngsw patch was not applied | re-run `npm install` without `--ignore-scripts`; check the script's regex match output |
-| Times shifted by an hour on old rows | the serial-number reverse conversion uses today's timezone offset | [date encoding](../domain/spreadsheet-layout.md) |
-| A person's name is truncated in the selector | the UI shows `title.split('_')[1]`, and the name contains `_` | rename the tab |
-
-# Where errors go to die
-
-Every effect's `catchError` returns `EMPTY` after logging, and `SpreadsheetService` never
-inspects status codes.[^effects] For the 7 remote-calling effects there is a toast and an
-`AppState.lastError` record — but the toast copy is generic ("Couldn't save that expense.
-Please try again."), never the actual status/message, so **diagnosis of the cause starts
-from the log overlay or the network tab, never from the UI.** The 4 localStorage-only
-persist effects and the setup pipeline are fully silent, with no toast, no error state, and
-no failure action at all — the log overlay is the only place to see what happened.
+| Setup spinner stops, nothing happens | the setup pipeline failed and only logged | overlay; no edit rights, offline, or Picker/`APP_ID` problem ([setup](../flows/initial-setup.md)) |
+| Setup fails on the deployed site but works locally | CI builds with an empty `APP_ID` | [known issues](../constraints/known-issues.md) #29 |
+| Redirected to `#/setup` on every visit | `spreadsheetId` or `categoriesSheetId` missing | localStorage; logout clears it |
+| Login loops back to Google | redirect URI mismatch, or consent screen in testing mode (7-day refresh tokens) | Cloud console: redirect URI must equal `origin + pathname` |
+| Everything fails after a while | refresh token revoked or expired | log out and in ([authentication](../flows/authentication.md)) |
+| "Couldn't load your expenses" toast | any `loadExpenses` failure, including `Invalid response format from Google Sheets API` (gviz returned HTML: auth failure, wrong `gid`, or format change) or a malformed date cell | overlay; [gviz](../interfaces/gviz-query.md) |
+| Deleted expense reappears with a toast | older than the newest 100 rows, or the request failed | [delete flow](../flows/delete-expense.md) |
+| Category order reverts with a toast | the reorder write failed; rollback is intended | overlay |
+| A setup value reverts after reload, no toast | a `localStorage` write threw once; that persist effect has stopped for the session | overlay; known issues #28 |
+| Outbox badge never clears | a drain precondition fails (offline, signed out, no spreadsheet id) or requests keep failing `retryable`/`auth` | overlay lines `OutboxEffects: precondition …`; [write outbox](../architecture/write-outbox.md) |
+| "…belongs to a different spreadsheet" notice | a queued record was made for another spreadsheet | Retry after switching back, or Discard |
+| Queued expenses survive logout | the IndexedDB outbox is not cleared | DevTools → Application → IndexedDB → delete `exp-spsh-outbox` |
+| Blank page, app will not boot | corrupt JSON in a localStorage key | clear site data |
+| Source edits never appear with `watch` running | a production build left a hashed `index.html` in `dist/exp-spsh` | restart `watch` ([build and serve](build-and-serve.md)) |
+| Stale UI after a rebuild in dev | the service worker runs in development | unregister it or hard-reload |
+| `ERR_INTERNET_DISCONNECTED` offline despite a prior visit | `ngsw.json` has empty `urls` (glob written as `/exp-spsh/…`) or URLs lack `/exp-spsh/` | inspect `ngsw.json` ([PWA](../architecture/pwa-and-service-worker.md)) |
+| iOS PWA crashes or fails to cache | the postinstall ngsw patch was not applied | reinstall without `--ignore-scripts`; check the script's match output |
+| A person's name is truncated in selectors | the UI shows `title.split('_')[1]` and the name contains `_` | rename the tab |
 
 [^logger]: On-page logger
 [^effects]: Effect error handling

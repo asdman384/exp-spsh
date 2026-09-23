@@ -43,6 +43,7 @@ jobs:
           API_KEY: ${{ secrets.API_KEY }}
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          APP_ID: ${{ secrets.APP_ID }}
 
         run: |
           keys='{ "CLIENT_ID": "'

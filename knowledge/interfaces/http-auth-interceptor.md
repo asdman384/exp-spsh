@@ -1,10 +1,10 @@
 ---
 type: Interface
 title: ExpAuthInterceptor
-description: The single HTTP choke point - it refreshes a token before every request and attaches the bearer header.
+description: The single HTTP choke point - it obtains a valid token before every request and attaches the bearer header.
 tags: [interface, http, auth, interceptor]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: int
     resource: ../../src/http-interceptors/auth-interceptor.ts
@@ -18,7 +18,7 @@ sources:
 
 ```ts
 intercept(req, next) {
-  if (req.url.includes('oauth2.googleapis.com/token')) return next.handle(req);   // escape hatch
+  if (req.url.includes('oauth2.googleapis.com/token')) return next.handle(req);
 
   return this.security.refreshToken().pipe(
     take(1),
@@ -30,24 +30,20 @@ intercept(req, next) {
 }
 ```
 
-It is a class-based interceptor registered as a multi-provider on `HTTP_INTERCEPTORS`, which
-is why the app calls `provideHttpClient(withInterceptorsFromDi())`.[^cfg]
+A class-based interceptor on `HTTP_INTERCEPTORS`, hence
+`provideHttpClient(withXhr(), withInterceptorsFromDi(), ...)`.[^cfg]
 
-# Behaviour worth knowing
+# Behaviour
 
-- **Every request awaits `refreshToken()`.** With a valid stored token that resolves
-  synchronously (`of(token)`), so the cost is negligible; with an expired one the request is
-  held until a new token arrives, and with no token at all the redirect strategy navigates
-  the whole page away to Google — an in-flight request simply never completes.
-- **The token endpoint is excluded by substring match**, preventing infinite recursion when
-  `refreshToken()` itself performs the exchange.
-- `take(1)` is essential: `refreshToken()` returns long-lived subjects in both strategies.
-- **No response handling.** There is no 401 retry, no error mapping, and no logout on
-  auth failure — a rejected request propagates to the caller, where effects swallow it.
-- It logs `"<METHOD> <url>"` for every request into the on-page logger, which makes the
-  logger overlay an effective request trace during debugging.
-- `refreshToken()` is typed loosely here as `{ access_token: string }`, which is what lets
-  the same interceptor serve both security strategies
-  ([authentication](../flows/authentication.md)).
+- **Every request waits for `refreshToken()`.** A valid stored token returns synchronously;
+  an expired one holds the request until a new token arrives; with none, the redirect
+  strategy navigates the page to Google and the request never completes.
+- **The token endpoint is skipped**, preventing recursion when `refreshToken()` itself POSTs.
+- `take(1)` matters: both strategies return long-lived subjects.
+- **No response handling** — no 401 retry, no logout on auth failure. Errors reach the caller
+  (effects toast; the outbox classifies them).
+- Each request is logged as `"<METHOD> <url>"`, so the log overlay is a request trace.
+- The token is typed loosely as `{ access_token: string }`, so one interceptor serves both
+  strategies ([authentication](../flows/authentication.md)).
 
 [^cfg]: HTTP_INTERCEPTORS registration

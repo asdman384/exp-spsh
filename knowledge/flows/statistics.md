@@ -4,7 +4,7 @@ title: Monthly statistics and drill-down
 description: Person/year/month selection, client-side aggregation by category, the drill-down into one category, and the View Transitions animation.
 tags: [flow, statistics, aggregation, view-transitions]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: stats
     resource: ../../src/modules/dashboard/statistics/statistics.container.ts
@@ -19,67 +19,57 @@ sources:
 
 # Selection
 
-Three `mat-tab-group` carousels, each a selector rather than a tab panel:[^statshtml]
+Three `mat-tab-group`s used as carousels:[^statshtml]
 
 | Carousel | Items |
 |---|---|
 | User | one tab per data sheet, labelled `title.split('_')[1]` |
-| Year | `currentYear` down to **2019** (`new Date().getFullYear() - 2018` entries) |
-| Month | `Jan..Dec`, from `new Date(0, i).toLocaleString('default', { month: 'short' })` |
+| Year | current year down to 2019 |
+| Month | `Jan`–`Dec` from `toLocaleString('default', { month: 'short' })` |
 
-Any change calls `formChanged(sheetIndex, yearIndex, monthIndex, sheets)`, which resets the
-table animation and dispatches [`loadExpenses`](load-expenses.md) for the whole month.
-The initial selection takes the current sheet from the store and the current month from the
-clock; `ngAfterViewInit` scrolls the month carousel so the current month is visible when it
-would otherwise be off-screen (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).
+Any change calls `formChanged`, which clears the table animation and dispatches
+[`loadExpenses`](load-expenses.md) for the whole month. The initial selection is the current
+sheet and the current month; `ngAfterViewInit` scrolls the month carousel so the current
+month is visible (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).[^stats]
 
 # Aggregation
 
-The displayed rows come from an aggregator function held in a `BehaviorSubject`:[^stats]
+Displayed rows come from an aggregator held in a `BehaviorSubject`:
 
 ```
 aggregator$ --switchMap--> expensesSelector --map(fn)--> startViewTransition --> table
 ```
 
-- **Default `groupByCategory`** — group by `category`, sum `amount`, emit one
-  `{ category, amount }` per group. Rows have no `date`/`comment`, so the table hides those
-  columns automatically.
-- **`filterByCategoryName(name)`** — keep only that category, sort newest-first, and project
-  to `{ amount, comment, date }`. Dropping `category` is what makes the table swap its
-  columns on drill-down.
+- **`groupByCategory`** (default) — one `{ category, amount }` per category, amounts summed.
+  The table hides the other columns because they have no data.
+- **`filterByCategoryName(name)`** — that category's rows, newest-first, projected to
+  `{ amount, comment, date }`.
 
-Both are pure module-level functions; no aggregation happens server-side.
+All aggregation is client-side.
 
 # Drill-down and back
 
-Clicking a **category** cell emits `cellClick`; the handler ignores clicks on other
-columns and on the literal `TOTAL` category,[^consts] then sets `selectable = false`,
-plays the `straight` animation, records `selectedCategory`, and pushes the filter
-aggregator. The undo button calls `unCategory()`, which restores the grouping aggregator and
-plays the `reverse` animation.
+Clicking a **category** cell (not `TOTAL`, not another column)[^consts] sets
+`selectable = false`, plays the `straight` animation, records `selectedCategory`, and pushes
+the filter aggregator. The undo button (`unCategory()`) restores grouping and plays `reverse`.
 
 # Total
 
-The table is rendered with `[selected]="expenses"` (everything preselected) and
-`[selectable]="selectable"`. Its `selectionChange` output feeds
-`total = sum(Number(amount))` followed by an explicit `cd.detectChanges()`. So the **Total
-line reflects the checked rows**, letting the user tick categories off to see a partial sum.
-The label shows `selectedCategory ?? 'Total'`.
+The table gets `[selected]="expenses"` (all rows pre-selected) and
+`[selectable]="selectable"`. `selectionChange` sets `total = sum(Number(amount))` of the
+checked rows, so unticking categories shows a partial sum. The label is
+`selectedCategory ?? 'Total'`.
 
 # Animation
 
-`startViewTransition` wraps each emission in `document.startViewTransition(...)` when the
-browser supports it, warning `View transitions unsupported` and updating directly otherwise.
-`tableAnimation(direction)` toggles the CSS classes `summary-table-straight` /
-`summary-table-reverse` on the table element; the route's `canDeactivate` clears them on
-leave ([routing](../architecture/routing-and-guards.md)).
+Each emission runs inside `document.startViewTransition(...)` when supported; otherwise it
+updates directly and warns `View transitions unsupported`. `tableAnimation(direction)`
+toggles `summary-table-straight` / `summary-table-reverse` on the table element; the route's
+`canDeactivate` clears them ([routing](../architecture/routing-and-guards.md)).
 
-`summaryTable` is an optional `viewChild('summaryTable', { read: ElementRef })` signal, read
-with `()?.` because the table sits inside an `@if` and because `tableAnimation` can run before
-the view exists — the `sheetsSelector` subscription in the constructor calls `formChanged`,
-which calls `tableAnimation('none')`, well before `ngAfterViewInit`. `monthSelector` is a
-required `viewChild.required('monthSelector', { read: MatTabGroup })` signal, read only in
-`scrollToCurrentMonth()`, which `ngAfterViewInit` calls once the view is guaranteed to exist.
+`summaryTable` is an optional `viewChild` read with `()?.`, because `formChanged` runs from
+the constructor before the view exists. `monthSelector` is `viewChild.required`, read only
+after view init.
 
 [^statshtml]: Statistics template
 [^stats]: StatisticsContainer

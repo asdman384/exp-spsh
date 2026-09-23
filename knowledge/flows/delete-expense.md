@@ -4,7 +4,7 @@ title: Delete an expense
 description: Swipe-to-delete with an optimistic store update, a re-read to resolve the row index, and rollback on failure.
 tags: [flow, expense, delete, optimistic-update]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: effects
     resource: ../../src/@state/app.effects.ts
@@ -14,67 +14,43 @@ sources:
     title: ExpensesTableComponent drag handling
   - id: helpers
     resource: ../../src/shared/helpers/index.ts
-    title: isExpenseEqual
-  - id: commit
-    resource: ../../.git
-    title: commit 2ddd6c5 "delete expense - implement optimistic update"
+    title: isExpenseEqual, Memento
 ---
 
 # Trigger
 
-Only on the dashboard, where the table is rendered with `[draggable]="true"`. The user drags
-a row horizontally (`cdkDragLockAxis="x"`); when the drag ends past
-`DELETE_THRESHOLD = 100` px the row is flung off-screen
-(`setFreeDragPosition({ x: window.outerWidth, y: 0 })`) and `deleteRow` emits. Below the
-threshold the row springs back via `event.source.reset()`. A placeholder showing a delete
-icon tracks the row while dragging.[^table]
-
-The container forwards it as `deleteExpense({ expense, sheet })` using the **current** sheet.
+Dashboard only (`[draggable]="true"`). A row dragged horizontally past 100 px is flung
+off-screen and `deleteRow` emits; below that it springs back.[^table] The container
+dispatches `deleteExpense({ expense, sheet })` with the current sheet. There is no
+confirmation and no offline queueing.
 
 # Steps
 
-`deleteExpense$` is the most intricate effect in the app.[^effects]
+`deleteExpense$`:[^effects]
 
-1. **Optimistic removal.** Find the expense in the current `expenses` array with
-   [`isExpenseEqual`](../domain/expense.md); if found, save
-   `deletedExpenseBackup = { expense, index }` and dispatch `storeExpenses` without it. If
-   not found, clear the backup (nothing to roll back).
-2. **Resolve the real row.** Set `loading = true` and call
-   `loadLastExpenses(sheet.title, 100)` — a `values.get` over `A1:E100` of that tab.
-3. **Delete by index.** Find the matching row in that fresh array; its array index *is* the
-   sheet row index because the sheet is newest-first and the read starts at row 1. Issue
-   `deleteSheetRow(sheet.id, i)` -> `deleteDimension` for `[i, i+1)`. If no match is found,
-   the effect throws `cannot find expense in the last 100 rows`, which step 5 catches.
-4. **Settle.** Clear the backup and emit `loading(false)`.
-5. **Rollback.** On any error (including the "not found" throw from step 3): log it and
-   dispatch `operationFailed({ source: 'deleteExpense$', message: "Couldn't delete that
-   expense. It's back in your list." })`, which opens a snackbar, on **both** exits from this
-   step — the early return when there was no backup to restore, and the restore pipeline
-   below. When a backup exists, the effect also re-reads the current expenses, splices the
-   row back at `min(backup.index, length)` when it is not already present, clears `loading`,
-   and dispatches `storeExpenses` with the restored array.
+1. **Optimistic removal.** Find the expense in `expenses` with
+   [`isExpenseEqual`](../domain/expense.md#identity). If found, save `{ expense, index }` in
+   a `Memento` and dispatch `storeExpenses` without it; otherwise clear the memento.
+2. **Resolve the row.** `loading(true)`; `loadLastExpenses(sheet.title, 100)` — `values.get`
+   over `A1:E100`.
+3. **Delete by index.** The matching index in that array is the sheet row index (newest-first,
+   no header). `deleteSheetRow(sheet.id, i)` → `deleteDimension [i, i+1)`. No match throws
+   `cannot find expense in the last 100 rows`.
+4. **Success.** Clear the memento; `loading(false)`.
+5. **Failure** (any error, including step 3's throw): log it, dispatch
+   `operationFailed` ("Couldn't delete that expense. It's back in your list."), and clear
+   `loading`. If the memento holds a backup, re-insert the row at `min(index, length)` unless
+   it is already present, via `storeExpenses`.
 
-# Constraints this flow carries
+# Constraints
 
-- **Only the newest 100 rows are deletable.** Anything older is not found in step 3, which
-  throws and triggers step 5's rollback: the optimistically-removed row reappears and a
-  toast reports the failure — the row was never actually deleted from the spreadsheet.
-- **The row index is positional.** If the sheet is edited or sorted in Google Sheets between
-  step 2 and step 3, the wrong row can be deleted. The re-read in step 2 exists precisely to
-  narrow that window.
-- **Duplicate rows are ambiguous.** Two identical expenses (same second, amount, category,
-  comment) match the same index; the first is removed.
-- The whole flow uses `exhaustMap`, so a second swipe during an in-flight delete is dropped —
-  which also means the second row stays visually flung off-screen until the next data change
-  resets it (a component `effect()` tracking `dataSource()` calls `lastDeletedDragRow.reset()`).
-
-- `deleteExpense$`'s `catchError` sits inside its `exhaustMap` projection (like every other
-  remote effect; see [state management](../architecture/state-management.md)), so a failed
-  delete only completes that one attempt's inner observable — logging, rolling back the
-  optimistic removal, and toasting. The effect keeps responding to further `deleteExpense`
-  actions afterwards.
-
-There is no confirmation dialog; `ExpDialogComponent` exists but is not wired to this flow.
+- **Only the newest 100 rows are deletable**; older ones roll back with the toast
+  ([known issues](../constraints/known-issues.md) #2).
+- **The index is positional.** Editing or sorting the sheet between steps 2 and 3 can delete
+  the wrong row (#3).
+- **Duplicates are ambiguous**: identical expenses match the first row.
+- `exhaustMap` drops a second swipe during an in-flight delete; that row stays flung until the
+  next `dataSource` change, when the table's `effect()` resets it.
 
 [^table]: ExpensesTableComponent drag handling
 [^effects]: deleteExpense$

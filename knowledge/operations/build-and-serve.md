@@ -4,7 +4,7 @@ title: Build and run locally
 description: The exact local loop for this project - why `npm run serve` is not `ng serve`, and the URL and query flags that matter.
 tags: [operations, build, dev-server, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5, at: 2026-09-05T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
   - id: pkg
     resource: ../../package.json
@@ -20,78 +20,57 @@ sources:
     title: Verification harness
 ---
 
-# Prerequisite
+# Prerequisites
 
-Create `keys.json` at the repo root from `keys.example.json` before the first build. It is
-imported at compile time, so **the build fails to resolve without it**
-([configuration and secrets](configuration-and-secrets.md)).
-
-On Windows, allow script execution first:
-
-```powershell
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-```
+- `keys.json` at the repo root, copied from `keys.example.json` with all four fields. It is
+  imported as a module, so a missing file or field fails the build
+  ([configuration](configuration-and-secrets.md)).
+- `npm install` **with** scripts, so `postinstall` patches the service worker.
+- On Windows, `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser` may be needed for npm
+  shims.
 
 # The local loop
 
-This project does **not** use `ng serve`. `npm run serve` starts `http-server` over the
-`dist/` directory, so the loop is two terminals:[^pkg]
+Two terminals; `ng serve` is not used:[^pkg]
 
 ```
-# terminal 1 - incremental build into dist/exp-spsh
-npx npm run watch
-
-# terminal 2 - static server on port 4200, caching disabled (-c-1)
-npx npm run serve
+npm run watch     # incremental development build into dist/exp-spsh
+npm run serve     # http-server on :4200 over dist/, caching disabled (-c-1)
 ```
 
-Then open **http://localhost:4200/exp-spsh/** — the `exp-spsh` path segment is required
-because the server roots at `dist/` while the build writes into `dist/exp-spsh`, and because
-`baseHref` is `/exp-spsh/`, so the page and the service worker manifest request every asset
-under that path ([PWA](../architecture/pwa-and-service-worker.md)).
+Open **http://localhost:4200/exp-spsh/**. The path segment is required: the server roots at
+`dist/`, and `baseHref` is `/exp-spsh/`, so every asset URL carries it. There is no
+live reload; refresh after a rebuild.
 
-The page does **not** live-reload. After a rebuild, refresh manually.
+# Production build and harness
 
-# Production build
+`npm run build` → `dist/exp-spsh`, hashed filenames, budgets enforced.[^ng] CI runs the same
+command.
 
-```
-npm run build          # ng build --configuration=production
-```
+`bash scripts/harness.sh` runs lint, `tsc -b` over app + specs, a production build into
+`tmp/harness-dist`, and the tests; flags `--lint`, `--typecheck`, `--build`, `--test`,
+`--include <spec>` select layers. Its build never touches `dist/exp-spsh`, so it can run
+alongside the loop.[^harness]
 
-Output: `dist/exp-spsh`, hashed filenames, budgets enforced (initial 2.5 MB warn / 5 MB
-error).[^ng] This is exactly what CI runs
-([CI and deployment](ci-and-deployment.md)).
-
-`scripts/harness.sh` runs the same production build with
-`--output-path=tmp/harness-dist`, so its output never lands in `dist/exp-spsh` and the harness
-can run while the local loop is up.[^harness]
-
-# Useful runtime flags
+# Runtime flags
 
 | URL | Effect |
 |---|---|
-| `.../#/dashboard` | normal entry (root redirects here) |
-| `...?logger=1#/dashboard` | additionally fetches and registers **NgRx StoreDevtools** (dynamically imported, so it is otherwise not downloaded at all) |
-| `.../#/playground` | unguarded Angular-features sandbox |
+| `…/exp-spsh/#/dashboard` | normal entry (root redirects here) |
+| `…/exp-spsh/?logger=1#/dashboard` | also loads NgRx StoreDevtools (the query must be before `#`) |
+| `…/exp-spsh/#/playground` | unguarded sandbox |
 
-The on-page **log overlay** (the `memory` icon in the corner) is always active regardless of
-the flag — it is hard-coded on in `src/logger.ts`. Tap it to expand; it has copy and clear
-buttons and records every HTTP request through the interceptor.
+The on-page **log overlay** is always present: tap the `memory` icon at the bottom to slide it
+up. It has copy and clear buttons and records every HTTP request.
 
-# Things that will bite
+# Things that bite
 
-- **The service worker is enabled in development.** Stale assets after a rebuild are
-  expected; unregister the worker in DevTools > Application, or hard-reload.
-- **`npm run build` and `npm run watch` share `dist/exp-spsh`.** A production build while the
-  watcher runs deletes the dev output and writes a production `index.html` that loads hashed
-  bundles (`main-<hash>.js`). The watcher's incremental rebuilds emit only the files it sees
-  as changed — `main.js`, never `index.html` — so the page keeps loading the production
-  bundle and source edits never appear. Restart `watch` to get a full dev build; restarting
-  `serve` changes nothing.
-- Google OAuth requires `http://localhost:4200/exp-spsh/` to be a registered redirect URI in
-  the Cloud console, or login fails with a redirect_uri mismatch.
-- `npm install` re-runs the postinstall patch on `node_modules/@angular/service-worker`;
-  installing with `--ignore-scripts` silently produces an iOS-broken worker.
+- **The service worker runs in development.** Unregister it (DevTools → Application) or
+  hard-reload after a rebuild.
+- **`npm run build` while `watch` runs** replaces the dev output with a production
+  `index.html` that loads `main-<hash>.js`. The watcher never rewrites `index.html`, so edits
+  stop appearing; restart `watch`. The harness avoids this by building elsewhere.
+- Google OAuth needs `http://localhost:4200/exp-spsh/` registered as a redirect URI.
 
 [^pkg]: npm scripts
 [^ng]: Build configurations
