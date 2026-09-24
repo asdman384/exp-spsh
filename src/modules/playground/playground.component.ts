@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { Component, inject, NgZone, OnInit } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { catchError, debounceTime, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, switchMap, timer } from 'rxjs';
+import { catchError, debounceTime, defer, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, switchMap, timer } from 'rxjs';
 import { AppActions } from 'src/@state';
 import { TestPerfComponent } from './test-perf/test-perf.component';
 
@@ -17,10 +17,10 @@ export function searchQuery<T>(
   return pipe(
     debounceTime(300),
     distinctUntilChanged(),
-    switchMap(q => fetch(q).pipe(
+    switchMap(q => defer(() => fetch(q)).pipe(
       map(items => ({ items, loading: false, error: null })),
       startWith({ items: [], loading: true, error: null }),
-      catchError(() => of({ items: [], loading: false, error: 'error' })),
+      catchError(() => of<State<T>>({ items: [], loading: false, error: 'error for ' + q })),
     )),
   );
 }
@@ -43,7 +43,7 @@ export class PlaygroundComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly zone = inject(NgZone);
 
-  protected items: number[] = Array.from({ length: 500 }, () => 1);
+  protected items: number[] = Array.from({ length: 0 }, () => 1);
 
   private readonly obs = new Subject<string>();
 
@@ -69,12 +69,16 @@ export class PlaygroundComponent implements OnInit {
     console.log(`Testing: ${feature}`);
   }
 
+  i = 2;
   onButtonClick() {
-    this.obs.next('test');
+    this.obs.next('test' + this.i++);
   }
 }
 
 function fetchData(query: string): Observable<string[]> {
+  if (query === 'test3') {
+    throw new Error('Simulated error for query: ' + query);
+  }
   // Simulate an API call - replace this with your actual data fetching logic
   return of([`Result for: ${query}`]).pipe(delay(500)); // Simulate network delay
 }

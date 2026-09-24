@@ -100,8 +100,12 @@ Angular's `HttpClient`.
   (database `exp-spsh-outbox`), not `localStorage`, and it **survives logout** — reset it via
   DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. A drain pass holds the Web
   Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
-- **The service worker is enabled in development too**. Stale assets after a rebuild are
-  expected — unregister the worker or hard-reload.
+- **The service worker runs only in production builds.** `SERVICE_WORKER_IN_DEV` in
+  `src/shared/helpers/service-worker-mode.ts` (default `false`) is the one switch for
+  development builds. With it off, `main.ts` unregisters any worker scoped to `/exp-spsh/`
+  left over from an earlier build and deletes its `ngsw:/exp-spsh/…` caches before
+  bootstrap, reloading once if that worker was controlling the page. The dev build still emits
+  `ngsw-worker.js`/`ngsw.json`, so flipping the constant is the whole change.
 - **The hold-to-record voice note lives only in memory.** `VoiceRecorderService`
   (`src/services/voice-recorder/`) holds the latest `VoiceRecording` in a signal — it is not in
   the NgRx store (a `Blob` isn't serialisable) and is never persisted. It survives logout

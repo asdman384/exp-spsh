@@ -11,6 +11,7 @@ import { AppEffects } from 'src/@state/app.effects';
 import { OutboxEffects } from 'src/@state/outbox.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
+import { isServiceWorkerEnabled } from 'src/shared/helpers/service-worker-mode';
 import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
 import { routes } from './app.routes';
 
@@ -56,7 +57,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
       importProvidersFrom([
         BrowserModule,
         ServiceWorkerModule.register('ngsw-worker.js', {
-          enabled: true, // !isDevMode(),
+          enabled: isServiceWorkerEnabled(),
           // Register the ServiceWorker as soon as the application is stable
           // or after 30 seconds (whichever comes first).
           registrationStrategy: 'registerWhenStable:30000'

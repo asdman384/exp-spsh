@@ -65,8 +65,11 @@ up. It has copy and clear buttons and records every HTTP request.
 
 # Things that bite
 
-- **The service worker runs in development.** Unregister it (DevTools → Application) or
-  hard-reload after a rebuild.
+- **The service worker is off in development builds**, and the first load of a dev build
+  removes a worker left by an earlier build (one automatic reload). Set
+  `SERVICE_WORKER_IN_DEV = true` in `src/shared/helpers/service-worker-mode.ts` to test
+  offline/update behaviour locally; then stale assets after a rebuild are expected again.
+  Serving a production build (`npm run build`) always registers the worker.
 - **`npm run build` while `watch` runs** replaces the dev output with a production
   `index.html` that loads `main-<hash>.js`. The watcher never rewrites `index.html`, so edits
   stop appearing; restart `watch`. The harness avoids this by building elsewhere.

@@ -44,7 +44,7 @@ Add `?logger=1` before the `#` to also load NgRx DevTools and see which action s
 | Queued expenses survive logout | the IndexedDB outbox is not cleared | DevTools → Application → IndexedDB → delete `exp-spsh-outbox` |
 | Blank page, app will not boot | corrupt JSON in a localStorage key | clear site data |
 | Source edits never appear with `watch` running | a production build left a hashed `index.html` in `dist/exp-spsh` | restart `watch` ([build and serve](build-and-serve.md)) |
-| Stale UI after a rebuild in dev | the service worker runs in development | unregister it or hard-reload |
+| Stale UI after a rebuild in dev | `SERVICE_WORKER_IN_DEV` is `true`, or `dist/exp-spsh` holds a production build whose worker is serving | unregister it or hard-reload; restart `watch` |
 | `ERR_INTERNET_DISCONNECTED` offline despite a prior visit | `ngsw.json` has empty `urls` (glob written as `/exp-spsh/…`) or URLs lack `/exp-spsh/` | inspect `ngsw.json` ([PWA](../architecture/pwa-and-service-worker.md)) |
 | iOS PWA crashes or fails to cache | the postinstall ngsw patch was not applied | reinstall without `--ignore-scripts`; check the script's match output |
 | A person's name is truncated in selectors | the UI shows `title.split('_')[1]` and the name contains `_` | rename the tab |

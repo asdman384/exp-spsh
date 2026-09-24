@@ -27,9 +27,12 @@ sources:
 
 `main.ts`:[^main]
 
-1. dynamically imports `./logger`, which installs the global `log()`;
-2. awaits `getAppConfig()` (async — it may dynamically import `@ngrx/store-devtools`);
-3. calls `bootstrapApplication(AppComponent, { providers: [provideZonelessChangeDetection(), appConfig.providers] })`.
+1. when the service worker is off (development build, `SERVICE_WORKER_IN_DEV` false),
+   removes a leftover worker and its ngsw caches, and reloads instead of continuing if that
+   worker controlled the page ([PWA](pwa-and-service-worker.md));
+2. dynamically imports `./logger`, which installs the global `log()`;
+3. awaits `getAppConfig()` (async — it may dynamically import `@ngrx/store-devtools`);
+4. calls `bootstrapApplication(AppComponent, { providers: [provideZonelessChangeDetection(), appConfig.providers] })`.
 
 A rejection anywhere in the chain is written to `console.error` and `log()`. The app is
 **zoneless**; `zone.js` is not a dependency.
@@ -44,7 +47,7 @@ A rejection anywhere in the chain is written to `console.error` and `log()`. The
 | `StorageService` | `LocalStorageService` | see [localStorage](../interfaces/local-storage.md) |
 | — | `provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport())` | XHR backend, class-based interceptors |
 | — | `provideRouter(routes, withComponentInputBinding())` + `withViewTransitions(...).ɵproviders` | [routing](routing-and-guards.md) |
-| — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: true, registrationStrategy: 'registerWhenStable:30000' })` | **enabled in development too** |
+| — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: isServiceWorkerEnabled(), registrationStrategy: 'registerWhenStable:30000' })` | production always; development only with `SERVICE_WORKER_IN_DEV` |
 | — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects, OutboxEffects])` | [state](state-management.md) |
 | — | `StoreDevtoolsModule.instrument(...)` | only when the URL has a `logger` query param; the package is a lazy chunk fetched only then |
 

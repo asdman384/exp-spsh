@@ -61,7 +61,8 @@ per component, which keeps datepicker/table/tabs/drag-drop in the lazy dashboard
 
 - Windows/PowerShell development; npm shims may need an execution-policy change
   ([toolchain](../systems/toolchain.md)).
-- The service worker is enabled in development.
+- The service worker runs in production builds only; `SERVICE_WORKER_IN_DEV` turns it on for
+  development builds.
 - `npm install` must run `postinstall` (iOS worker patch).
 
 [^ngsw]: Service worker path globs

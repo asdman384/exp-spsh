@@ -21,6 +21,12 @@ sources:
   - id: appcomp
     resource: ../../src/app/app.component.ts
     title: AppComponent update handling
+  - id: swmode
+    resource: ../../src/shared/helpers/service-worker-mode.ts
+    title: Service worker on/off switch
+  - id: main
+    resource: ../../src/main.ts
+    title: Stale worker removal before bootstrap
 ---
 
 # Installability
@@ -66,10 +72,24 @@ Safari can reject Cache Storage operations and crash the worker without it.
 - The script prints each regex's matches; empty arrays after an Angular upgrade mean the
   upstream code shape changed and the patch no longer applies.
 
-# Update delivery
+# When the worker runs
 
-The worker is `enabled: true` unconditionally, so it runs in local development too — stale
-assets after a rebuild are expected (unregister the worker or hard-reload).
+`ServiceWorkerModule.register` gets `enabled: isServiceWorkerEnabled()`, which is
+`!isDevMode() || SERVICE_WORKER_IN_DEV`.[^swmode]
+
+- **Production builds** (`npm run build`, CI, the harness) always register the worker.
+- **Development builds** (`npm run watch`) register it only when the constant
+  `SERVICE_WORKER_IN_DEV` is `true`; it is `false`, so every refresh loads the fresh build
+  from the server (`http-server -c-1` disables HTTP caching too).
+- With the worker off, `main.ts` calls `removeServiceWorker()` before bootstrap.[^main] It
+  unregisters the registration whose scope equals `document.baseURI` (`…/exp-spsh/`) and
+  deletes Cache Storage entries prefixed `ngsw:/exp-spsh/`; other scopes on the same origin
+  are left alone. If a worker was controlling the page, the running bundle came from its cache,
+  so the page reloads once instead of bootstrapping.
+- Both configurations emit `ngsw-worker.js` and `ngsw.json` (`serviceWorker` is a base
+  build option in `angular.json`), so flipping the constant needs no build config change.
+
+# Update delivery
 
 `AppComponent` maps `SwUpdate.versionUpdates` `VERSION_READY` to `hasUpdates`, shown as a `!`
 badge on the avatar and an **Update** menu item that calls `location.reload()`.[^appcomp]
@@ -79,3 +99,5 @@ badge on the avatar and an **Update** menu item that calls `location.reload()`.[
 [^manifest]: Web app manifest
 [^iosfix]: postinstall iOS patch
 [^appcomp]: AppComponent update handling
+[^swmode]: Service worker on/off switch
+[^main]: Stale worker removal before bootstrap

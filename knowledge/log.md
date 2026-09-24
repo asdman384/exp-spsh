@@ -1,5 +1,18 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-24 — service worker only in production
+
+* **Update**: [PWA and service worker](architecture/pwa-and-service-worker.md) — new "When the
+  worker runs" section: production builds always register the worker; development builds
+  register it only when `SERVICE_WORKER_IN_DEV` (`src/shared/helpers/service-worker-mode.ts`)
+  is `true`. With it off, `main.ts` unregisters a leftover `/exp-spsh/` worker, deletes its
+  `ngsw:/exp-spsh/` caches, and reloads once if that worker controlled the page. Previously the
+  worker was `enabled: true` in every build.
+* **Update**: [dependency wiring](architecture/dependency-wiring.md) (bootstrap step and
+  provider row), [technical constraints](constraints/technical-constraints.md),
+  [build and serve](operations/build-and-serve.md),
+  [troubleshooting](operations/troubleshooting.md), [source map](references/source-map.md).
+
 ## 2026-09-24 — hold-to-record voice note
 
 * **Creation**: [Hold-to-record voice note](flows/voice-recording.md) — a square 56×56 px
