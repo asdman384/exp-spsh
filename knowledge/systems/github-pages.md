@@ -24,7 +24,7 @@ docs do not trigger a build.
 
 | Job | Steps |
 |---|---|
-| `build` | checkout → Node 22.x → write `keys.json` → `npm install` → `npm run build` → `upload-pages-artifact` from `dist/exp-spsh` |
+| `build` | checkout → Node 22.x → write `keys.json` → `npm install` → `npm run build` → write `robots.txt` (`Disallow: /`) into `dist/exp-spsh` → `upload-pages-artifact` from `dist/exp-spsh` |
 | `deploy` | needs `build`; `actions/deploy-pages@v4` to the `github-pages` environment (`pages: write`, `id-token: write`) |
 
 `deploy` has no branch or event condition, so a `pull_request` run also attempts to deploy.

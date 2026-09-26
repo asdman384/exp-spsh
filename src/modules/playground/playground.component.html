@@ -1,5 +1,15 @@
 <button (click)="onButtonClick()">Error</button>
+<input type="text" (keyup)="filter1Change($event)" />
+<input type="text" (keyup)="filter2Change($event)" />
 
+<pre>{{ output$ | async | json }}</pre>
+
+<button (click)="onSignalButtonClick()">Error (signals)</button>
+<input type="text" (keyup)="filter1SignalChange($event)" />
+<input type="text" (keyup)="filter2SignalChange($event)" />
+
+<pre>{{ output() | json }}</pre>
+    
 @for (item of items; track $index) {
 <app-test-perf></app-test-perf>
 }

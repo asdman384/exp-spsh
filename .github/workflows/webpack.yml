@@ -59,6 +59,11 @@ jobs:
           npm install
           npm run build
 
+      - name: Generate robots.txt
+        run: |
+          echo "User-agent: *" > dist/exp-spsh/robots.txt
+          echo "Disallow: /" >> dist/exp-spsh/robots.txt
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:

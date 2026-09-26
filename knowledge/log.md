@@ -1,5 +1,11 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-26 — robots.txt in the deploy
+
+* **Update**: [GitHub Pages](systems/github-pages.md) — the `build` job now writes
+  `robots.txt` (`User-agent: *` / `Disallow: /`) into `dist/exp-spsh` before uploading the
+  Pages artifact.
+
 ## 2026-09-24 — service worker only in production
 
 * **Update**: [PWA and service worker](architecture/pwa-and-service-worker.md) — new "When the
