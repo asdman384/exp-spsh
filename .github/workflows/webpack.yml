@@ -37,6 +37,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.node-version }}
+          cache: npm
 
       - name: Build
         env:
@@ -56,7 +57,7 @@ jobs:
           keys+="$APP_ID"
           keys+='" }'
           echo $keys >keys.json
-          npm install
+          npm ci
           npm run build
 
       - name: Generate robots.txt

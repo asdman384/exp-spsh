@@ -1,5 +1,13 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-26 — CI installs with `npm ci`
+
+* **Update**: [GitHub Pages](systems/github-pages.md),
+  [CI and deployment](operations/ci-and-deployment.md) — the `build` job runs `npm ci` instead
+  of `npm install`, so CI installs exactly the committed `package-lock.json` and fails when it
+  disagrees with `package.json`; `actions/setup-node` now caches npm downloads (`cache: npm`).
+  The "lockfile is not strictly enforced" gap is closed.
+
 ## 2026-09-26 — robots.txt in the deploy
 
 * **Update**: [GitHub Pages](systems/github-pages.md) — the `build` job now writes

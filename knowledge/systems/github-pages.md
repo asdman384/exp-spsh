@@ -24,11 +24,13 @@ docs do not trigger a build.
 
 | Job | Steps |
 |---|---|
-| `build` | checkout → Node 22.x → write `keys.json` → `npm install` → `npm run build` → write `robots.txt` (`Disallow: /`) into `dist/exp-spsh` → `upload-pages-artifact` from `dist/exp-spsh` |
+| `build` | checkout → Node 22.x (npm cache) → write `keys.json` → `npm ci` → `npm run build` → write `robots.txt` (`Disallow: /`) into `dist/exp-spsh` → `upload-pages-artifact` from `dist/exp-spsh` |
 | `deploy` | needs `build`; `actions/deploy-pages@v4` to the `github-pages` environment (`pages: write`, `id-token: write`) |
 
 `deploy` has no branch or event condition, so a `pull_request` run also attempts to deploy.
-`npm install` (not `npm ci`) runs the `postinstall` iOS service-worker patch
+`actions/setup-node` caches the npm download cache keyed on `package-lock.json`. `npm ci`
+installs exactly the committed lockfile and fails if it disagrees with `package.json`; it
+still runs the `postinstall` iOS service-worker patch
 ([PWA](../architecture/pwa-and-service-worker.md)).
 
 # Secrets

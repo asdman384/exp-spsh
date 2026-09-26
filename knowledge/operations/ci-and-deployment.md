@@ -18,7 +18,7 @@ sources:
 
 ```
 push to master (path-filtered)
-  -> build:  checkout | node 22 | write keys.json | npm install | npm run build | upload dist/exp-spsh
+  -> build:  checkout | node 22 | write keys.json | npm ci | npm run build | upload dist/exp-spsh
   -> deploy: actions/deploy-pages@v4 -> github-pages environment
 ```
 
@@ -42,7 +42,6 @@ older successful run. Installed PWAs switch versions only when their worker fetc
 # Gaps
 
 - No test, lint, or spec type-check in CI; `npm run build` type-checks the app only.
-- `npm install`, not `npm ci`: the lockfile is not strictly enforced.
 - `deploy` is not guarded to `push`/`master`, so pull-request runs also reach it.
 - `APP_ID` is not passed to the build step, so deployed builds have an empty `APP_ID`
   ([known issues](../constraints/known-issues.md) #29).
