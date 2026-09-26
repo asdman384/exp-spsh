@@ -46,13 +46,13 @@
     "@types/google.accounts": "^0.0.18",
     "@types/google.picker": "^0.0.52",
     "@types/node": "^25.9.1",
-    "@vitest/browser-playwright": "^4.1.7",
+    "@vitest/browser-playwright": "^4.1.11",
     "angular-eslint": "22.5.0",
     "eslint": "^10.3.0",
     "http-server": "^14.1.1",
     "jsdom": "^27.0.1",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.59.2",
-    "vitest": "^4.1.7"
+    "vitest": "^4.1.11"
   }
 }
