@@ -3,9 +3,10 @@ import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
 import { signal } from '@angular/core';
 
-import { AppActions, categoriesSelector, currentSheetSelector, expensesSelector, loadingSelector, sheetsSelector } from 'src/@state';
+import { categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
 import { VoiceRecorderOutcomeEvent, VoiceRecorderService, VoiceRecorderStatus } from 'src/services';
 
+import { ExpensesService } from '../expenses.service';
 import { DashboardPageContainer } from './dashboard-page.container';
 
 class FakeVoiceRecorderService {
@@ -16,19 +17,27 @@ class FakeVoiceRecorderService {
   readonly stop = vi.fn();
 }
 
+class FakeExpensesService {
+  readonly expenses = signal([]);
+  readonly load = vi.fn();
+  readonly add = vi.fn();
+  readonly delete = vi.fn();
+}
+
 describe('DashboardPageContainer', () => {
   let fixture: ComponentFixture<DashboardPageContainer>;
   let dispatchSpy: ReturnType<typeof vi.fn>;
   let recorder: FakeVoiceRecorderService;
+  let expensesService: FakeExpensesService;
 
   beforeEach(async () => {
     dispatchSpy = vi.fn();
     recorder = new FakeVoiceRecorderService();
+    expensesService = new FakeExpensesService();
 
     const selectMock = vi.fn((selector: unknown) => {
       if (selector === sheetsSelector) return of([]);
       if (selector === categoriesSelector) return of([]);
-      if (selector === expensesSelector) return of([]);
       if (selector === currentSheetSelector) return of(undefined);
       if (selector === loadingSelector) return of(false);
       return of(undefined);
@@ -38,7 +47,8 @@ describe('DashboardPageContainer', () => {
       imports: [DashboardPageContainer],
       providers: [
         { provide: Store, useValue: { select: selectMock, dispatch: dispatchSpy } },
-        { provide: VoiceRecorderService, useValue: recorder }
+        { provide: VoiceRecorderService, useValue: recorder },
+        { provide: ExpensesService, useValue: expensesService }
       ]
     }).compileComponents();
 
@@ -90,8 +100,7 @@ describe('DashboardPageContainer', () => {
     }
 
     function addExpenseDispatches(): Array<unknown> {
-      const addExpenseType = AppActions.addExpense({ sheetId: 1, expense: {} as never }).type;
-      return dispatchSpy.mock.calls.map((call) => call[0]).filter((action: { type: string }) => action?.type === addExpenseType);
+      return expensesService.add.mock.calls;
     }
 
     it('should_not_dispatch_addExpense_or_call_onSubmit_on_click', () => {

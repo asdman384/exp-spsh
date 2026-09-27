@@ -1,5 +1,6 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -10,20 +11,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
-import { first, tap } from 'rxjs';
+import { EMPTY, catchError, filter, finalize, first, skip, switchMap, tap, withLatestFrom } from 'rxjs';
 
-import {
-  AppActions,
-  categoriesSelector,
-  currentSheetSelector,
-  expensesSelector,
-  loadingSelector,
-  sheetsSelector
-} from 'src/@state';
+import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
 import { TIME_FORMAT } from 'src/constants';
-import { Expense, Sheet } from 'src/shared/models';
+import { ExpenseRecognitionService, VoiceRecorderService } from 'src/services';
+import { Expense, Sheet, VoiceRecording } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-button/voice-record-button.component';
+import { ExpensesService } from '../expenses.service';
 
 interface ExpenseFormModel {
   date: Date;
@@ -75,8 +71,12 @@ export class DashboardPageContainer {
   protected readonly loading$ = this.store.select(loadingSelector);
   protected readonly sheets$ = this.store.select(sheetsSelector);
   protected readonly categories$ = this.store.select(categoriesSelector);
-  protected readonly expenses$ = this.store.select(expensesSelector);
   protected readonly timeFormat = TIME_FORMAT;
+
+  private readonly expensesService = inject(ExpensesService);
+  protected readonly expenses = this.expensesService.expenses;
+  private readonly recorder = inject(VoiceRecorderService);
+  private readonly recognition = inject(ExpenseRecognitionService);
 
   protected minDate: Date = new Date(new Date().getFullYear(), 0, 1, 0, 0, 0, 0);
 
@@ -96,11 +96,13 @@ export class DashboardPageContainer {
         first(),
         tap((sheet) => {
           if (sheet) {
-            this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id }));
+            this.expensesService.load({ sheetId: sheet.id });
           }
         })
       )
       .subscribe((sheet) => this.expenseModel.update((model) => ({ ...model, sheet: sheet ?? null })));
+
+    this.logRecognizedExpenses();
   }
 
   protected onSubmit(event: Event): void {
@@ -111,7 +113,7 @@ export class DashboardPageContainer {
     const value = this.expenseForm().value();
     log('DashboardPageContainer::onSubmit', value);
     const sheet = value.sheet as Sheet;
-    this.store.dispatch(AppActions.addExpense({ expense: value as Expense, sheetId: sheet.id }));
+    this.expensesService.add(sheet.id, value as Expense);
     this.expenseForm().reset({
       ...this.createExpenseModel(),
       date: value.date,
@@ -121,7 +123,7 @@ export class DashboardPageContainer {
 
   protected onSheetChange(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(this.expenseModel().date) }));
+    this.expensesService.load({ sheetId: sheet.id, ...this.getInterval(this.expenseModel().date) });
   }
 
   protected onDateChange(date: Date): void {
@@ -131,7 +133,7 @@ export class DashboardPageContainer {
       return;
     }
 
-    this.store.dispatch(AppActions.loadExpenses({ sheetId: sheet.id, ...this.getInterval(date) }));
+    this.expensesService.load({ sheetId: sheet.id, ...this.getInterval(date) });
 
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
@@ -152,7 +154,41 @@ export class DashboardPageContainer {
       return;
     }
 
-    this.store.dispatch(AppActions.deleteExpense({ expense, sheet }));
+    this.expensesService.delete(sheet, expense);
+  }
+
+  /**
+   * Sends every new voice note to Gemini and logs the recognized expenses as JSON. Nothing is
+   * dispatched yet: the result is only for inspection in the console / log overlay.
+   */
+  private logRecognizedExpenses(): void {
+    toObservable(this.recorder.latest)
+      .pipe(
+        // The first emission is whatever recording was already held when the page opened.
+        skip(1),
+        filter((recording): recording is VoiceRecording => recording !== null),
+        withLatestFrom(this.categories$),
+        switchMap(([recording, categories]) => {
+          this.store.dispatch(AppActions.loading({ loading: true }));
+          return this.recognition.recognize(recording, categories.map((c) => c.name), new Date()).pipe(
+            catchError((error) => {
+              log('DashboardPageContainer::recognize failed', error);
+              this.store.dispatch(AppActions.operationFailed({ source: 'Gemini', message: error }));
+
+              return EMPTY;
+            }),
+            finalize(() => this.store.dispatch(AppActions.loading({ loading: false })))
+          )
+        }
+        ),
+        takeUntilDestroyed()
+      )
+      .subscribe((expenses) => {
+        log('DashboardPageContainer::recognized expenses', JSON.stringify(expenses, null, 2));
+        console.log('Recognized expenses:', expenses);
+        const sheet = this.expenseModel().sheet;
+        expenses.forEach((expense) => this.expensesService.add(sheet!.id, expense));
+      });
   }
 
   private getInterval(from: Date): { from: Date; to?: Date } {

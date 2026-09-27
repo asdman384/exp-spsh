@@ -8,8 +8,6 @@ import { LocalStorageService } from 'src/services';
 import { Category, Sheet } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { AppState } from './app.model';
-import { OutboxState } from './outbox.model';
-import { outboxReducer } from './outbox.reducers';
 
 export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ selectId: (e) => e.title });
 
@@ -21,7 +19,6 @@ export const initialState: AppState = {
   dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }),
   categoriesSheetId: LocalStorageService.get<number>(CATEGORIES_SHEET_ID) ?? undefined,
   categories: LocalStorageService.get<Array<Category>>(CATEGORIES) ?? [],
-  expenses: [],
   lastError: null
 };
 
@@ -31,7 +28,7 @@ if (initialDataSheets) {
   initialState.dataSheets = sheetsAdapter.upsertMany(initialDataSheets, initialState.dataSheets);
 }
 
-export const reducers: ActionReducerMap<{ app: AppState; outbox: OutboxState }> = {
+export const reducers: ActionReducerMap<{ app: AppState }> = {
   app: createReducer(
     initialState,
     on(AppActions.loading, (state, { loading }) => ({ ...state, loading })),
@@ -47,13 +44,11 @@ export const reducers: ActionReducerMap<{ app: AppState; outbox: OutboxState }> 
     })),
     on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId })),
     on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories })),
-    on(AppActions.storeExpenses, (state, { expenses }) => ({ ...state, expenses })),
     on(AppActions.operationFailed, (state, { source, message }) => ({
       ...state,
       lastError: { id: (state.lastError?.id ?? 0) + 1, source, message }
     }))
-  ),
-  outbox: outboxReducer
+  )
 };
 
-export const metaReducers: MetaReducer<{ app: AppState; outbox: OutboxState }>[] = isDevMode() ? [] : [];
+export const metaReducers: MetaReducer<{ app: AppState }>[] = isDevMode() ? [] : [];

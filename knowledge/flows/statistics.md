@@ -15,6 +15,9 @@ sources:
   - id: consts
     resource: ../../src/constants/UI.ts
     title: TOTAL constant
+  - id: expenses
+    resource: ../../src/modules/dashboard/expenses.service.ts
+    title: ExpensesService
 ---
 
 # Selection
@@ -27,8 +30,8 @@ Three `mat-tab-group`s used as carousels:[^statshtml]
 | Year | current year down to 2019 |
 | Month | `Jan`–`Dec` from `toLocaleString('default', { month: 'short' })` |
 
-Any change calls `formChanged`, which clears the table animation and dispatches
-[`loadExpenses`](load-expenses.md) for the whole month. The initial selection is the current
+Any change calls `formChanged`, which clears the table animation and calls
+[`ExpensesService.load`](load-expenses.md) for the whole month.[^expenses] The initial selection is the current
 sheet and the current month; `ngAfterViewInit` scrolls the month carousel so the current
 month is visible (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).[^stats]
 
@@ -37,7 +40,7 @@ month is visible (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).[^stats]
 Displayed rows come from an aggregator held in a `BehaviorSubject`:
 
 ```
-aggregator$ --switchMap--> expensesSelector --map(fn)--> startViewTransition --> table
+aggregator$ --switchMap--> toObservable(ExpensesService.expenses) --map(fn)--> startViewTransition --> table
 ```
 
 - **`groupByCategory`** (default) — one `{ category, amount }` per category, amounts summed.
@@ -74,3 +77,4 @@ after view init.
 [^statshtml]: Statistics template
 [^stats]: StatisticsContainer
 [^consts]: TOTAL constant
+[^expenses]: ExpensesService

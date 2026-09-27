@@ -1,5 +1,6 @@
 import { AsyncPipe } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -8,10 +9,11 @@ import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
 import { Store } from '@ngrx/store';
 import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, take } from 'rxjs';
 
-import { AppActions, currentSheetSelector, expensesSelector, sheetsSelector } from 'src/@state';
+import { AppActions, currentSheetSelector, sheetsSelector } from 'src/@state';
 import { TOTAL } from 'src/constants';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { Expense, Sheet } from 'src/shared/models';
+import { ExpensesService } from '../expenses.service';
 
 const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
@@ -24,6 +26,8 @@ const PADDINGS = 76;
 })
 export class StatisticsContainer implements AfterViewInit {
   private readonly store = inject(Store);
+  private readonly expensesService = inject(ExpensesService);
+  private readonly expensesList$ = toObservable(this.expensesService.expenses);
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
@@ -39,7 +43,7 @@ export class StatisticsContainer implements AfterViewInit {
     .map((v, i) => new Date().getFullYear() - i);
 
   protected readonly expenses$ = this.aggregator$.pipe(
-    switchMap((fn) => this.store.select(expensesSelector).pipe(map(fn))),
+    switchMap((fn) => this.expensesList$.pipe(map(fn))),
     mergeMap(this.startViewTransition.bind(this))
   );
 
@@ -76,13 +80,11 @@ export class StatisticsContainer implements AfterViewInit {
   protected formChanged(sheetIndex: number, yearIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
     this.tableAnimation('none');
     const year = this.yearsTabs[yearIndex];
-    this.store.dispatch(
-      AppActions.loadExpenses({
-        sheetId: sheets[sheetIndex].id,
-        from: new Date(year, monthIndex, 1),
-        to: new Date(year, monthIndex + 1, 1)
-      })
-    );
+    this.expensesService.load({
+      sheetId: sheets[sheetIndex].id,
+      from: new Date(year, monthIndex, 1),
+      to: new Date(year, monthIndex + 1, 1)
+    });
   }
 
   protected expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {

@@ -1,7 +1,7 @@
 # Architecture
 
 * [exp-spsh system overview](overview.md) - Single-page Angular PWA that records personal expenses directly into a user-owned Google Spreadsheet, with no backend of its own.
-* [NgRx state management](state-management.md) - The `app` and `outbox` slices, reducer-versus-effect responsibilities, hydration, and failure reporting.
+* [NgRx state management](state-management.md) - The `app` slice, reducer-versus-effect responsibilities, hydration, the signal services for expenses and the outbox, and failure reporting.
 * [Routing and route guards](routing-and-guards.md) - Hash-based lazy route tree, the three guards that gate it, and the redirect targets when a guard fails.
 * [Bootstrap and dependency wiring](dependency-wiring.md) - What `main.ts` and `app.config.ts` provide, which abstractions are bound to which implementations, and the global `log()` side channel.
 * [PWA, service worker, and caching](pwa-and-service-worker.md) - How the app installs, what ngsw caches (and deliberately does not cache), the iOS patch applied at postinstall, and how updates reach the user.

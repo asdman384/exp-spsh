@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { signal } from '@angular/core';
+import { Store } from '@ngrx/store';
+import { BehaviorSubject } from 'rxjs';
 
 import { VoiceRecorderOutcomeEvent, VoiceRecorderService, VoiceRecorderStatus } from 'src/services';
 
@@ -19,15 +21,18 @@ describe('VoiceRecordButtonComponent', () => {
   let recorder: FakeVoiceRecorderService;
   let announceSpy: ReturnType<typeof vi.fn>;
   let outcomeCounter: number;
+  let loading$: BehaviorSubject<boolean>;
 
   beforeEach(async () => {
     recorder = new FakeVoiceRecorderService();
     announceSpy = vi.fn().mockResolvedValue(undefined);
     outcomeCounter = 0;
+    loading$ = new BehaviorSubject(false);
 
     await TestBed.configureTestingModule({
       imports: [VoiceRecordButtonComponent],
       providers: [
+        { provide: Store, useValue: { select: () => loading$ } },
         { provide: VoiceRecorderService, useValue: recorder },
         { provide: LiveAnnouncer, useValue: { announce: announceSpy } }
       ]
@@ -265,6 +270,20 @@ describe('VoiceRecordButtonComponent', () => {
       fixture.detectChanges();
 
       expect(button().getAttribute('aria-busy')).toBe('false');
+    });
+  });
+
+  describe('app loading state', () => {
+    it('should_disable_the_button_while_the_app_is_loading_and_enable_it_after', () => {
+      expect(button().disabled).toBe(false);
+
+      loading$.next(true);
+      fixture.detectChanges();
+      expect(button().disabled).toBe(true);
+
+      loading$.next(false);
+      fixture.detectChanges();
+      expect(button().disabled).toBe(false);
     });
   });
 });

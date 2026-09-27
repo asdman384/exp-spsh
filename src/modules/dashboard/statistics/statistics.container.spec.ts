@@ -8,6 +8,8 @@ import { Store, StoreModule } from '@ngrx/store';
 import { AppActions } from 'src/@state';
 import { metaReducers, reducers } from 'src/@state/app.reducers';
 import { Sheet } from 'src/shared/models';
+import { signal } from '@angular/core';
+import { ExpensesService } from '../expenses.service';
 
 // `scrollToCurrentMonth` (`statistics.container.ts`) schedules its `_tabHeader.scrollDistance`
 // write via a zero-delay `setTimeout`; this waits out that macrotask, mirroring the pattern in
@@ -25,7 +27,8 @@ describe('StatisticsContainer', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FormsModule, StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })]
+      imports: [FormsModule, StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })],
+      providers: [{ provide: ExpensesService, useValue: { expenses: signal([]), load: vi.fn() } }]
     }).compileComponents();
 
     // The container's constructor synchronously reads `sheetsSelector`/`currentSheetSelector` and

@@ -45,6 +45,7 @@ jobs:
           CLIENT_ID: ${{ secrets.CLIENT_ID }}
           CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
           APP_ID: ${{ secrets.APP_ID }}
+          GGG_KEY: ${{ secrets.GGG_KEY }}
 
         run: |
           keys='{ "CLIENT_ID": "'
@@ -55,6 +56,8 @@ jobs:
           keys+="$CLIENT_SECRET"
           keys+='", "APP_ID": "'
           keys+="$APP_ID"
+          keys+='", "GGG_KEY": "'
+          keys+="$GGG_KEY"
           keys+='" }'
           echo $keys >keys.json
           npm ci

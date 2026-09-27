@@ -42,7 +42,6 @@ describe('[AC5] app reducers - operationFailed / lastError', () => {
       spreadsheetId: 'sheet-abc',
       categoriesSheetId: 7,
       categories: [{ id: 0, name: 'Food' }],
-      expenses: [],
       lastError: null
     };
 
@@ -55,6 +54,5 @@ describe('[AC5] app reducers - operationFailed / lastError', () => {
     expect(next.dataSheets).toBe(start.dataSheets);
     expect(next.categoriesSheetId).toBe(start.categoriesSheetId);
     expect(next.categories).toBe(start.categories);
-    expect(next.expenses).toBe(start.expenses);
   });
 });

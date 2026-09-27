@@ -5,8 +5,8 @@ import { MatIconModule } from '@angular/material/icon';
 
 /**
  * Toolbar badge for the write outbox (`docs/specs/write-outbox.md` D12). Presentational only --
- * `AppComponent` feeds it `pending`/`failed` from the store and dispatches `syncRequested` on
- * `activate`. Not exported from `src/shared/components/index.ts` (imported by direct path, like
+ * `AppComponent` feeds it `pending`/`failed` from `OutboxService` and calls `OutboxService.sync`
+ * on `activate`. Not exported from `src/shared/components/index.ts` (imported by direct path, like
  * the spec requires).
  */
 @Component({
@@ -15,6 +15,7 @@ import { MatIconModule } from '@angular/material/icon';
   template: `
     @if (total() > 0) {
       <button
+        style="width: 36px;    height: 36px;    padding: 6px;"
         mat-icon-button
         type="button"
         [matBadge]="total()"

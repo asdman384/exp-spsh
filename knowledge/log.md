@@ -1,5 +1,116 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-27 — bundle re-validation after the NgRx slim-down
+
+Re-read all of `src/` and every concept; removed stale claims and shortened where possible.
+Earlier log entries were condensed (full text is in git history).
+
+* **Fix (voice → expenses)**: [voice recording](flows/voice-recording.md) (rewritten, shorter),
+  [Gemini](interfaces/gemini-api.md), [add expense](flows/add-expense.md) — recognized
+  expenses are queued through `ExpensesService.add`, no longer only logged; recognition errors
+  when no valid expense survives; the Gemini key is `keys.GGG_KEY`, not `API_KEY`; a failure
+  toasts the raw error with `source: 'Gemini'`.
+* **Fix (stale NgRx facts)**: [overview](architecture/overview.md) (one `app` slice, signal
+  services, Gemini in the layer diagram), [dependency wiring](architecture/dependency-wiring.md)
+  (`provideAppInitializer`, full root-provided list, no `loggerType`),
+  [state management](architecture/state-management.md), [NgRx actions](interfaces/ngrx-actions.md),
+  [index](index.md), [interfaces index](interfaces/index.md) (no `Outbox` action group),
+  [flows index](flows/index.md) (voice recording listed).
+* **Fix (config/CI)**: [configuration](operations/configuration-and-secrets.md),
+  [GitHub Pages](systems/github-pages.md), [CI](operations/ci-and-deployment.md),
+  [Google backend](systems/google-workspace.md), [security posture](constraints/security-posture.md),
+  [technical constraints](constraints/technical-constraints.md),
+  [build and serve](operations/build-and-serve.md) — CI now passes `APP_ID`; `GGG_KEY` is
+  documented and its absence from CI and `keys.example.json` recorded.
+* **Fix (tests)**: [testing](operations/testing.md) — coverage table matches the current
+  spec files (deleted outbox-NgRx and drain-lock specs removed; expenses, outbox service,
+  voice, Gemini, service-worker-mode specs added).
+* **Known issues**: removed the fixed #29 (empty `APP_ID` in CI) and its references; added #32
+  (`GGG_KEY` missing from CI and the template) and #33 (Gemini failure toasts the raw error);
+  #2/#3 now point at `ExpensesService.delete`.
+* **Also**: [code conventions](constraints/code-conventions.md) (`inject()` in new code,
+  signal-service pattern), [toolchain](systems/toolchain.md) (`@google/genai`, Vitest
+  `^4.1.11`), [offline](flows/offline-and-updates.md), [glossary](domain/glossary.md),
+  [source map](references/source-map.md). `CLAUDE.md`'s Gemini and prerequisite notes updated.
+
+## 2026-09-27 — Voice record button disabled while loading
+
+* **Update**: `VoiceRecordButtonComponent` reads `loadingSelector` and sets `disabled` while
+  the app is loading; `voice-recording.md` describes it. Its spec stubs `Store` with a
+  controllable `loading$` and covers the disabled state.
+
+## 2026-09-27 — OutboxDrainLock removed
+
+* **Removal**: `OutboxDrainLock` (`src/services/outbox/outbox-drain-lock.service.ts`) and its
+  spec, and the Web Lock `exp-spsh-outbox-drain`. The app is a phone PWA used in a single tab,
+  so cross-tab coordination guarded an impossible case. `OutboxService.runPassAsync` calls
+  `runPass` directly; the in-tab single-flight and `sessionSent` stay.
+* **Update**: `write-outbox.md`, `known-issues.md` #26, `dependency-wiring.md`,
+  `source-map.md`, `testing.md`, and `CLAUDE.md` no longer mention the lock. The outbox specs
+  count passes through `countCompletedPasses` instead of the lock stub.
+
+## 2026-09-27 — OutboxDrainLock.run takes and returns a Promise
+
+* **Update**: `OutboxDrainLock.run(work)` (`src/services/outbox/outbox-drain-lock.service.ts`)
+  is now `async`, takes `() => Promise<T>` and returns `navigator.locks.request`'s promise
+  directly; the Observable wrapper is gone. `OutboxService.runPassAsync` awaits it without
+  `firstValueFrom`/`from` conversions. Behaviour (exclusive lock, release on settle, unlocked
+  fallback logged once) is unchanged, so no concept file changes.
+
+## 2026-09-27 — The outbox moves out of NgRx into OutboxService
+
+* **Creation**: `OutboxService` (`src/services/outbox/outbox.service.ts`) — root service with
+  `records` / `pendingCount` / `failedCount` signals, `sent$`, `init()`, `add()`, `sync()`.
+  It carries the drain loop, triggers, preconditions, Retry/Discard, failure notice, and
+  announcements unchanged. `init()` runs from `provideAppInitializer`. `ExpensesService.add`
+  calls `OutboxService.add`; the post-send reload listens to `sent$`. `outbox-messages.ts`
+  moved to `src/services/outbox/`.
+* **Removal**: `OutboxActions`, `OutboxEffects`, the `outbox` reducer, model, and selectors;
+  the store now has only the `app` slice and `AppEffects`.
+* **Update**: [write outbox](architecture/write-outbox.md),
+  [state management](architecture/state-management.md), [NgRx actions](interfaces/ngrx-actions.md),
+  [add expense](flows/add-expense.md), [load expenses](flows/load-expenses.md),
+  [offline](flows/offline-and-updates.md), [dependency wiring](architecture/dependency-wiring.md),
+  [known issues](constraints/known-issues.md), [code conventions](constraints/code-conventions.md),
+  [troubleshooting](operations/troubleshooting.md), [source map](references/source-map.md),
+  [architecture index](architecture/index.md), [knowledge index](index.md).
+* **Update**: `CLAUDE.md` — the outbox bullet names `OutboxService` and the single slice.
+
+## 2026-09-27 — Expenses move out of NgRx into ExpensesService
+
+* **Creation**: `ExpensesService` (`src/modules/dashboard/expenses.service.ts`) — root
+  service holding the expense list in a signal, with `load`, `add`, and `delete`. `add`
+  always enqueues into the write outbox (`drain: true`); the live write path and its routing
+  are gone. The service reloads the last sent record's day on `drainCompleted` while on
+  `/dashboard`.
+* **Removal**: `AppActions.addExpense`/`deleteExpense`/`loadExpenses`/`storeExpenses`,
+  `AppState.expenses`, `expensesSelector`, `AppEffects.addExpense$`/`deleteExpense$`/
+  `loadExpenses$`, `OutboxEffects.reloadOnDrainCompleted$`.
+* **Update**: [state management](architecture/state-management.md),
+  [NgRx actions](interfaces/ngrx-actions.md), [write outbox](architecture/write-outbox.md),
+  [add expense](flows/add-expense.md), [load expenses](flows/load-expenses.md),
+  [delete expense](flows/delete-expense.md), [statistics](flows/statistics.md),
+  [offline](flows/offline-and-updates.md), [overview](architecture/overview.md),
+  [app system](systems/exp-spsh-app.md), [known issues](constraints/known-issues.md) #24,
+  [source map](references/source-map.md).
+* **Update**: `CLAUDE.md` — "Things that will surprise you" describes `ExpensesService` and
+  the always-queued add.
+
+## 2026-09-26 — Gemini expense recognition (log only)
+
+* **Creation**: [Gemini expense recognition](interfaces/gemini-api.md) — root-provided
+  `ExpenseRecognitionService` (`src/services/expense-recognition/`) sends a `VoiceRecording`
+  to `gemini-3.5-flash-lite` through `@google/genai` with `keys.API_KEY` and a
+  `responseJsonSchema`, and maps the reply to `Expense[]`. The SDK is loaded by dynamic
+  `import()` so it stays out of `main`. `DashboardPageContainer` sends every new recording and
+  `log()`s the JSON result; nothing is dispatched. OAuth scopes are unchanged.
+* **Update**: [voice recording](flows/voice-recording.md) — recordings now go to Gemini.
+* **Update**: [security posture](constraints/security-posture.md) — `API_KEY` also reaches
+  Gemini.
+* **Update**: [source map](references/source-map.md), [interfaces index](interfaces/index.md),
+  [knowledge index](index.md).
+* **Update**: `CLAUDE.md` — "Things that will surprise you" gains the Gemini bullet.
+
 ## 2026-09-26 — CI installs with `npm ci`
 
 * **Update**: [GitHub Pages](systems/github-pages.md),
@@ -14,445 +125,26 @@
   `robots.txt` (`User-agent: *` / `Disallow: /`) into `dist/exp-spsh` before uploading the
   Pages artifact.
 
-## 2026-09-24 — service worker only in production
+## Earlier history (condensed)
 
-* **Update**: [PWA and service worker](architecture/pwa-and-service-worker.md) — new "When the
-  worker runs" section: production builds always register the worker; development builds
-  register it only when `SERVICE_WORKER_IN_DEV` (`src/shared/helpers/service-worker-mode.ts`)
-  is `true`. With it off, `main.ts` unregisters a leftover `/exp-spsh/` worker, deletes its
-  `ngsw:/exp-spsh/` caches, and reloads once if that worker controlled the page. Previously the
-  worker was `enabled: true` in every build.
-* **Update**: [dependency wiring](architecture/dependency-wiring.md) (bootstrap step and
-  provider row), [technical constraints](constraints/technical-constraints.md),
-  [build and serve](operations/build-and-serve.md),
-  [troubleshooting](operations/troubleshooting.md), [source map](references/source-map.md).
-
-## 2026-09-24 — hold-to-record voice note
-
-* **Creation**: [Hold-to-record voice note](flows/voice-recording.md) — a square 56×56 px
-  button next to Add Expense on the dashboard. Holding it (pointer or Space/Enter) records
-  audio via a new root-provided `VoiceRecorderService`
-  (`src/services/voice-recorder/voice-recorder.service.ts`), which owns the permission-first
-  press (D14: a press without a known grant only triggers the browser prompt and records
-  nothing; the next hold records), the `getUserMedia`/`MediaRecorder` lifecycle, the 60 s cap,
-  and the 1 s minimum. The result is a single in-memory `VoiceRecording`
-  (`src/shared/models/voice-recording.ts`) held in a signal until the app reloads — not in the
-  NgRx store, not persisted anywhere, and not cleared on logout (D12). The gesture, red pulsing
-  indicator, and `LiveAnnouncer` announcements live in a new
-  `VoiceRecordButtonComponent` (`src/shared/components/voice-record-button/`). No file under
-  `src/@state/` changed. Spec: [`docs/specs/hold-to-record-voice.md`](../docs/specs/hold-to-record-voice.md).
-* **Update**: [add expense](flows/add-expense.md) — the form section notes the button now sits
-  in the same `.submit-row`, unrelated to `addExpense`.
-* **Update**: [source map](references/source-map.md) — new rows for `services/voice-recorder/`,
-  `shared/components/voice-record-button/`, and `VoiceRecording`.
-* **Update**: [knowledge index](index.md) — new Flows entry.
-* **Update**: `CLAUDE.md` — "Things that will surprise you" gains a bullet: the recording is
-  held in memory only, is not in the store, and survives logout but not reload.
-
-## 2026-09-23 — logout revokes the redirect grant
-
-* **Fix (code)**: `logout()` revokes `revocableToken()`, a per-strategy method. The redirect
-  strategy returns the stored refresh token, else the `redirect-token` access token; the popup
-  strategy returns the `token` access token. Known issue #30 is closed.
-* **Docs**: [authentication](flows/authentication.md), [security posture](constraints/security-posture.md),
-  [OAuth](interfaces/google-oauth.md), [local storage](interfaces/local-storage.md),
-  [known issues](constraints/known-issues.md), [testing](operations/testing.md)
-  (new `security.service.spec.ts`).
-
-## 2026-09-23 — bundle re-validation
-
-Re-validated every concept against the source at commit `6cad020` and rewrote the bundle
-for accuracy and brevity. No code changed.
-
-* **Fix (stale facts)**:
-  - [dependency wiring](architecture/dependency-wiring.md), [toolchain](systems/toolchain.md),
-    [app system](systems/exp-spsh-app.md): the app is zoneless
-    (`provideZonelessChangeDetection`), `zone.js` is not a dependency, and `main.ts` registers
-    no global error handlers. `provideHttpClient` includes `withXhr()`. The log overlay is
-    always installed (not a hard-coded `loggerType`). `PickerService`, `OutboxDrainLock`, and
-    `IndexedDbOutboxStorage` added to the root-provided list; `initialUrlParams` documented.
-  - [PWA](architecture/pwa-and-service-worker.md), [gviz](interfaces/gviz-query.md),
-    [Google backend](systems/google-workspace.md): `docs.google.com` is not in the service
-    worker `dataGroups`.
-  - [spreadsheet layout](domain/spreadsheet-layout.md), [troubleshooting](operations/troubleshooting.md):
-    serial → `Date` uses the offset at the stored instant, so DST no longer shifts old rows.
-    Column order is centralised in `EXPENSE_COLUMNS` (`expense-row.ts`).
-  - [load expenses](flows/load-expenses.md), [gviz](interfaces/gviz-query.md): empty
-    category/amount cells no longer throw (`''` / `0`). Added the outbox reload as a
-    `loadExpenses` caller, and that the latest load re-runs on every reconnect.
-  - [initial setup](flows/initial-setup.md), [troubleshooting](operations/troubleshooting.md):
-    setup has a `catchError` that stops the spinner; removed the pasted-URL symptom.
-  - [local storage](interfaces/local-storage.md): `put` skips only `null`/`undefined`.
-  - [manage categories](flows/manage-categories.md), [delete expense](flows/delete-expense.md):
-    rollback snapshots are `Memento`s, not `categoriesBackUp`/`deletedExpenseBackup` fields.
-  - [statistics](flows/statistics.md), [expenses table](interfaces/expenses-table-component.md):
-    no `detectChanges()` calls; no explicit `OnPush` (Angular 22 default); the Debt column
-    shows only when some row is in debt.
-  - [Sheets API](interfaces/google-sheets-api.md): removed the deleted `append` method.
-  - [OAuth](interfaces/google-oauth.md): GIS is the vendored `src/scripts/client.js`.
-  - [configuration](operations/configuration-and-secrets.md): `keys.json` has `APP_ID`;
-    environment files hold only `production` and are unused; `BACK` constant removed.
-  - [toolchain](systems/toolchain.md): ESLint config exists; `paths` replaces `baseUrl`.
-  - [testing](operations/testing.md): only `app.component.spec.ts` is skipped; coverage
-    table rewritten for the current specs.
-  - [working agreements](constraints/working-agreements.md): rules come from root `CLAUDE.md`
-    and `.claude/rules/`; current `.claude/settings.json` permissions and hooks; the
-    `settings copy.json` variant no longer exists.
-  - [source map](references/source-map.md): removed `test.ts`, `OKF/SPEC.md`, branch list;
-    added `expense-row.ts`, `picker/`, `harness.sh`, `docs/`.
-  - Frontmatter sources pointing at `.github/CLAUDE.md` and `.github/rules/` now point at
-    `CLAUDE.md` and `.claude/rules/`.
-* **Add** [known issues](constraints/known-issues.md): #28 localStorage persist effects fail
-  silently and stop for the session; #29 CI writes an empty `APP_ID`; #30 logout does not
-  revoke the redirect strategy's token; #31 the deploy job is not guarded to `master` pushes.
-
-## 2026-09-20
-
-Implemented item 9 of [the backend-less assessment](../docs/backend-less-assessment.md):
-narrowed the OAuth scope from the full `auth/spreadsheets` to `auth/drive.file`.
-
-* **Add**: `src/services/picker/picker.service.ts` — lazily loads the Google Picker
-  (`https://apis.google.com/js/api.js`, fetched from Google's CDN at runtime, not vendored
-  like `src/scripts/client.js`) and opens it restricted to `ViewId.SPREADSHEETS`, authenticated
-  with a token from `AbstractSecurityService.refreshToken()` plus `keys.API_KEY` and the new
-  `keys.APP_ID` (the Cloud project number). Added `@types/google.picker` and the
-  `google.picker` entry in `tsconfig.json`'s `types`.
-* **Update**: `AbstractSecurityService.SCOPES` now requests `drive.file` instead of
-  `spreadsheets`. This invalidates every previously stored token — anyone using the app
-  re-consents once.
-* **Update**: setup (`SettingsPageContainer` / its template) no longer takes a pasted
-  spreadsheet URL. `extractSpreadsheetId` (regex URL/id parsing) is deleted; the "Choose
-  spreadsheet" button now opens `PickerService.pickSpreadsheet()` directly, and the id it
-  resolves with feeds the same `loadSpreadSheet` -> tab-discovery -> tab-creation pipeline as
-  before. `drive.file` makes pasting an id mostly pointless anyway: the app has no access to
-  a file it did not create and the user did not pick through Picker.
-* **Update**: `keys.example.json` gained `APP_ID`; anyone with an existing `keys.json` must
-  add it by hand (build/typecheck fail loudly with `TS2339` until they do, same pattern as a
-  missing `keys.json` entirely).
-* **Update**: `knowledge/systems/google-workspace.md`, `knowledge/interfaces/google-oauth.md`,
-  `knowledge/constraints/security-posture.md`, `knowledge/flows/authentication.md`,
-  `knowledge/flows/initial-setup.md`, `CLAUDE.md`, and
-  `docs/backend-less-assessment.md` (item 9 marked done) to describe the new scope and flow.
-* Not touched: `environment.ts`'s already-dead, already-stale `SCOPES` constant (noted as
-  unused before this change) — left alone rather than partially patched, matching the pattern
-  from the 2026-09-15 entry below.
-
-## 2026-09-15
-
-Upgraded the project from Angular 21 to Angular 22 via `ng update`, continuing the
-19 -> 20 -> 21 chain already noted in [toolchain](systems/toolchain.md).
-
-* **Update**: `ng update @angular/cli @angular/core angular-eslint`, then
-  `ng update @angular/material`, then `ng update @ngrx/store @ngrx/effects @ngrx/entity
-  @ngrx/store-devtools`, each committed separately (`ng update` requires a clean tree).
-  TypeScript moved to `6.0.3` (Angular 22's compiler-cli requires `>=6.0 <6.1`).
-* **Update**: raised the active Node.js version to `22.23.2` (via the existing `nvm4w`
-  install) — Angular CLI 22 requires Node.js `>= 22.22.3` / `>= 24.15.0` / `>= 26.0.0` and
-  the repo's prior `22.12.0` no longer qualifies.
-* **Update**: the core migration added `withXhr()` to both `provideHttpClient()` call sites
-  (`src/app/app.config.ts`, one spec) since `HttpXhrBackend` (used for upload progress) is no
-  longer implied by default; wrapped one template optional-chaining expression in
-  `$safeNavigationMigration()` (`src/modules/setup/setup-page/setup-page.container.html`) now
-  that the compiler's optional-chaining diagnostics are stricter; and pinned
-  `ChangeDetectionStrategy` on ten components that had never set it explicitly, since
-  Angular 22 changed the implicit default from the old check-always strategy to `OnPush`.
-  The migration chose `Eager` (preserving each component's exact pre-upgrade behavior) on
-  all ten; manually switched all ten to `OnPush` instead, matching this project's own
-  component convention — every one of them only mutates template-bound state through the
-  async pipe or a template event handler, so the switch is behavior-preserving.
-* **Update**: `tsconfig.json` gained `"ignoreDeprecations": "6.0"` to silence TS5101
-  (`baseUrl` deprecated as of TypeScript 6.0) — `baseUrl` itself stays, since the project's
-  dominant absolute-from-root import style (`src/shared/models`, no `paths` map) depends on
-  it; `tsconfig.app.json`/`tsconfig.spec.json` gained
-  `extendedDiagnostics.checks: { nullishCoalescingNotNullable: suppress,
-  optionalChainNotNullable: suppress }` from the same migration, avoiding a wave of new
-  template diagnostics unrelated to this upgrade.
-* **Update**: [toolchain](systems/toolchain.md), [overview](architecture/overview.md),
-  [knowledge index](index.md), `CLAUDE.md`, and
-  `.claude/rules/development.md` — version numbers and the `ng update` history line.
-* Not touched: `.claude/agents/*.md` and `.claude/commands/orchestrate.md` still say
-  "Angular 21" — `CLAUDE.md`'s own "Subagents" section already flags those files as
-  describing a nonexistent backend/frontend layout that needs verifying before use, so their
-  version mentions were left alone rather than partially patched.
-
-## 2026-09-13 (3)
-
-Offline launch fix: the generated `ngsw.json` listed no asset URLs, so the service worker
-cached nothing and opening the app offline failed with `ERR_INTERNET_DISCONNECTED`.
-
-* **Update**: `ngsw-config.json` asset globs are relative to the build output again
-  (`/*.js`, `/assets/**`, …); the `/exp-spsh/` prefix matched no output file.
-* **Update**: `angular.json` `baseHref` is `/exp-spsh/` (was `""`), so the generator emits
-  `/exp-spsh/…` URLs that match what the page requests under the worker's scope.
-* **Update**: [PWA](architecture/pwa-and-service-worker.md), [technical
-  constraints](constraints/technical-constraints.md), [GitHub Pages](systems/github-pages.md),
-  [exp-spsh app](systems/exp-spsh-app.md), [overview](architecture/overview.md),
-  [configuration](operations/configuration-and-secrets.md), [build and
-  serve](operations/build-and-serve.md) — describe `baseHref` as the carrier of the deployment
-  path and the globs as build-output-relative.
-* **Correction**: [offline behaviour](flows/offline-and-updates.md) — claimed the app shell was
-  prefetched; it was not before this fix.
-* **New**: [troubleshooting](operations/troubleshooting.md) row for an offline launch failing
-  because `ngsw.json` caches nothing.
-
-## 2026-09-13 (2)
-
-Fix iteration 2 for [write outbox for addExpense](architecture/write-outbox.md), addressing
-`docs/reviews/write-outbox.md`'s "Re-review 1" blocking findings 1 and 2:
-
-* **Update**: `src/services/outbox/indexed-db-outbox-storage.service.ts` — every throw while
-  creating a transaction (for example `db.transaction(...)` raising `InvalidStateError` on a
-  connection the browser has already closed) now reaches the same once-only error channel as the
-  existing `abort`/`error` handling, instead of rejecting an unobserved promise and leaving the
-  Observable pending forever. `IDBDatabase.onclose` also drops the cached connection, guarded so
-  a newer connection already open by the time it fires is never discarded, the same guard used
-  for the existing `onversionchange` handling.
-* **Update**: [write outbox](architecture/write-outbox.md) — the connection-handling paragraph
-  now covers the `close` event dropping the cached connection and a synchronous transaction-setup
-  throw reaching the caller as an error, matching the fix above.
-* **Correction**: [state management](architecture/state-management.md) — the claim that NgRx's
-  default effects error handler "limits" the exposure of the 4 localStorage-only persist effects'
-  outer-pipe `catchError` was wrong: that handler resubscribes only on an *error* notification,
-  and these effects catch their own error and return `EMPTY`, so their stream emits *complete*
-  and is never resubscribed. Restated: after the first caught throw, the effect's stream stays
-  completed for the rest of the session, and later dispatches of its trigger action still update
-  the store through the reducer but are not written to localStorage.
-* **Correction**: [troubleshooting](operations/troubleshooting.md) — the matching row repeated
-  the same resubscription claim and described the symptom as "no visible effect", when the
-  reducer keeps applying the action in-session; only the localStorage write stops, which becomes
-  visible after a reload. Restated accordingly.
-* **Correction**: [state management](architecture/state-management.md) — the trigger action of
-  `saveSheetId$` is `upsertDataSheet`; there is no `sheetId` action.
-* **Correction**: [troubleshooting](operations/troubleshooting.md) — after a reload the value
-  reverts to the last one successfully written to localStorage, and is absent only if none was.
-
-## 2026-09-13
-
-Fix iteration 1 for [write outbox for addExpense](architecture/write-outbox.md), addressing
-`docs/reviews/write-outbox.md`'s five blocking findings (R-1 to R-5) plus its recommended note
-N6:
-
-* **Update**: [write outbox](architecture/write-outbox.md) — the record-shape and enqueue
-  descriptions now match `IndexedDbOutboxStorage` settling on transaction commit rather than
-  request success (R-2), and three narration phrases are restated as plain present-tense
-  descriptions (R-4).
-* **Update**: [state management](architecture/state-management.md) — the `catchError`-placement
-  claim is scoped to the 7 remote-calling effects; the 4 localStorage-only persist effects are
-  described accurately as putting `catchError` on the *outer* pipe (so a throw completes their
-  stream), with current line numbers (R-5). Two narration phrases are restated (R-4).
-* **Update**: [bootstrap and dependency wiring](architecture/dependency-wiring.md) — one
-  narration phrase restated (R-4).
-* **Update**: [add expense](flows/add-expense.md), [offline behaviour and app
-  updates](flows/offline-and-updates.md), [testing](operations/testing.md) — narration phrases
-  restated as present-tense descriptions (R-4).
-* **Correction (N6)**: [delete expense](flows/delete-expense.md), [load
-  expenses](flows/load-expenses.md), and [manage categories](flows/manage-categories.md) each
-  cited known-issue item 21, which does not exist. Verified against the current
-  `deleteExpense$`/`loadExpenses$`/`updateCategoryPosition$` source: each effect's `catchError`
-  sits inside its `exhaustMap` projection, so a failure only completes that one attempt, and the
-  effect keeps responding to later actions of the same type. Restated accordingly.
-* **Correction (N6)**: [troubleshooting](operations/troubleshooting.md) — the "retrying an
-  already-failed action does nothing" row and the closing "items 1, 10, 20, 21" citation both
-  cited known-issues entries that don't exist. The row now describes the one place this pattern
-  actually holds (the 4 localStorage-only persist effects, outer-pipe `catchError`); the closing
-  citation is replaced with a plain statement, since no matching known-issues entries exist.
-
-Production code changes made alongside this docs pass (R-1, R-2, R-3), reviewed at
-`docs/reviews/write-outbox.md`:
-
-* `src/@state/app.effects.ts` — `addExpense$`'s reactive enqueue now captures
-  `spreadsheetId`/`enqueuedAt` before the live request goes out, not inside its `catchError`.
-* `src/services/outbox/indexed-db-outbox-storage.service.ts` — `add`/`updateStatus`/`remove`/
-  `getAll` settle only on their transaction's `complete` event; an `abort` or `error` (including
-  after the request itself succeeded) now reaches the Observable's error channel.
-* `src/shared/components/outbox-status/outbox-status.component.ts` — the toolbar icon button no
-  longer sets `color="primary"` inside the primary toolbar, fixing a 1:1 icon/background
-  contrast.
-
-## 2026-09-12 (3)
-
-* **Creation**: [Write outbox for addExpense](architecture/write-outbox.md) — a new NgRx
-  `outbox` slice plus `OutboxEffects`, `OutboxStorage`/`IndexedDbOutboxStorage` (raw
-  IndexedDB, database `exp-spsh-outbox`), `OutboxDrainLock` (Web Locks), and two new UI
-  components (`OutboxStatusComponent`, `OutboxFailureNoticeComponent`) queue and replay
-  `addExpense` while offline or on a connectivity failure, drained serially the next time the
-  app can reach Google. Every other mutation is unchanged and still fails exactly as before.
-  Spec: [`docs/specs/write-outbox.md`](../docs/specs/write-outbox.md). Architecture note:
-  [`docs/architecture/write-outbox.md`](../docs/architecture/write-outbox.md).
-* **Update**: [state management](architecture/state-management.md) — documents the second
-  `outbox` feature slice, `OutboxState`'s shape, `OutboxEffects` in the effects catalogue, the
-  outbox reducer/effect and selector tables, and IndexedDB (rather than localStorage)
-  hydration for that slice.
-* **Correction found while updating state management**: the "effect goes permanently
-  unresponsive after its first failure of the session" caveat was wrong — every effect's
-  `catchError` sits *inside* `exhaustMap`'s projection, so it only completes that one attempt's
-  inner observable; `exhaustMap` itself keeps responding to later actions. Corrected in
-  [state management](architecture/state-management.md) and
-  [add expense](flows/add-expense.md). The same now-stale claim (citing the removed known-issue
-  item 21) still appears in [delete expense](flows/delete-expense.md),
-  [load expenses](flows/load-expenses.md), [manage categories](flows/manage-categories.md), and
-  [troubleshooting](operations/troubleshooting.md) — noted here, not fixed, since none of those
-  are part of this slice's touched-files list.
-* **Update**: [offline behaviour and app updates](flows/offline-and-updates.md) — the
-  capability table's "Add / delete an expense" row splits into "Add" (now **queued**) and
-  "Delete" (still fails as before); the "reads queue, writes do not" line is replaced; a new
-  section documents the toolbar outbox indicator.
-* **Update**: [NgRx action surface](interfaces/ngrx-actions.md) — documents the `Outbox`
-  action group (12 events) and its intent/result split.
-* **Update**: [bootstrap and dependency wiring](architecture/dependency-wiring.md) —
-  `EffectsModule.forRoot([AppEffects, OutboxEffects])`, and `OutboxStorage`'s root default
-  binding (on the abstract class itself, not in `app.config.ts`).
-* **Update**: [testing](operations/testing.md) — the ten new spec files this slice adds (all
-  new files, per D17 of the spec, so none of the twelve pre-existing specs are touched), and
-  the two that exercise real IndexedDB / real Web Locks in headless Chromium rather than a
-  double.
-* **Update**: [source map](references/source-map.md) — new rows for `services/outbox/`, the
-  two new `shared/components/` directories, `OutboxRecord`, `classifyWriteError`, and the five
-  new `@state/outbox.*` files; the test-file list grows from twelve to twelve-plus-ten.
-* **Update**: [known issues](constraints/known-issues.md) — five new entries, numbered 23-27
-  (after the highest number ever used, 22, so no existing cross-reference by number breaks):
-  duplicate rows on replay (23), drain ordering exceptions (24), the outbox surviving logout
-  (25), a hung request holding the drain lock indefinitely (26), and a timezone change between
-  queueing and sending (27).
-* **Update**: `CLAUDE.md` — "Things that will surprise you" now covers `addExpense`'s outbox
-  routing, the two state slices and two effects classes, and the `exp-spsh-outbox` IndexedDB
-  database (including how to reset it); the knowledge table gains a `write-outbox` row.
-
-## 2026-09-12 (2)
-
-* **Update**: `scripts/harness.sh` builds production into `tmp/harness-dist` instead of
-  `dist/exp-spsh`. Its build shared the dev watcher's output folder, and every harness run
-  left a production `index.html` there that the watcher never rewrote, so the local loop
-  served a stale bundle until `watch` was restarted. `npm run build` and CI are unchanged
-  and still produce `dist/exp-spsh`. Touched: [build and serve](operations/build-and-serve.md),
-  [troubleshooting](operations/troubleshooting.md).
-
-## 2026-09-12
-
-* **Update**: `DashboardPageContainer`'s add-expense form migrated from a template-driven
-  `ngForm`/`ngModel` form to the experimental Signal Forms API
-  (`@angular/forms/signals`: `form()`, `required()`, `[formField]`) — the one form in the app
-  that is no longer template-driven. Material controls (`mat-select`, `mat-checkbox`, the
-  datepicker input, `matInput`) bind through `[formField]` via their existing
-  `ControlValueAccessor`. Touched: [add expense](flows/add-expense.md),
-  [code conventions](constraints/code-conventions.md). Bundle-size comparison:
-  [docs/signal-forms-migration.md](../docs/signal-forms-migration.md).
-
-## 2026-09-11 (3)
-
-* **Update**: `docs/specs/signal-inputs-outputs.md` — `ExpensesTableComponent`'s five
-  `@Input()`s and three `@Output()`s (`EventEmitter`s) became `input()` / `output()` /
-  `outputFromObservable()` signals, `ngOnChanges`/`OnChanges`/`SimpleChanges` were removed, and
-  `columns` became a `computed()`; `StatisticsContainer`'s two `@ViewChild()`s became
-  `viewChild()` (`summaryTable`, optional) and `viewChild.required()` (`monthSelector`).
-  Touched: [ExpensesTableComponent](interfaces/expenses-table-component.md),
-  [statistics flow](flows/statistics.md), [delete expense flow](flows/delete-expense.md).
-
-## 2026-09-11 (2)
-
-* **Cleanup**: swept the whole bundle (every file except this log) for prose that narrated
-  *how something used to behave* — dated phrases like "since 2026-09-08", "fixed 2026-09-08",
-  "now all dispatch...", "unchanged", "the old advice still applies", and commit-id citations
-  used as history ("has changed before, commit `cdc85e6`") — and rewrote each as a plain
-  present-tense statement of current behaviour. Concept files should describe only the
-  system as it is now; this log is the only place change history belongs. Touched:
-  [dependency wiring](architecture/dependency-wiring.md),
-  [state management](architecture/state-management.md),
-  [technical constraints](constraints/technical-constraints.md),
-  [code conventions](constraints/code-conventions.md),
-  [known issues](constraints/known-issues.md), [source map](references/source-map.md),
-  [testing](operations/testing.md), [troubleshooting](operations/troubleshooting.md),
-  [CI and deployment](operations/ci-and-deployment.md),
-  [gviz interface](interfaces/gviz-query.md), [add expense](flows/add-expense.md),
-  [delete expense](flows/delete-expense.md), [load expenses](flows/load-expenses.md), and
-  [manage categories](flows/manage-categories.md).
-* **Correction found during the sweep**: [delete expense](flows/delete-expense.md) step 3
-  said a not-found row was "a silent no-op" — actually reading `app.effects.ts` shows
-  `deleteExpense$` **throws** `cannot find expense in the last 100 rows` when the row isn't
-  in the last 100, which step 5's rollback catches (the optimistic removal is reverted and a
-  toast fires). The flow doc and [known issues](constraints/known-issues.md) item 2 now
-  match the code.
-* **Correction found during the sweep**: [source map](references/source-map.md) said "Ten
-  `.spec.ts` files"; twelve currently exist. Corrected the count and named the three
-  `src/@state/*.spec.ts` files among "the substantive ones," and added `report-failure.ts`
-  to the `@state/` row (both existed but weren't listed).
-
-## 2026-09-11
-
-* **Update**: [dependency wiring](architecture/dependency-wiring.md) — `src/shared/modules/`
-  (the `UIKitModule` barrel that re-exported every Material module plus `CommonModule` and
-  CDK `DragDropModule`) was deleted. Every standalone component now imports only the
-  Material/CDK modules and `@angular/common` pipes/directives its own template uses; the
-  `MAT_DATE_LOCALE`/`MAT_DATE_FORMATS` providers moved from the module's `providers` array to
-  `DashboardPageContainer`'s own `@Component({ providers: [...] })`, since it is the only
-  component with a datepicker. Bundle-size motivated: the barrel put Material's
-  datepicker/table/tabs/drag-drop into every component's initial chunk regardless of need.
-* **Update**: `getAppConfig()` (`src/app/app.config.ts`) is now `async` and dynamically
-  imports `@ngrx/store-devtools` (`await import(...)`) only when the URL carries a `logger`
-  query param, instead of statically importing the package at module top-level. `main.ts`
-  now awaits `getAppConfig()` before calling `bootstrapApplication`. `StoreDevtools` is a
-  genuinely separate lazy chunk now, not just conditionally-instantiated dead weight in the
-  initial bundle. Reflected in
-  [dependency wiring](architecture/dependency-wiring.md#material-and-cdk-imports),
-  [state management](architecture/state-management.md), and
-  [technical constraints](constraints/technical-constraints.md).
-* **Update**: [exp-spsh system overview](architecture/overview.md) — the app now authors
-  zero `@NgModule` classes (previously "the only NgModule is `UIKitModule`").
-* **Update**: [code conventions](constraints/code-conventions.md) and
-  [ExpensesTableComponent](interfaces/expenses-table-component.md) updated to describe
-  per-component Material/CDK imports instead of the `UIKitModule` convention.
-* **Update**: [source map](references/source-map.md) — removed the
-  `shared/modules/uikit.module.ts` row (path no longer exists).
-* Not otherwise touched: `ExpDialogComponent` remains unused dead code, just no longer
-  incidentally re-exported through the deleted barrel.
-
-## 2026-09-08
-
-* **Update**: Reflected the `effect-error-surfacing` feature
-  (`docs/specs/effect-error-surfacing.md`, `docs/architecture/effect-error-surfacing.md`)
-  across the bundle — the 7 remote-calling effects now dispatch `operationFailed` and show a
-  `MatSnackBar` toast on failure, instead of failing silently.
-* **Update**: [state management](architecture/state-management.md) — new `AppState.lastError`
-  field, new `lastErrorSelector`, effects catalogue updated with `showFailureToast$` and the
-  `reportFailure` mechanism.
-* **Update**: [NgRx action surface](interfaces/ngrx-actions.md) — new `operationFailed`
-  action documented; the "no failure actions" claim removed.
-* **Update**: [known issues](constraints/known-issues.md) — item 1 (rollback never
-  dispatches) and item 10 (all errors silent) marked **fixed**; two issues surfaced during
-  the fix added as new entries: item 20 (the 4 localStorage effects still have no failure
-  path) and item 21 (every remote effect goes permanently unresponsive after its first
-  failure of the session, since `catchError` completes rather than errors).
-* **Update**: [troubleshooting](operations/troubleshooting.md),
-  [testing](operations/testing.md), and the four affected flows
-  ([add expense](flows/add-expense.md), [delete expense](flows/delete-expense.md),
-  [load expenses](flows/load-expenses.md), [manage categories](flows/manage-categories.md))
-  updated to match — including the new effects-testing pattern (`provideMockActions`, and the
-  `log()`-must-exist-before-construction gotcha) now precedented in
-  `src/@state/app.effects.spec.ts` and `src/@state/report-failure.spec.ts`.
-* Two follow-up specs identified but not written: `storage-write-failures` (known issues
-  item 20) and `effect-resubscription` (item 21).
-
-## 2026-09-05
-
-* **Initialization**: Created the OKF v0.2 bundle for exp-spsh from a full read of the
-  repository at commit `78b5109` ("update tests docs") on `master`.
-* **Creation**: Architecture section — [overview](architecture/overview.md),
-  [state management](architecture/state-management.md),
-  [routing and guards](architecture/routing-and-guards.md),
-  [dependency wiring](architecture/dependency-wiring.md),
-  [PWA and service worker](architecture/pwa-and-service-worker.md).
-* **Creation**: Domain section — [expense](domain/expense.md),
-  [category](domain/category.md), [sheet and user](domain/sheet-and-user.md),
-  [spreadsheet layout](domain/spreadsheet-layout.md), [glossary](domain/glossary.md).
-* **Creation**: Flows section — eight end-to-end flows covering authentication, setup,
-  the expense lifecycle, categories, statistics, and offline behaviour.
-* **Creation**: Interfaces section — the three Google boundaries plus the interceptor,
-  the NgRx action surface, the shared table contract, and the localStorage keys.
-* **Creation**: Systems section — the app artifact, the Google backend, GitHub
-  Actions/Pages, and the development toolchain.
-* **Creation**: Operations section — build and serve, testing, CI and deployment,
-  configuration and secrets, troubleshooting.
-* **Creation**: Constraints section — working agreements, technical constraints, security
-  posture, code conventions, and [known issues](constraints/known-issues.md) (19 entries
-  derived from reading the code, none reproduced at runtime).
-* **Creation**: [Source map](references/source-map.md) as the navigation reference.
+* **2026-09-24** — The service worker runs only in production builds
+  (`SERVICE_WORKER_IN_DEV` switch, stale-worker removal in `main.ts`). Hold-to-record voice
+  note added (`VoiceRecorderService`, `VoiceRecordButtonComponent`, in-memory `VoiceRecording`).
+* **2026-09-23** — `logout()` revokes a per-strategy `revocableToken()` (closed #30). Full
+  bundle re-validation at `6cad020`: zoneless bootstrap, `withXhr()`, DST-safe serial dates,
+  `EXPENSE_COLUMNS`, gviz empty-cell handling, `Memento` rollbacks; known issues #28–#31 added.
+* **2026-09-20** — OAuth scope narrowed from `auth/spreadsheets` to `auth/drive.file`; setup
+  picks the spreadsheet with Google Picker (`PickerService`, `APP_ID`).
+* **2026-09-15** — Angular 21 → 22 and NgRx 22 via `ng update`; TypeScript 6.0.3, Node
+  `>= 22.22.3`; `withXhr()` added; components on the `OnPush` default.
+* **2026-09-13** — `baseHref` `/exp-spsh/` and build-output-relative ngsw globs (offline
+  start fixed); IndexedDB storage hardening; corrections to state management,
+  troubleshooting, delete and load flows.
+* **2026-09-12** — Write outbox for `addExpense` introduced (IndexedDB queue, drain loop,
+  failure notice, toolbar badge; known issues #23–#27). Harness builds into `tmp/harness-dist`.
+  Dashboard form moved to Signal Forms; `ExpensesTableComponent` to signal inputs/outputs.
+* **2026-09-11** — Bundle swept to present-tense descriptions; `getAppConfig()` became async
+  with lazy StoreDevtools; standalone-only components (no shared UI module).
+* **2026-09-08** — Effect error surfacing: `operationFailed`, `lastError`, fixed-copy toasts.
+* **2026-09-05** — Bundle created (OKF v0.2): architecture, domain, flows, interfaces,
+  systems, operations, constraints, source map.

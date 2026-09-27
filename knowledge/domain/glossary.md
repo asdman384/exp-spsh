@@ -4,7 +4,7 @@ title: Project glossary
 description: Terms that mean something specific in this codebase, including the ones whose names are misleading.
 tags: [domain, glossary, terminology]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: repo
     resource: ../../src
@@ -25,6 +25,7 @@ sources:
 | **gviz / tq** | The Google Visualization Query endpoint used for filtered expense reads. See [gviz](../interfaces/gviz-query.md). |
 | **outbox** | The IndexedDB-backed queue of `addExpense` writes waiting to be sent. See [write outbox](../architecture/write-outbox.md). |
 | **drain / drain pass** | One run through the outbox that sends pending records oldest-first. |
+| **voice note** | A hold-to-record clip kept in memory; Gemini turns it into expenses that are queued. See [voice recording](../flows/voice-recording.md). |
 | **Memento** | The one-snapshot holder (`src/shared/helpers`) that optimistic effects use for rollback. |
 | **`initialUrlParams`** | The pre-`#` query string (`code`, `state`, `logger`) captured once at startup, before the router drops it. |
 | **TOTAL** | A string constant in `src/constants/UI.ts`; the table hides the selection checkbox for rows whose category is `TOTAL`. |

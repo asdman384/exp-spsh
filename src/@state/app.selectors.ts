@@ -28,6 +28,3 @@ export const byIdSheetSelector = (id: string) =>
 // categories
 export const categoriesSheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.categoriesSheetId);
 export const categoriesSelector = createSelector(selectAppFeature, (state: AppState) => state.categories);
-
-// expenses
-export const expensesSelector = createSelector(selectAppFeature, (state: AppState) => state.expenses);

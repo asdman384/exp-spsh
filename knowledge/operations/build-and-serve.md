@@ -4,7 +4,7 @@ title: Build and run locally
 description: The exact local loop for this project - why `npm run serve` is not `ng serve`, and the URL and query flags that matter.
 tags: [operations, build, dev-server, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: pkg
     resource: ../../package.json
@@ -22,7 +22,7 @@ sources:
 
 # Prerequisites
 
-- `keys.json` at the repo root, copied from `keys.example.json` with all four fields. It is
+- `keys.json` at the repo root, copied from `keys.example.json` plus `GGG_KEY`. It is
   imported as a module, so a missing file or field fails the build
   ([configuration](configuration-and-secrets.md)).
 - `npm install` **with** scripts, so `postinstall` patches the service worker.

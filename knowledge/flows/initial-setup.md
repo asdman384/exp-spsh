@@ -4,7 +4,7 @@ title: Initial setup
 description: Binding a spreadsheet to the app - picking it with Google Picker, tab discovery, tab creation, validation formatting, and the state that unlocks the dashboard.
 tags: [flow, setup, onboarding, sheets]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: setup
     resource: ../../src/modules/setup/setup-page/setup-page.container.ts
@@ -63,8 +63,7 @@ only in the [log overlay](../architecture/dependency-wiring.md#the-global-log). 
 
 - the account lacks **edit** rights (the first `batchUpdate` fails);
 - offline (the route has no `isOnline` guard);
-- a Picker load failure, or an empty `APP_ID` in `keys.json`
-  ([known issues](../constraints/known-issues.md) #29).
+- a Picker load failure, or a wrong `APP_ID` in `keys.json`.
 
 Steps 2–4 may have partly run before the failure (e.g. `spreadsheetId` stored, one tab
 created); a retry reuses existing tabs.

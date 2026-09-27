@@ -10,8 +10,7 @@ export type OutboxRecordPatch = Partial<Pick<OutboxRecord, 'status' | 'attempts'
  * Async persistence for the write outbox (`docs/specs/write-outbox.md` D11). Carries its own
  * root default binding to `IndexedDbOutboxStorage`, the same "abstract class as DI token" idea
  * as `StorageService` / `AbstractSecurityService`, but resolved here rather than in
- * `app.config.ts` so an unmodified `app.effects.spec.ts` TestBed (which provides no
- * `OutboxStorage`) can still build `AppEffects`.
+ * `app.config.ts` so a TestBed that provides no `OutboxStorage` still resolves one.
  *
  * Every operation is a cold `Observable` that emits once (or errors) and completes. One
  * instance runs its operations strictly in subscription order.

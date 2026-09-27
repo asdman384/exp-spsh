@@ -1,6 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withJsonpSupport, withXhr } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, ImportProvidersSource } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, ImportProvidersSource, inject, provideAppInitializer } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -8,11 +8,16 @@ import { EffectsModule } from '@ngrx/effects';
 import { StoreModule } from '@ngrx/store';
 import { metaReducers, reducers } from 'src/@state';
 import { AppEffects } from 'src/@state/app.effects';
-import { OutboxEffects } from 'src/@state/outbox.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 import { isServiceWorkerEnabled } from 'src/shared/helpers/service-worker-mode';
-import { AbstractSecurityService, LocalStorageService, RedirectSecurityService, StorageService } from 'src/services';
+import {
+  AbstractSecurityService,
+  LocalStorageService,
+  OutboxService,
+  RedirectSecurityService,
+  StorageService
+} from 'src/services';
 import { routes } from './app.routes';
 
 const loggerType = initialUrlParams.get('logger');
@@ -54,6 +59,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
       { provide: LocationStrategy, useClass: HashLocationStrategy },
       { provide: StorageService, useClass: LocalStorageService },
       provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport()),
+      provideAppInitializer(() => inject(OutboxService).init()),
       importProvidersFrom([
         BrowserModule,
         ServiceWorkerModule.register('ngsw-worker.js', {
@@ -63,7 +69,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
           registrationStrategy: 'registerWhenStable:30000'
         }),
         StoreModule.forRoot(reducers, { metaReducers }),
-        EffectsModule.forRoot([AppEffects, OutboxEffects]),
+        EffectsModule.forRoot([AppEffects]),
         ...debug
       ])
     ]

@@ -4,7 +4,7 @@ title: Code conventions
 description: The patterns this codebase actually follows - naming, imports, component style, RxJS idioms - so new code reads like the old.
 tags: [constraints, conventions, code-style]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: rules
     resource: ../../.claude/rules/code-style.md
@@ -56,9 +56,10 @@ src/fun/               seasonal extras
   (`SetupComponent`, `LoginPageContainer`, `OutboxStatusComponent`,
   `OutboxFailureNoticeComponent`).
 - `input()`/`output()`/`viewChild()` signal APIs (no decorator inputs).
-- Constructor injection with `private readonly` parameters dominates (`prefer-inject` lint is
-  off); `inject()` appears in `OutboxEffects`, `StatisticsContainer`, the outbox components,
-  `PlaygroundComponent`, and the functional guards.
+- Older classes use constructor injection with `private readonly` parameters
+  (`prefer-inject` lint is off); newer ones — the signal services, the outbox and voice
+  components, `StatisticsContainer`, the functional guards — use `inject()`. Prefer `inject()`
+  in new code.
 - Template-visible members are `protected`; observables end in `$`.
 - Block control flow (`@if`, `@for` with `track`, `@empty`).
 - Forms: the dashboard uses **Signal Forms** (`form()`, `required()`, `[formField]`);
@@ -70,8 +71,10 @@ src/fun/               seasonal extras
   `pageState$`.
 - `first()` / `take(1)` for one-shot reads in constructors; `takeUntilDestroyed()` for
   component subscriptions.
-- Effects start with `tap(log)`; remote effects use `exhaustMap` and put `catchError` on the
-  inner observable, reporting via `reportFailure`.
+- Effects start with `tap(log)`; remote effects and `ExpensesService` pipelines use
+  `exhaustMap` and put `catchError` on the inner observable, reporting via `reportFailure`.
+- Non-serialisable or list state lives in root services as a private `signal` exposed with
+  `asReadonly()` (`ExpensesService`, `OutboxService`, `VoiceRecorderService`).
 - Optimistic effects snapshot state in a `Memento` for rollback.
 
 # Styling and comments

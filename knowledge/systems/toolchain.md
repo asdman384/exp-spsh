@@ -4,7 +4,7 @@ title: Development toolchain
 description: Pinned framework and tooling versions, the builders behind each npm script, and the local platform assumptions.
 tags: [system, toolchain, dependencies, versions]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 stale_after: 2026-12-23T00:00:00Z
 sources:
   - id: pkg
@@ -28,10 +28,11 @@ sources:
 | Framework | `@angular/*` incl. CDK/Material | `^22.1.6` |
 | State | `@ngrx/store`, `effects`, `entity`, `store-devtools` | `^22.0.1` |
 | Reactive | `rxjs` | `~7.8.2` |
+| AI | `@google/genai` | `^2.24.0` (lazy chunk) |
 | Build | `@angular/build`, `@angular/cli` | `^22.1.8` |
 | Language | `typescript` | `~6.0.3` |
 | Lint | `eslint` `^10.3.0`, `angular-eslint` `22.5.0`, `typescript-eslint` `8.59.2` | |
-| Test | `vitest`, `@vitest/browser-playwright` `^4.1.7`; `jsdom` `^27.0.1` | |
+| Test | `vitest`, `@vitest/browser-playwright` `^4.1.11`; `jsdom` `^27.0.1` | |
 | Types | `@types/gapi`, `gapi.client.sheets-v4`, `gapi.client.oauth2-v2`, `gapi.client.discovery-v1`, `google.accounts`, `google.picker`, `node` | various |
 | Static server | `http-server` | `^14.1.1` |
 

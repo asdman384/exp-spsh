@@ -1,10 +1,10 @@
 ---
 type: Flow
 title: Add an expense
-description: From the dashboard form to a row inserted at the top of a data sheet (live or via the outbox), and the targeted re-read that follows.
+description: From the dashboard form through the write outbox to a row inserted at the top of a data sheet, and the targeted re-read that follows.
 tags: [flow, expense, write, sheets]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
@@ -12,15 +12,15 @@ sources:
   - id: html
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.html
     title: Dashboard form template
-  - id: effects
-    resource: ../../src/@state/app.effects.ts
-    title: addExpense$
+  - id: expenses
+    resource: ../../src/modules/dashboard/expenses.service.ts
+    title: ExpensesService.add
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
     title: SpreadsheetService.addExpense
   - id: outbox
-    resource: ../../src/@state/outbox.effects.ts
-    title: OutboxEffects
+    resource: ../../src/services/outbox/outbox.service.ts
+    title: OutboxService
 ---
 
 # The form
@@ -43,47 +43,47 @@ asterisk is not shown.
   dispatches `loadCategories`; normally the list comes from localStorage.
 - After submit the form resets but keeps `date` and `sheet`.
 
-The last `.submit-row`, after the **Add Expense** button, also holds `<voice-record-button>` —
-the [hold-to-record voice note](voice-recording.md) button. It is unrelated to this form: it
-never dispatches `addExpense` or calls `onSubmit`, and its recording is not attached to the
-expense in any way.
+The [voice note](voice-recording.md) button after **Add Expense** is a second entry point: it
+never submits the form, but each expense Gemini recognizes goes to the same
+`ExpensesService.add`, so everything below applies to it too.
 
 # Steps
 
-1. `onSubmit` prevents native submit, returns unless the form is valid, and dispatches
-   `addExpense({ expense, sheetId: sheet.id })`, then resets the form.
-2. `addExpense$` writes live, or queues in the [write outbox](../architecture/write-outbox.md)
-   when offline or when records are already pending.[^effects]
-3. A live write sets `loading`, then `SpreadsheetService.addExpense` sends **one
-   `:batchUpdate`**:[^svc]
+1. `onSubmit` prevents native submit, returns unless the form is valid, and calls
+   `ExpensesService.add(sheet.id, expense)`, then resets the form.
+2. `add` never calls Google. It calls `OutboxService.add`, which builds a pending
+   `OutboxRecord` (`attempts: 0`, the five expense fields, the current spreadsheet id), so
+   **every** expense goes through the [write outbox](../architecture/write-outbox.md).[^expenses]
+3. `OutboxService` persists the record to IndexedDB, announces "Expense saved on this
+   device…", and starts a drain pass. The pass sends only when online, signed in, and a
+   spreadsheet is selected; otherwise the record waits for the next trigger.[^outbox]
+4. The drain sends through `SpreadsheetService.addExpense`, **one `:batchUpdate`**:[^svc]
    - `insertDimension` ROWS `[0, 1)`, `inheritFromBefore: false`;
    - `updateCells` at row 0, `fields: 'userEnteredValue'`, with the five cells from
      `toExpenseCells` ([row mapping](../domain/expense.md#row-mapping)).
-
-   A queued expense is later sent through the same call.
-4. On live success the effect dispatches `loadExpenses({ sheetId, from: date, to: date + 1 day })`,
-   which replaces the table with that one day. `loadExpenses$` clears `loading`.
+5. When a pass has sent at least one record (`OutboxService.sent$`) and the router is on
+   `/dashboard`, `ExpensesService` reloads the day of the last sent record
+   ([load expenses](load-expenses.md)).
 
 # Outcomes
 
-| Path | `loading` | User sees |
-|---|---|---|
-| live success | on → off | table reloads to that day |
-| offline, or behind the queue | untouched | polite announcement "Expense saved on this device…"; outbox badge |
-| live fails `retryable`/`auth` | on → off | queued as above |
-| live fails `terminal` | on → off | toast "Couldn't save that expense. Please try again." |
-| outbox cannot persist | — | same toast |
+| Path | User sees |
+|---|---|
+| queued, then sent | polite announcement "Expense saved on this device…", then the table reloads to that day |
+| queued, cannot send yet (offline, signed out) | the announcement; outbox badge |
+| send fails `retryable`/`auth` | stays pending; retried on the next trigger |
+| send fails `terminal` | failure notice with Retry / Discard |
+| outbox cannot persist (no IndexedDB) | toast "Couldn't save that expense. Please try again." |
 
-The form was already reset, so a failed entry must be retyped. A queued expense appears in
-the table only after it is sent and the post-drain reload runs (only on `/dashboard`).[^outbox]
-
-`exhaustMap` drops a second **Add Expense** while a live write is in flight.
+The form was already reset, so an entry that could not be persisted must be retyped. A
+queued expense appears in the table only after it is sent and the post-drain reload runs
+(only on `/dashboard`).
 
 The date is written as local wall-clock time; a queued expense is converted at send time
 ([known issues](../constraints/known-issues.md) #27).
 
 [^html]: Dashboard form template
 [^page]: DashboardPageContainer
-[^effects]: addExpense$
+[^expenses]: ExpensesService.add
 [^svc]: SpreadsheetService.addExpense
-[^outbox]: OutboxEffects
+[^outbox]: OutboxService

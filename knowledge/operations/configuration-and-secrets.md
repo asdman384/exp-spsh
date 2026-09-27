@@ -4,7 +4,7 @@ title: Configuration and secrets
 description: Every configuration input the app has - keys.json, environment files, constants - and where each one is consumed.
 tags: [operations, configuration, secrets, keys]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: example
     resource: ../../keys.example.json
@@ -27,9 +27,12 @@ sources:
   "CLIENT_ID": "your-google-client-id-here.apps.googleusercontent.com",
   "API_KEY": "your-google-api-key-here",
   "CLIENT_SECRET": "your-google-client-secret-here",
-  "APP_ID": "your-google-cloud-project-number-here"
+  "APP_ID": "your-google-cloud-project-number-here",
+  "GGG_KEY": "your-gemini-api-key-here"
 }
 ```
+
+`keys.example.json` does not yet contain `GGG_KEY` ([known issues](../constraints/known-issues.md) #32).
 
 At the repo root, gitignored, imported as a module (`resolveJsonModule`).[^example] A missing
 file or field is a build error.
@@ -40,9 +43,10 @@ file or field is a build error.
 | `CLIENT_ID` | both security services' GIS clients; token exchange/refresh |
 | `CLIENT_SECRET` | `RedirectSecurityService` token exchange and refresh |
 | `APP_ID` | `PickerService.setAppId` (Cloud project number) |
+| `GGG_KEY` | `ExpenseRecognitionService` — the `@google/genai` API key ([Gemini](../interfaces/gemini-api.md)) |
 
 CI writes the file from repository secrets ([GitHub Pages](../systems/github-pages.md#secrets)).
-All four values ship in the JavaScript bundle ([security posture](../constraints/security-posture.md)).
+All values ship in the JavaScript bundle ([security posture](../constraints/security-posture.md)).
 
 # Environment files
 

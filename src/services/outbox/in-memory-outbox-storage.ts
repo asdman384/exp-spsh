@@ -9,8 +9,8 @@ import type { OutboxRecordPatch, OutboxStorage } from './outbox-storage';
 
 /**
  * Test double for `OutboxStorage`, backed by an in-memory `Map`. `structuredClone` is used on
- * the way in and out because NgRx freezes actions/state in dev mode, and this double must catch
- * accidental mutation the same way the real, structured-clone-backed IndexedDB store would.
+ * the way in and out so this double catches accidental mutation the same way the real,
+ * structured-clone-backed IndexedDB store would.
  */
 @Injectable()
 export class InMemoryOutboxStorage implements OutboxStorage {

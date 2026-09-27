@@ -4,7 +4,7 @@ title: CI and deployment
 description: How a change reaches production, what the pipeline does and does not check, and the manual steps around a release.
 tags: [operations, ci, deployment, github-actions, playbook]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: wf
     resource: ../../.github/workflows/webpack.yml
@@ -43,7 +43,7 @@ older successful run. Installed PWAs switch versions only when their worker fetc
 
 - No test, lint, or spec type-check in CI; `npm run build` type-checks the app only.
 - `deploy` is not guarded to `push`/`master`, so pull-request runs also reach it.
-- `APP_ID` is not passed to the build step, so deployed builds have an empty `APP_ID`
-  ([known issues](../constraints/known-issues.md) #29).
+- `GGG_KEY` is not written into `keys.json`, so the build fails type-checking
+  `ExpenseRecognitionService` ([known issues](../constraints/known-issues.md) #32).
 
 [^pkg]: version field

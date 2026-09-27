@@ -4,7 +4,7 @@ title: Bootstrap and dependency wiring
 description: What `main.ts` and `app.config.ts` provide, which abstractions are bound to which implementations, and the global `log()` side channel.
 tags: [architecture, di, bootstrap, angular]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: main
     resource: ../../src/main.ts
@@ -48,16 +48,20 @@ A rejection anywhere in the chain is written to `console.error` and `log()`. The
 | — | `provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport())` | XHR backend, class-based interceptors |
 | — | `provideRouter(routes, withComponentInputBinding())` + `withViewTransitions(...).ɵproviders` | [routing](routing-and-guards.md) |
 | — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: isServiceWorkerEnabled(), registrationStrategy: 'registerWhenStable:30000' })` | production always; development only with `SERVICE_WORKER_IN_DEV` |
-| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects, OutboxEffects])` | [state](state-management.md) |
+| — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects])` | [state](state-management.md) |
 | — | `StoreDevtoolsModule.instrument(...)` | only when the URL has a `logger` query param; the package is a lazy chunk fetched only then |
 
+`provideAppInitializer(() => inject(OutboxService).init())` hydrates the
+[write outbox](write-outbox.md) at startup.
+
 Root-provided (`providedIn: 'root'`): `SpreadsheetService`, `NetworkStatusService`,
-`PickerService`, `IndexedDbOutboxStorage`, `OutboxDrainLock`, and `OutboxStorage`.
+`PickerService`, `OutboxService`, `IndexedDbOutboxStorage`, `OutboxStorage`,
+`ExpensesService`, `VoiceRecorderService`, `ExpenseRecognitionService`.
 
 `OutboxStorage` is an abstract class that binds itself —
 `@Injectable({ providedIn: 'root', useFactory: () => inject(IndexedDbOutboxStorage) })` — so
-it needs no line in `app.config.ts`, and a `TestBed` that does not provide it can still build
-`AppEffects`. See [the write outbox](write-outbox.md).
+it needs no line in `app.config.ts`, and a `TestBed` that does not provide it still resolves
+one.
 
 # Pre-hash query parameters
 
@@ -77,9 +81,6 @@ here: `RedirectSecurityService`, `LoginPageContainer`, and `app.config.ts`.
   copy (`content_copy`) and clear (`not_interested`) buttons;
 - objects are serialised with `JSON.stringify(arg, null, 2)`; `Error`s get a stack trace via
   the V8-only `Error.captureStackTrace`.
-
-`logger.ts` also parses `?logger=` into an unused `loggerType`; that parameter only gates
-DevTools.
 
 `log()` is used without import in effects, services, guards, and containers. Any new
 environment must install it first: `tsconfig.app.json` and `tsconfig.spec.json` both include

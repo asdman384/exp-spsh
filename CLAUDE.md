@@ -60,10 +60,11 @@ shims run; hence the `npx npm run <script>` form seen in the README.
 ## Prerequisite
 
 `keys.json` must exist at the repo root before the first build (copy `keys.example.json`).
-It holds `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID` and is **imported as a module**, so
-a missing file — or a missing field, such as `APP_ID` — is a build-time module-resolution or
+It holds `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID`, `GGG_KEY` and is **imported as a
+module**, so a missing file — or a missing field — is a build-time module-resolution or
 type-check failure. `APP_ID` is the Google Cloud project number, used by the Picker (see
-below). CI writes the file from repository secrets.
+below); `GGG_KEY` is the Gemini API key. CI writes the file from repository secrets, but does
+not yet write `GGG_KEY`, and `keys.example.json` lacks it (known issue #32).
 
 ## Architecture
 
@@ -79,10 +80,11 @@ Angular's `HttpClient`.
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
   *before* bootstrap). It is used without import across effects, services, and guards, and
   writes to both the console and an always-on overlay in the page.
-- **Failures surface as a fixed-text toast, never the real error.** The 7 remote-calling
-  effects catch on their inner observable, dispatch `operationFailed({ source, message })`
-  (via `reportFailure` in `src/@state/report-failure.ts`), and `showFailureToast$` opens a
-  snackbar with one of the `FAILURE_MESSAGES` strings. The raw error goes only to `log()` —
+- **Failures surface as a fixed-text toast, never the real error.** The 4 remote category
+  effects and `ExpensesService`'s load/delete catch on their inner observable, dispatch
+  `operationFailed({ source, message })` (via `reportFailure` in
+  `src/@state/report-failure.ts`), and `showFailureToast$` opens a snackbar with one of the
+  `FAILURE_MESSAGES` strings. The raw error goes only to `log()` —
   the overlay is where you debug. The setup page and the four localStorage persist effects
   only log, with no toast.
 - **Pre-`#` query params are read once, from `initialUrlParams`**
@@ -91,15 +93,20 @@ Angular's `HttpClient`.
   `window.location`.
 - **The NgRx entity adapter keys sheets by `title`**, so `selectedSheetId` holds a string;
   `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering *position*, not an id.
-- **`addExpense` may not touch the network at all.** Offline, or while another expense is
-  already queued, `AppEffects.addExpense$` writes the expense into IndexedDB instead of
-  calling Google, and `OutboxEffects` drains that queue serially the next time the app can
-  reach the spreadsheet (see `knowledge/architecture/write-outbox.md`). The store has **two**
-  feature slices (`app`, `outbox`) and **two** effects classes
-  (`EffectsModule.forRoot([AppEffects, OutboxEffects])`). The queue lives in IndexedDB
+- **Expenses are not in the NgRx store.** `ExpensesService`
+  (`src/modules/dashboard/expenses.service.ts`) holds the list in a signal and owns
+  `load`/`add`/`delete`; there are no expense actions, reducer keys, or effects.
+- **Adding an expense never touches the network directly.** `ExpensesService.add` calls
+  `OutboxService.add` (`src/services/outbox/outbox.service.ts`), and `OutboxService` drains
+  that IndexedDB queue serially whenever the app can reach the spreadsheet; `ExpensesService`
+  reloads the day from `OutboxService.sent$` (see `knowledge/architecture/write-outbox.md`).
+  The outbox is not NgRx either: the store has **one** feature slice (`app`) and **one**
+  effects class (`EffectsModule.forRoot([AppEffects])`); `OutboxService.init()` runs from
+  `provideAppInitializer` in `app.config.ts`. The queue lives in IndexedDB
   (database `exp-spsh-outbox`), not `localStorage`, and it **survives logout** — reset it via
-  DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. A drain pass holds the Web
-  Lock `exp-spsh-outbox-drain` for its whole run, across tabs.
+  DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. There is no cross-tab
+  coordination: the app is a phone PWA used in a single tab, so only the in-tab single-flight
+  guards a drain pass.
 - **The service worker runs only in production builds.** `SERVICE_WORKER_IN_DEV` in
   `src/shared/helpers/service-worker-mode.ts` (default `false`) is the one switch for
   development builds. With it off, `main.ts` unregisters any worker scoped to `/exp-spsh/`
@@ -110,6 +117,13 @@ Angular's `HttpClient`.
   (`src/services/voice-recorder/`) holds the latest `VoiceRecording` in a signal — it is not in
   the NgRx store (a `Blob` isn't serialisable) and is never persisted. It survives logout
   (`AppComponent.logout` does not reload) but is lost on an actual page reload.
+- **Voice notes become queued expenses via Gemini.** `DashboardPageContainer` sends each new
+  recording to `ExpenseRecognitionService`, which calls `gemini-3.5-flash-lite` through
+  `@google/genai` with `keys.GGG_KEY` (the SDK uses `fetch`, so `ExpAuthInterceptor` is not
+  involved and no OAuth scope is needed). The SDK is loaded by dynamic `import()` — keep it
+  that way, or the barrel pulls ~390 kB into `main`. Every recognized `Expense` goes to
+  `ExpensesService.add` (the outbox); a failure is the one toast that shows the raw error
+  (`source: 'Gemini'`). See `knowledge/flows/voice-recording.md`.
 - **OAuth scope is `drive.file`.** Setup has no URL field —
   `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
   loaded lazily, not vendored like `src/scripts/client.js`) and the user's selection is what

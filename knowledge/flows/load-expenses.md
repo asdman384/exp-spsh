@@ -6,9 +6,9 @@ tags: [flow, expense, read, gviz, offline]
 status: stable
 generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
 sources:
-  - id: effects
-    resource: ../../src/@state/app.effects.ts
-    title: loadExpenses$
+  - id: expenses
+    resource: ../../src/modules/dashboard/expenses.service.ts
+    title: ExpensesService.load
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
     title: DashboardPageContainer.getInterval
@@ -18,38 +18,36 @@ sources:
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
     title: SpreadsheetService.loadExpenses
-  - id: outbox
-    resource: ../../src/@state/outbox.effects.ts
-    title: reloadOnDrainCompleted$
 ---
 
 # Callers
 
-`loadExpenses({ sheetId, from?, to? })` is the only way expenses enter the store.
+`ExpensesService.load({ sheetId, from?, to? })` is the only way expenses enter the list.
+The list is the service's `expenses` signal; it is not in the NgRx store.[^expenses]
 
 | Caller | Window |
 |---|---|
 | `DashboardPageContainer` constructor (if a current sheet exists) | none — `from` defaults to today, open-ended |
 | dashboard date change | `getInterval(date)` |
 | dashboard person change | `getInterval(current date)` |
-| `addExpense$` after a live write | the expense's day |
-| `OutboxEffects.reloadOnDrainCompleted$` (only on `/dashboard`) | the last sent record's day |
+| `OutboxService.sent$` (only on `/dashboard`) | the last sent record's day |
 | `StatisticsContainer.formChanged` | the selected month |
 
 `getInterval(from)`: if `from` is today, send only `from` (open-ended); otherwise
 `{ from, to: from + 1 day }`.[^page] Statistics sends `[1st of month, 1st of next month)`.[^stats]
 
-# The effect
+# The pipeline
 
 ```
-loadExpenses --switchMap--> online$.filter(true) --exhaustMap--> loading(true); svc.loadExpenses
-             --> storeExpenses; loading(false)
+load(filter) --switchMap--> online$.filter(true) --exhaustMap--> loading(true); svc.loadExpenses
+             --> expenses.set(rows); loading(false)
 ```
 
-An offline dispatch waits and fires when connectivity returns; a newer dispatch replaces the
-waiting one.[^effects] The inner `online$` stream never completes, so **the latest
-`loadExpenses` re-runs on every later offline → online transition**. `storeExpenses` replaces
-the array wholesale.
+An offline call waits and fires when connectivity returns; a newer call replaces the
+waiting one.[^expenses] The inner `online$` stream never completes, so **the latest
+`load` re-runs on every later offline → online transition**. The signal is replaced
+wholesale. `ExpensesService` is a root singleton, so the list survives navigation between
+the dashboard and statistics pages.
 
 On failure, `reportFailure('loadExpenses$')` shows "Couldn't load your expenses. Check your
 connection and try again." and the table keeps its previous rows.
@@ -76,5 +74,5 @@ amount cells become `''`/`0`; a date string that is not `Date(…)` throws and f
 
 [^page]: DashboardPageContainer.getInterval
 [^stats]: StatisticsContainer.formChanged
-[^effects]: loadExpenses$
+[^expenses]: ExpensesService.load
 [^svc]: SpreadsheetService.loadExpenses

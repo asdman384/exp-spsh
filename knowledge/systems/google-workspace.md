@@ -5,7 +5,7 @@ description: The external system that stores all application data and authentica
 tags: [system, google, sheets, oauth, dependency]
 resource: https://console.cloud.google.com/
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
@@ -30,6 +30,7 @@ Google is not an integration here — it **is** the backend.
 | `oauth2.googleapis.com` | token exchange and refresh |
 | `accounts.google.com` | GIS consent/redirect (library bundled as `src/scripts/client.js`) |
 | `apis.google.com` | Picker library, loaded lazily during setup |
+| `generativelanguage.googleapis.com` | Gemini, via `@google/genai` `fetch` ([Gemini](../interfaces/gemini-api.md)) |
 
 Only the first and third are in the service worker's `dataGroups` (zero caching).
 
@@ -39,11 +40,12 @@ One Google Cloud project supplies an OAuth **Web application** client, an API ke
 project number, delivered as `keys.json`:[^keys]
 
 ```json
-{ "CLIENT_ID": "...apps.googleusercontent.com", "API_KEY": "...", "CLIENT_SECRET": "...", "APP_ID": "..." }
+{ "CLIENT_ID": "...apps.googleusercontent.com", "API_KEY": "...", "CLIENT_SECRET": "...", "APP_ID": "...", "GGG_KEY": "..." }
 ```
 
 `APP_ID` is the numeric **project number** (not the project id), passed to
-`PickerBuilder.setAppId()`.[^picker]
+`PickerBuilder.setAppId()`.[^picker] `GGG_KEY` is an API key allowed for the Generative
+Language API (Gemini).
 
 Required settings:
 

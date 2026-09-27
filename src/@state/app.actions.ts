@@ -1,5 +1,5 @@
 import { createActionGroup, emptyProps, props } from '@ngrx/store';
-import { Category, Expense, Sheet } from 'src/shared/models';
+import { Category, Sheet } from 'src/shared/models';
 
 export const AppActions = createActionGroup({
   source: 'App shell',
@@ -20,12 +20,6 @@ export const AppActions = createActionGroup({
     addCategory: props<{ newCategory: Category }>(),
     deleteCategory: props<{ category: Category }>(),
     updateCategoryPosition: props<{ categories: Array<Category> }>(),
-
-    // expenses
-    addExpense: props<{ sheetId: number; expense: Expense }>(),
-    deleteExpense: props<{ sheet: Sheet; expense: Expense }>(),
-    loadExpenses: props<{ sheetId: number; from?: Date; to?: Date }>(),
-    storeExpenses: props<{ expenses: Array<Expense> }>(),
 
     // errors
     operationFailed: props<{ source: string; message: string }>()

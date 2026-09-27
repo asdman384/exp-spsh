@@ -15,7 +15,7 @@ export interface OutboxFailureNoticeData {
 }
 
 /**
- * Snackbar body for a `failed` outbox record (`docs/specs/write-outbox.md` D13). `OutboxEffects`
+ * Snackbar body for a `failed` outbox record (`docs/specs/write-outbox.md` D13). `OutboxService`
  * opens this with `MatSnackBar.openFromComponent` and reads `choice()` from
  * `MatSnackBarRef.instance` after `afterDismissed()`, since Material's snackbar has no other
  * return-value channel.
@@ -47,7 +47,7 @@ export class OutboxFailureNoticeComponent {
 
   protected readonly record: OutboxRecord = this.data.record;
 
-  /** Read by `OutboxEffects` from `MatSnackBarRef.instance` after `afterDismissed()`. */
+  /** Read by `OutboxService` from `MatSnackBarRef.instance` after `afterDismissed()`. */
   readonly choice = signal<'retry' | 'discard' | 'close' | undefined>(undefined);
 
   protected choose(choice: 'retry' | 'discard' | 'close'): void {

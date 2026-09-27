@@ -1,5 +1,5 @@
 import { EntityState } from '@ngrx/entity';
-import { Category, Expense, Sheet } from 'src/shared/models';
+import { Category, Sheet } from 'src/shared/models';
 
 export interface SheetsState extends EntityState<Sheet> {
   selectedSheetId: string | null;
@@ -17,6 +17,5 @@ export interface AppState {
   dataSheets: SheetsState;
   categoriesSheetId: number | undefined;
   categories: Array<Category>;
-  expenses: Array<Expense>;
   lastError: AppError | null;
 }

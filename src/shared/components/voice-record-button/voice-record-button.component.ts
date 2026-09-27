@@ -1,8 +1,12 @@
-import { Component, DestroyRef, computed, effect, inject } from '@angular/core';
 import { LiveAnnouncer } from '@angular/cdk/a11y';
+import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, computed, effect, inject } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 
+import { Store } from '@ngrx/store';
+
+import { loadingSelector } from 'src/@state/app.selectors';
 import { VoiceRecorderOutcome, VoiceRecorderService } from 'src/services';
 
 const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
@@ -25,7 +29,7 @@ const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
  */
 @Component({
   selector: 'voice-record-button',
-  imports: [MatButtonModule, MatIconModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule],
   template: `
     <button
       mat-icon-button
@@ -43,6 +47,7 @@ const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
       (keyup)="onKeyUp($event)"
       (blur)="onBlur()"
       (contextmenu)="onContextMenu($event)"
+      [disabled]="loading$ | async"
     >
       <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
     </button>
@@ -50,9 +55,12 @@ const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
   styleUrl: './voice-record-button.component.scss'
 })
 export class VoiceRecordButtonComponent {
+  private readonly store = inject(Store);
   private readonly recorder = inject(VoiceRecorderService);
   private readonly liveAnnouncer = inject(LiveAnnouncer);
   private readonly destroyRef = inject(DestroyRef);
+  protected readonly loading$ = this.store.select(loadingSelector);
+
 
   protected readonly isRecording = computed(() => this.recorder.status() === 'recording');
   protected readonly isBusy = computed(() => {

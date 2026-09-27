@@ -51,7 +51,7 @@ the repo root.
   ([dependency wiring](../architecture/dependency-wiring.md)).
 - `localStorage` holds parseable JSON ([storage](../interfaces/local-storage.md)); IndexedDB
   and `crypto.randomUUID` enable the [write outbox](../architecture/write-outbox.md)
-  (without them `addExpense` always writes live).
+  (without them a new expense cannot be saved).
 - Served under `/exp-spsh/` with hash routing, so no server-side rewrites are needed
   ([PWA](../architecture/pwa-and-service-worker.md)).
 

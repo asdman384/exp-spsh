@@ -1,8 +1,8 @@
 import { Expense } from './expense';
 
 /**
- * A queued `addExpense` write, persisted in IndexedDB (`OutboxStorage`) and mirrored in the
- * `outbox` NgRx slice. See `docs/specs/write-outbox.md` D10.
+ * A queued `addExpense` write, persisted in IndexedDB (`OutboxStorage`) and mirrored in
+ * `OutboxService.records`. See `docs/specs/write-outbox.md` D10.
  */
 export interface OutboxRecord {
   localId: string;

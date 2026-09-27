@@ -1,5 +1,5 @@
 import { AsyncPipe, NgClass } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -12,18 +12,10 @@ import { SwUpdate, VersionReadyEvent } from '@angular/service-worker';
 import { Store } from '@ngrx/store';
 import { combineLatest, debounceTime, first, map, startWith } from 'rxjs';
 
-import {
-  AppActions,
-  OutboxActions,
-  failedCountSelector,
-  loadingSelector,
-  pendingCountSelector,
-  spreadsheetIdSelector,
-  titleSelector
-} from 'src/@state';
+import { AppActions, loadingSelector, spreadsheetIdSelector, titleSelector } from 'src/@state';
 import { DATA_SHEET_TITLE_PREFIX, ROUTE } from 'src/constants';
 import { SnowComponent } from 'src/fun/snow/snow.component';
-import { AbstractSecurityService, NetworkStatusService, SpreadsheetService } from 'src/services';
+import { AbstractSecurityService, NetworkStatusService, OutboxService, SpreadsheetService } from 'src/services';
 import { OutboxStatusComponent } from 'src/shared/components/outbox-status/outbox-status.component';
 
 import pak from '../../package.json';
@@ -48,14 +40,13 @@ import pak from '../../package.json';
   ]
 })
 export class AppComponent {
+  protected readonly outbox = inject(OutboxService);
   protected readonly pageState$ = combineLatest({
     user: this.securityService.user$,
     online: this.networkStatus.online$,
     loading: this.store.select(loadingSelector),
     headline: this.store.select(titleSelector),
     spreadsheetId: this.store.select(spreadsheetIdSelector),
-    pending: this.store.select(pendingCountSelector),
-    failed: this.store.select(failedCountSelector),
     hasUpdates: this.swUpdate.versionUpdates.pipe(
       map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
       startWith(false)
@@ -94,6 +85,6 @@ export class AppComponent {
   }
 
   protected syncOutbox(): void {
-    this.store.dispatch(OutboxActions.syncRequested());
+    this.outbox.sync();
   }
 }

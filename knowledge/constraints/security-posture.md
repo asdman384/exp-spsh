@@ -4,7 +4,7 @@ title: Security posture
 description: What a backend-less design implies here - a client secret in the bundle, an API key in every URL, and tokens in localStorage - stated plainly with the mitigations that do exist.
 tags: [constraints, security, oauth, secrets]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: redirect
     resource: ../../src/services/security/redirect-security.service.ts
@@ -28,11 +28,13 @@ secret into `keys.json`, and the bundler inlines it.[^wf] Anyone can read it fro
 published site. Removing it needs PKCE with a public client or a token-exchange backend; the
 existing `PopupSecurityService` needs no secret and is the smaller step.
 
-# 2. `API_KEY` on every Sheets request
+# 2. API keys in the bundle
 
 Every `SpreadsheetService` call sends `key: keys.API_KEY`, and Picker uses it too.[^svc]
-Restrict the key by HTTP referrer and API in the Cloud console, or the published key can
-consume the project's quota.
+`ExpenseRecognitionService` ships a second key, `keys.GGG_KEY`, for Gemini
+([Gemini](../interfaces/gemini-api.md)). Restrict both by HTTP referrer and API in the Cloud
+console, or the published keys can consume the project's quota — Gemini quota costs money once
+billing is enabled.
 
 # 3. Tokens and data in browser storage
 

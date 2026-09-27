@@ -27,7 +27,7 @@ const MIN_DURATION_MS = 1000;
  * Owns the microphone permission check, `getUserMedia`/`MediaRecorder` lifecycle, and the
  * latest in-memory recording (`docs/specs/hold-to-record-voice.md`). Feature-detects at call
  * time, never throws into the caller, and logs on every fallback or failure -- the same shape
- * as `NetworkStatusService`/`OutboxDrainLock`. Owns no copy text; `VoiceRecordButtonComponent`
+ * as `NetworkStatusService`. Owns no copy text; `VoiceRecordButtonComponent`
  * turns `lastOutcome` into announcements.
  */
 @Injectable({ providedIn: 'root' })
@@ -53,8 +53,6 @@ export class VoiceRecorderService {
   private stopRequestedWhileStarting = false;
 
   private recorder: MediaRecorder | null = null;
-  private stream: MediaStream | null = null;
-  private chunks: Array<Blob> = [];
   private startedAt = 0;
   private limitTimer: ReturnType<typeof setTimeout> | null = null;
   private limitReachedPending = false;
@@ -216,8 +214,6 @@ export class VoiceRecorderService {
       this.clearLimitTimer();
       stream.getTracks().forEach((track) => track.stop());
       this.recorder = null;
-      this.stream = null;
-      this.chunks = [];
       this.limitReachedPending = false;
       this._status.set('idle');
       this.reportOutcome('failed');
@@ -244,14 +240,10 @@ export class VoiceRecorderService {
       }
 
       this.recorder = null;
-      this.stream = null;
-      this.chunks = [];
       this._status.set('idle');
     });
 
     this.recorder = recorder;
-    this.stream = stream;
-    this.chunks = chunks;
 
     try {
       this.startedAt = Date.now();
@@ -260,8 +252,6 @@ export class VoiceRecorderService {
       log('VoiceRecorderService: recorder.start failed', e);
       stream.getTracks().forEach((track) => track.stop());
       this.recorder = null;
-      this.stream = null;
-      this.chunks = [];
       this._status.set('idle');
       this.reportOutcome('failed');
       return;

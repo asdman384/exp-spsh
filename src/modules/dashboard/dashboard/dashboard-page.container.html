@@ -83,7 +83,7 @@
   </form>
 
   <expenses-table
-    [dataSource]="(expenses$ | async) || []"
+    [dataSource]="expenses()"
     [showDateCol]="false"
     [draggable]="true"
     (deleteRow)="handleDeleteExpense($event)"

@@ -4,7 +4,7 @@ title: Technical constraints
 description: The non-negotiable technical facts a change has to respect - path coupling, column order, hash routing, strict TypeScript, and bundle budgets.
 tags: [constraints, technical, coupling, invariants]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: ngsw
     resource: ../../ngsw-config.json
@@ -37,7 +37,7 @@ sources:
 | Pre-`#` query params read via `initialUrlParams` | the router drops them on its first redirect | OAuth `code`/`state` are lost |
 | Global **`log()`** exists before anything runs | `main.ts` imports `./logger` first; tsconfigs include it; specs install it | `ReferenceError` in effects, guards, services |
 | `google.accounts` loaded | security services build their client in the constructor; provided by `src/scripts/client.js` | login impossible |
-| `keys.json` has all four fields | imported as a typed module | build fails |
+| `keys.json` has every field read in code (`CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID`, `GGG_KEY`) | imported as a typed module | build fails |
 
 # Compiler strictness
 

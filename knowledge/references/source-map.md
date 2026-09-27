@@ -4,7 +4,7 @@ title: Source map
 description: Directory-by-directory index of the repository, with a pointer from each area to the concept that explains it.
 tags: [reference, source-map, navigation]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
   - id: tree
     resource: ../../src
@@ -36,15 +36,16 @@ sources:
 | `index.html`, `manifest.webmanifest` | shell and PWA manifest | [PWA](../architecture/pwa-and-service-worker.md) |
 | `styles.scss`, `css/fonts.scss` | global styles (incl. log overlay), Roboto | — |
 | `app/` | root component, `app.config.ts`, `app.routes.ts` | [routing](../architecture/routing-and-guards.md) |
-| `@state/` | `app.*` and `outbox.*` actions/effects/model/reducers/selectors, `report-failure.ts`, `outbox-messages.ts` | [state](../architecture/state-management.md), [write outbox](../architecture/write-outbox.md) |
+| `@state/` | `app.*` actions/effects/model/reducers/selectors, `report-failure.ts` | [state](../architecture/state-management.md) |
 | `constants/` | route, UI, storage-key, spreadsheet constants | [configuration](../operations/configuration-and-secrets.md) |
 | `environments/` | `{ production }` flags, unused | [configuration](../operations/configuration-and-secrets.md) |
 | `http-interceptors/` | `ExpAuthInterceptor` | [interceptor](../interfaces/http-auth-interceptor.md) |
 | `services/security/` | abstract, popup, redirect strategies | [authentication](../flows/authentication.md) |
 | `services/spreadsheet/` | `SpreadsheetService`, `expense-row.ts` | [Sheets API](../interfaces/google-sheets-api.md), [expense](../domain/expense.md) |
 | `services/picker/` | `PickerService` | [OAuth and Picker](../interfaces/google-oauth.md) |
-| `services/outbox/` | `OutboxStorage`, `IndexedDbOutboxStorage`, `InMemoryOutboxStorage` (test double), `OutboxDrainLock` | [write outbox](../architecture/write-outbox.md) |
+| `services/outbox/` | `OutboxService` (the queue, signal state, drain loop), `OutboxStorage`, `IndexedDbOutboxStorage`, `InMemoryOutboxStorage` (test double), `OUTBOX_MESSAGES` | [write outbox](../architecture/write-outbox.md) |
 | `services/storage/` | `StorageService`, `LocalStorageService` | [localStorage](../interfaces/local-storage.md) |
+| `services/expense-recognition/` | `ExpenseRecognitionService` — voice note to `Expense[]` via `@google/genai` | [Gemini](../interfaces/gemini-api.md) |
 | `services/network-status.service.ts` | `online$` | [offline](../flows/offline-and-updates.md) |
 | `services/voice-recorder/` | `VoiceRecorderService` — mic permission, `MediaRecorder` lifecycle, the latest in-memory recording | [voice recording](../flows/voice-recording.md) |
 | `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo`, `OutboxRecord`, `VoiceRecording` | [domain](../domain/) |
@@ -54,7 +55,7 @@ sources:
 | `shared/components/outbox-status/`, `outbox-failure-notice/` | toolbar badge; Retry/Discard/Close snackbar (imported by path, not via the barrel) | [write outbox](../architecture/write-outbox.md) |
 | `shared/components/voice-record-button/` | hold-to-record button (imported by path, not via the barrel) | [voice recording](../flows/voice-recording.md) |
 | `shared/components/dialog/` | `ExpDialogComponent`, unused | — |
-| `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/` | [flows](../flows/) |
+| `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/`; `expenses.service.ts` (`ExpensesService`, the signal-held expense list) | [flows](../flows/), [state management](../architecture/state-management.md#expensesservice) |
 | `modules/setup/` | shell + `login-page.containers.ts`, `setup-page/` | [initial setup](../flows/initial-setup.md) |
 | `modules/playground/` | unguarded sandbox (own README) | [app system](../systems/exp-spsh-app.md) |
 | `fun/snow/` | 14 February snow | [app system](../systems/exp-spsh-app.md) |
