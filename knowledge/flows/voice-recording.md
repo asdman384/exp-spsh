@@ -1,10 +1,10 @@
 ---
 type: Flow
 title: Hold-to-record voice note
-description: The dashboard's hold-to-record button, the permission-first press, the single in-memory recording, and how it becomes queued expenses via Gemini.
+description: The dashboard's hold-to-record button, the first-press browser prompt, the single in-memory recording, and how it becomes queued expenses via Gemini.
 tags: [flow, voice, microphone, accessibility, gemini]
 status: stable
-generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
+generated: { by: claude_code/claude-opus-5-5, at: 2026-09-28T00:00:00Z }
 sources:
   - id: svc
     resource: ../../src/services/voice-recorder/voice-recorder.service.ts
@@ -29,35 +29,33 @@ sent to Gemini and every recognized expense is queued like a typed one (see
 
 | Part | Owns |
 |---|---|
-| `VoiceRecorderService` (root) | permission, `getUserMedia`/`MediaRecorder` lifecycle, `status` and `latest` signals, `lastOutcome`[^svc] |
+| `VoiceRecorderService` (root) | `getUserMedia`/`MediaRecorder` lifecycle, `status` and `latest` signals, `lastOutcome`[^svc] |
 | `VoiceRecordButtonComponent` | the hold gesture, the indicator, `LiveAnnouncer` messages; `disabled` while `loadingSelector` is true[^btn] |
 | `DashboardPageContainer` | sends each new clip to `ExpenseRecognitionService` and queues the result[^page] |
 
-`status` is `'idle' | 'requesting' | 'starting' | 'recording'`; `latest` is
+`status` is `'idle' | 'starting' | 'recording'`; `latest` is
 `VoiceRecording | null` (`blob`, `mimeType`, `durationMs`, `recordedAt`).[^model] The clip is
 not in NgRx (a `Blob` is not serialisable); it survives logout and is lost on reload.
 
-# Permission-first press
-
-`start()` (a no-op unless `idle`) first resolves the permission: an in-memory flag set by an
-earlier successful `getUserMedia`, else `navigator.permissions.query({ name: 'microphone' })`.
-
-- **granted** → record (below);
-- **denied** → report `denied`, no `getUserMedia` call;
-- **prompt / unknown** → the press only triggers the browser prompt: `status` `requesting`,
-  `getUserMedia` then stop every track, set the flag. The next hold records. A release during
-  this step does not cancel it.
-
-A `NotAllowedError` on the record path clears the flag.
-
 # Recording
 
-`getUserMedia({ audio: true })` (`status` stays `starting`; a release now cancels), then a
-`MediaRecorder` with the browser's default codec, `status` `recording`, and a 60 s auto-stop
-(`limit-reached`). On stop every track is released and:
+`start()` (a no-op unless `idle`) sets `status` `starting` and calls
+`getUserMedia({ audio: true })`. There is no separate permission step and no Permissions API
+call: on the first press this call shows the browser prompt. A release while `starting`
+cancels the start — once `getUserMedia` resolves every track is stopped, nothing is recorded,
+and `released-early` is reported ("Microphone ready. Press and hold to record"). The browser
+keeps the grant, so the next hold records. A denied permission rejects with `NotAllowedError`.
+
+Otherwise a `MediaRecorder` with the browser's default codec starts, `status` becomes
+`recording`, and a 60 s timer calls `stop()`. On the recorder's `stop` event every track is
+released and:
 
 - under 1000 ms → `too-short`, `latest` unchanged;
-- otherwise → `latest` replaced, `saved` or `limit-reached`.
+- otherwise → `latest` replaced, `limit-reached` if it lasted ≥ 60 s, else `saved`.
+
+Every exit from `starting`/`recording` goes through one private `finish(outcome)`, which clears
+the timer, stops every track, and returns to `idle`. A recorder `error` finishes with `failed`;
+a `stop` event arriving after it is ignored.
 
 `getUserMedia` errors map by `DOMException.name`: `NotAllowedError`/`SecurityError` →
 `denied`, `NotFoundError`/`OverconstrainedError` → `no-device`, else `failed`; a missing API →
@@ -72,7 +70,7 @@ stops a recording.
 - `contextmenu` is suppressed; `DestroyRef.onDestroy` calls `stop()`.
 - Recording shows `mic` on red `#d32f2f` with a pulse (none under `prefers-reduced-motion`);
   otherwise `mic_none`. `aria-pressed` tracks recording, `aria-busy` tracks
-  `requesting`/`starting`. Every outcome is announced politely.
+  `starting`. Every outcome is announced politely.
 
 # Recognition
 

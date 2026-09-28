@@ -25,16 +25,16 @@ stays `- [ ]`. "I think it works" is not evidence.
 
 **Service**
 
-- [x] [AC5] With permission already granted, `start()` calls `getUserMedia({ audio: true })` and creates one `MediaRecorder`. `status` goes `idle` → `starting` → `recording`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC5] starting a recording with permission already granted` — passing
+- [x] [AC5] `start()` calls `getUserMedia({ audio: true })` and creates one `MediaRecorder`. `status` goes `idle` → `starting` → `recording`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC5] starting a recording` — passing
 - [x] [AC6] `stop()` after 2 s sets `latest` with a non-empty blob, the recorder's mimeType, `durationMs` ≥ 1000 and a `recordedAt` Date. `status` returns to `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC6] stopping after a 2s recording` — passing
 - [x] [AC7] A second valid recording replaces `latest`, and the old one is no longer referenced. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC7] a second valid recording` — passing
 - [x] [AC8] A recording under 1000 ms leaves `latest` unchanged and reports `too-short`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC8] a recording under 1000ms` — passing
 - [x] [AC9] A recording auto-stops at 60 000 ms, keeps the recording, reports `limit-reached` and returns to `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC9] the 60s cap` — passing
 - [x] [AC10] Every stop path stops all tracks: normal, too short, limit, recorder `error`, and `visibilitychange` → hidden. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC10] every stop path releases every track` — passing
-- [x] [AC11] `stop()` during `starting` stops all tracks once `getUserMedia` resolves. No recorder starts, `latest` is unchanged, and `status` ends `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC11] stop() while starting on the record path (getUserMedia not yet resolved)` — passing
-- [x] [AC12] `NotAllowedError` reports `denied`, `NotFoundError` reports `no-device`, and any other error reports `failed`. Each case calls `log()`, throws nothing, leaves `latest` unchanged and ends `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC12] getUserMedia rejection classification on the record path` — passing
+- [x] [AC11] `stop()` during `starting` stops all tracks once `getUserMedia` resolves. No recorder starts, `latest` is unchanged, `released-early` is reported, `status` ends `idle`, and the next press records. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC11] stop() while starting (getUserMedia not yet resolved)` — passing
+- [x] [AC12] `NotAllowedError` reports `denied`, `NotFoundError` reports `no-device`, and any other error reports `failed`. Each case calls `log()`, throws nothing, leaves `latest` unchanged and ends `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC12] getUserMedia rejection classification` — passing
 - [x] [AC13] With no `mediaDevices` or `MediaRecorder`, `start()` reports `unsupported`, calls `log()`, throws nothing and never calls `getUserMedia`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC13] unsupported environment` — passing
-- [x] [AC14] `start()` while `requesting`, `starting` or `recording` is a no-op, and so is `stop()` while `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC14] repeated start()/stop() calls that must be no-ops` — passing
+- [x] [AC14] `start()` while `starting` or `recording` is a no-op, and so is `stop()` while `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC14] repeated start()/stop() calls that must be no-ops` — passing
 - [x] [AC15] The service does no persistence and no HTTP, and it does not inject `HttpClient` or `Store`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC15] no persistence and no HTTP` — passing
 
 **Component**
@@ -44,16 +44,12 @@ stays `- [ ]`. "I think it works" is not evidence.
 - [x] [AC18] Space or Enter `keydown` (not a repeat) calls `start()` and `preventDefault()`. A repeat does not start again. `keyup` of that key calls `stop()`, and so does `blur` while recording. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC18] keyboard hold gesture` — passing
 - [x] [AC19] `contextmenu` on the button is `preventDefault`-ed. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC19] contextmenu suppression` — passing
 - [ ] [AC20] While recording: `recording` class (red, pulsing), `mic` icon, `aria-pressed="true"`. While idle: `mic_none` icon, no `recording` class, `aria-pressed="false"`. No pulse under `prefers-reduced-motion`. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC20] recording indicator` — passing for class/icon/aria-pressed; the reduced-motion clause is **untested** (only confirmed by reading `voice-record-button.component.scss`; the test builder cannot emulate `prefers-reduced-motion`) — left open
-- [x] [AC21] `LiveAnnouncer.announce(..., 'polite')` with the spec's message for each outcome, including "Microphone ready. Press and hold to record" for `permission-granted`. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC21] LiveAnnouncer messages` — passing
+- [x] [AC21] `LiveAnnouncer.announce(..., 'polite')` with the spec's message for each outcome, including "Microphone ready. Press and hold to record" for `released-early`. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC21] LiveAnnouncer messages` — passing
 - [x] [AC22] Destroying the component while recording calls `stop()` once. A recording of ≥ 1 s is kept (D9), and nothing throws after destroy. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC22] destroy while recording` — passing
 
-**Permission-first press (D14)**
+**Busy state**
 
-- [x] [AC26] With permission `prompt` or unknown and no in-memory grant, `start()` goes to `requesting` and calls `getUserMedia` once. On resolve it stops all tracks, creates no recorder, leaves `latest` unchanged, reports `permission-granted`, and ends `idle`. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC26] permission-first press: prompt/unknown state with no in-memory grant` — passing
-- [x] [AC27] A release (`stop()`) while `requesting`, or while the permission state is being resolved, does not cancel the request. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC27] stop() cannot cancel a permission request` — passing
-- [x] [AC28] After a grant, the next `start()` records: one more `getUserMedia` and one `MediaRecorder`, ending in `recording`. This also works without the Permissions API. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC28] the next start() after a granted permission takes the record path` — passing
-- [x] [AC29] Permissions API `denied` → reports `denied`, logs, and never calls `getUserMedia`. Request-path rejections follow AC12. A `NotAllowedError` on the record path clears the in-memory grant. — covered by `src/services/voice-recorder/voice-recorder.service.spec.ts::[AC29] permission denied handling` — passing
-- [x] [AC30] During `requesting` or `starting` the button looks idle and has `aria-busy="true"`. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC30] requesting/starting look idle but busy` — passing
+- [x] [AC30] During `starting` the button looks idle and has `aria-busy="true"`. — covered by `src/shared/components/voice-record-button/voice-record-button.component.spec.ts::[AC30] starting looks idle but busy` — passing
 
 **Quality gates**
 
@@ -87,7 +83,7 @@ stays `- [ ]`. "I think it works" is not evidence.
 
 - [x] Requested by: Oleg
 - [x] DoD approved by: Oleg, 2026-09-23  ← **the gate; nothing past step 2 runs until this is signed**
-- [ ] [AC25] Manual check in the running app (`npm run watch` + `npm run serve`, http://localhost:4200/exp-spsh/): with the site's mic permission reset, a first click shows the browser prompt, and after Allow nothing is recorded and "Microphone ready" is announced; then a 3 s hold shows red/pulse and the mic indicator goes off after release; a 0.5 s hold stores nothing; drag-out release stops the recording; denied permission doesn't crash and the error is logged and announced
+- [ ] [AC25] Manual check in the running app (`npm run watch` + `npm run serve`, http://localhost:4200/exp-spsh/): with the site's mic permission reset, a first press shows the browser prompt, and after Allow nothing is recorded and "Microphone ready" is announced; then a 3 s hold shows red/pulse and the mic indicator goes off after release; a 0.5 s hold stores nothing; drag-out release stops the recording; denied permission doesn't crash and the error is logged and announced
 - [x] D12 decided: keep the recording across logout (Oleg, 2026-09-23)
 - [ ] Change reviewed and accepted by: <name>
 - [ ] Version bumped in `package.json` if this ships

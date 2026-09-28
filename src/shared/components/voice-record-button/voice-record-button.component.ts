@@ -10,7 +10,7 @@ import { loadingSelector } from 'src/@state/app.selectors';
 import { VoiceRecorderOutcome, VoiceRecorderService } from 'src/services';
 
 const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
-  'permission-granted': 'Microphone ready. Press and hold to record',
+  'released-early': 'Microphone ready. Press and hold to record',
   started: 'Recording',
   saved: 'Recording stopped',
   'limit-reached': 'Recording stopped, 60 second limit reached',
@@ -63,10 +63,7 @@ export class VoiceRecordButtonComponent {
 
 
   protected readonly isRecording = computed(() => this.recorder.status() === 'recording');
-  protected readonly isBusy = computed(() => {
-    const status = this.recorder.status();
-    return status === 'starting' || status === 'requesting';
-  });
+  protected readonly isBusy = computed(() => this.recorder.status() === 'starting');
   protected readonly icon = computed(() => (this.isRecording() ? 'mic' : 'mic_none'));
 
   // Announces every outcome, including auto-stop and visibilitychange ones no handler here

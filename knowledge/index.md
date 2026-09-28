@@ -39,7 +39,7 @@ repository that contains this bundle.
 * [Manage categories](flows/manage-categories.md) - Add, reorder, and delete-by-swipe.
 * [Monthly statistics and drill-down](flows/statistics.md) - Client-side aggregation and the View Transitions animation.
 * [Offline behaviour and app updates](flows/offline-and-updates.md) - What works without a network, the outbox indicator, and how new versions arrive.
-* [Hold-to-record voice note](flows/voice-recording.md) - The permission-first press, the in-memory clip, and how Gemini turns it into queued expenses.
+* [Hold-to-record voice note](flows/voice-recording.md) - The hold gesture, the in-memory clip, and how Gemini turns it into queued expenses.
 
 # Interfaces
 

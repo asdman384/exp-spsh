@@ -209,7 +209,7 @@ describe('VoiceRecordButtonComponent', () => {
   // [AC21]
   describe('[AC21] LiveAnnouncer messages', () => {
     const cases: Array<[VoiceRecorderOutcomeEvent['outcome'], string]> = [
-      ['permission-granted', 'Microphone ready. Press and hold to record'],
+      ['released-early', 'Microphone ready. Press and hold to record'],
       ['started', 'Recording'],
       ['saved', 'Recording stopped'],
       ['limit-reached', 'Recording stopped, 60 second limit reached'],
@@ -243,18 +243,7 @@ describe('VoiceRecordButtonComponent', () => {
   });
 
   // [AC30]
-  describe('[AC30] requesting/starting look idle but busy', () => {
-    it('should_look_idle_with_aria_busy_true_while_requesting', () => {
-      recorder.status.set('requesting');
-      fixture.detectChanges();
-
-      const el = button();
-      expect(el.classList.contains('recording')).toBe(false);
-      expect(el.getAttribute('aria-pressed')).toBe('false');
-      expect(el.getAttribute('aria-busy')).toBe('true');
-      expect(fixture.nativeElement.querySelector('mat-icon').textContent.trim()).toBe('mic_none');
-    });
-
+  describe('[AC30] starting looks idle but busy', () => {
     it('should_look_idle_with_aria_busy_true_while_starting', () => {
       recorder.status.set('starting');
       fixture.detectChanges();
@@ -263,6 +252,7 @@ describe('VoiceRecordButtonComponent', () => {
       expect(el.classList.contains('recording')).toBe(false);
       expect(el.getAttribute('aria-pressed')).toBe('false');
       expect(el.getAttribute('aria-busy')).toBe('true');
+      expect(fixture.nativeElement.querySelector('mat-icon').textContent.trim()).toBe('mic_none');
     });
 
     it('should_have_aria_busy_false_while_idle', () => {

@@ -6,8 +6,8 @@ import { TestBed } from '@angular/core/testing';
 import { VoiceRecorderService } from './voice-recorder.service';
 
 // ---- Fakes -----------------------------------------------------------------------------------
-// Never touch real hardware: navigator.mediaDevices.getUserMedia, MediaRecorder, and
-// navigator.permissions.query are always stubbed, and every stub is restored afterwards.
+// Never touch real hardware: navigator.mediaDevices.getUserMedia and MediaRecorder are always
+// stubbed, and every stub is restored afterwards.
 
 class FakeMediaStreamTrack {
   readonly stop = vi.fn();
@@ -70,22 +70,18 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reje
 
 describe('VoiceRecorderService', () => {
   let getUserMediaMock: ReturnType<typeof vi.fn>;
-  let queryMock: ReturnType<typeof vi.fn>;
   let mediaDevicesSpy: ReturnType<typeof vi.spyOn>;
-  let permissionsSpy: ReturnType<typeof vi.spyOn>;
   let logSpy: ReturnType<typeof vi.spyOn>;
   let hiddenSpy: ReturnType<typeof vi.spyOn> | null;
 
   beforeEach(() => {
     FakeMediaRecorder.instances = [];
     getUserMediaMock = vi.fn();
-    queryMock = vi.fn();
     hiddenSpy = null;
 
     mediaDevicesSpy = vi
       .spyOn(navigator, 'mediaDevices', 'get')
       .mockReturnValue({ getUserMedia: getUserMediaMock } as unknown as MediaDevices);
-    permissionsSpy = vi.spyOn(navigator, 'permissions', 'get').mockReturnValue({ query: queryMock } as unknown as Permissions);
     vi.stubGlobal('MediaRecorder', FakeMediaRecorder);
     logSpy = vi.spyOn(window, 'log').mockImplementation(() => undefined);
     vi.useFakeTimers();
@@ -94,14 +90,12 @@ describe('VoiceRecorderService', () => {
   afterEach(() => {
     vi.useRealTimers();
     mediaDevicesSpy.mockRestore();
-    permissionsSpy.mockRestore();
     hiddenSpy?.mockRestore();
     logSpy.mockRestore();
     vi.unstubAllGlobals();
   });
 
   function grantedService(trackCount = 2): { service: VoiceRecorderService; stream: FakeMediaStream } {
-    queryMock.mockResolvedValue({ state: 'granted' });
     const stream = new FakeMediaStream(trackCount);
     getUserMediaMock.mockResolvedValue(stream);
     return { service: new VoiceRecorderService(), stream };
@@ -115,7 +109,7 @@ describe('VoiceRecorderService', () => {
   }
 
   // [AC5]
-  describe('[AC5] starting a recording with permission already granted', () => {
+  describe('[AC5] starting a recording', () => {
     it('should_move_status_idle_to_starting_to_recording_and_create_exactly_one_recorder', async () => {
       const { service } = grantedService();
       expect(service.status()).toBe('idle');
@@ -264,15 +258,13 @@ describe('VoiceRecorderService', () => {
   });
 
   // [AC11]
-  describe('[AC11] stop() while starting on the record path (getUserMedia not yet resolved)', () => {
-    it('should_stop_all_tracks_start_no_recorder_and_leave_latest_unchanged_once_it_resolves', async () => {
-      queryMock.mockResolvedValue({ state: 'granted' });
-      const pending = deferred<FakeMediaStream>();
+  describe('[AC11] stop() while starting (getUserMedia not yet resolved)', () => {
+    it('should_stop_all_tracks_start_no_recorder_leave_latest_unchanged_and_report_released_early_once_it_resolves', async () => {
+        const pending = deferred<FakeMediaStream>();
       getUserMediaMock.mockReturnValue(pending.promise);
       const service = new VoiceRecorderService();
 
       service.start();
-      await vi.advanceTimersByTimeAsync(0); // past permission resolution; getUserMedia in flight
       expect(service.status()).toBe('starting');
 
       service.stop(); // flags the pending start as cancelled
@@ -284,15 +276,35 @@ describe('VoiceRecorderService', () => {
       expect(FakeMediaRecorder.instances.length).toBe(0);
       expect(service.latest()).toBeNull();
       expect(service.status()).toBe('idle');
+      expect(service.lastOutcome()?.outcome).toBe('released-early');
       stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+    });
+
+    it('should_record_on_the_next_press_after_a_release_during_the_browser_prompt', async () => {
+      const pending = deferred<FakeMediaStream>();
+      getUserMediaMock.mockReturnValue(pending.promise);
+      const service = new VoiceRecorderService();
+
+      service.start();
+      service.stop(); // released while the prompt is open
+      pending.resolve(new FakeMediaStream(1));
+      await vi.advanceTimersByTimeAsync(0);
+      expect(service.lastOutcome()?.outcome).toBe('released-early');
+
+      getUserMediaMock.mockResolvedValue(new FakeMediaStream(1));
+      service.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(getUserMediaMock).toHaveBeenCalledTimes(2);
+      expect(FakeMediaRecorder.instances.length).toBe(1);
+      expect(service.status()).toBe('recording');
     });
   });
 
   // [AC12]
-  describe('[AC12] getUserMedia rejection classification on the record path', () => {
+  describe('[AC12] getUserMedia rejection classification', () => {
     it('should_report_denied_for_notallowederror', async () => {
-      queryMock.mockResolvedValue({ state: 'granted' });
-      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotAllowedError'));
+        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotAllowedError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -305,8 +317,7 @@ describe('VoiceRecorderService', () => {
     });
 
     it('should_report_no_device_for_notfounderror', async () => {
-      queryMock.mockResolvedValue({ state: 'granted' });
-      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotFoundError'));
+        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotFoundError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -319,8 +330,7 @@ describe('VoiceRecorderService', () => {
     });
 
     it('should_report_failed_for_any_other_error', async () => {
-      queryMock.mockResolvedValue({ state: 'granted' });
-      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotReadableError'));
+        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotReadableError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -374,15 +384,14 @@ describe('VoiceRecorderService', () => {
       expect(FakeMediaRecorder.instances.length).toBe(1);
     });
 
-    it('should_ignore_a_second_start_while_requesting_leaving_one_getusermedia_call', async () => {
-      queryMock.mockResolvedValue({ state: 'prompt' });
+    it('should_ignore_a_second_start_while_starting_leaving_one_getusermedia_call', async () => {
       const pending = deferred<FakeMediaStream>();
       getUserMediaMock.mockReturnValue(pending.promise);
       const service = new VoiceRecorderService();
 
       service.start();
       await vi.advanceTimersByTimeAsync(0);
-      expect(service.status()).toBe('requesting');
+      expect(service.status()).toBe('starting');
 
       service.start();
 
@@ -415,8 +424,7 @@ describe('VoiceRecorderService', () => {
       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem');
       const sessionStorageSpy = vi.spyOn(window.sessionStorage, 'setItem');
 
-      queryMock.mockResolvedValue({ state: 'granted' });
-      const stream = new FakeMediaStream(1);
+        const stream = new FakeMediaStream(1);
       getUserMediaMock.mockResolvedValue(stream);
 
       service.start();
@@ -435,189 +443,21 @@ describe('VoiceRecorderService', () => {
     });
   });
 
-  // [AC26]
-  describe('[AC26] permission-first press: prompt/unknown state with no in-memory grant', () => {
-    it('should_go_requesting_call_getusermedia_once_stop_all_tracks_create_no_recorder_and_report_permission_granted', async () => {
-      queryMock.mockResolvedValue({ state: 'prompt' });
-      const stream = new FakeMediaStream(2);
-      getUserMediaMock.mockResolvedValue(stream);
-      const service = new VoiceRecorderService();
+  describe('recorder error', () => {
+    it('should_report_failed_once_and_ignore_a_stop_event_that_follows_the_error', async () => {
+      const { service } = await startAndRecord();
+      const recorder = FakeMediaRecorder.instances[0];
+      recorder.emitData(32);
+      await vi.advanceTimersByTimeAsync(2000);
 
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
+      recorder.emitError();
+      const failed = service.lastOutcome();
+      recorder.stop();
 
-      expect(getUserMediaMock).toHaveBeenCalledTimes(1);
-      expect(getUserMediaMock).toHaveBeenCalledWith({ audio: true });
-      expect(FakeMediaRecorder.instances.length).toBe(0);
-      expect(service.latest()).toBeNull();
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(service.status()).toBe('idle');
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
-    });
-
-    it('should_take_the_same_permission_only_path_when_permissions_query_is_missing', async () => {
-      permissionsSpy.mockReturnValue(undefined as unknown as Permissions);
-      const stream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(stream);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(FakeMediaRecorder.instances.length).toBe(0);
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(service.status()).toBe('idle');
-    });
-
-    it('should_take_the_same_permission_only_path_when_permissions_query_rejects', async () => {
-      queryMock.mockRejectedValue(new Error('not supported'));
-      const stream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(stream);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(FakeMediaRecorder.instances.length).toBe(0);
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(service.status()).toBe('idle');
-    });
-  });
-
-  // [AC27]
-  describe('[AC27] stop() cannot cancel a permission request', () => {
-    it('should_not_cancel_while_requesting_the_outcome_matches_AC26', async () => {
-      queryMock.mockResolvedValue({ state: 'prompt' });
-      const pending = deferred<FakeMediaStream>();
-      getUserMediaMock.mockReturnValue(pending.promise);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(service.status()).toBe('requesting');
-
-      service.stop(); // must not cancel
-
-      const stream = new FakeMediaStream(1);
-      pending.resolve(stream);
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(FakeMediaRecorder.instances.length).toBe(0);
-      expect(service.latest()).toBeNull();
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(service.status()).toBe('idle');
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
-    });
-
-    it('should_not_cancel_while_starting_before_the_permission_state_is_known', async () => {
-      const pendingQuery = deferred<{ state: string }>();
-      queryMock.mockReturnValue(pendingQuery.promise);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      expect(service.status()).toBe('starting');
-
-      service.stop(); // must not cancel: the permission state is not resolved yet
-
-      const stream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(stream);
-      pendingQuery.resolve({ state: 'granted' });
-      await vi.advanceTimersByTimeAsync(0);
-
-      // Unaffected by the earlier stop(): the record path completes normally.
-      expect(FakeMediaRecorder.instances.length).toBe(1);
-      expect(service.status()).toBe('recording');
-    });
-  });
-
-  // [AC28]
-  describe('[AC28] the next start() after a granted permission takes the record path', () => {
-    it('should_call_getusermedia_once_more_and_create_one_recorder_ending_in_recording', async () => {
-      queryMock.mockResolvedValue({ state: 'prompt' });
-      const permissionStream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(permissionStream);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(getUserMediaMock).toHaveBeenCalledTimes(1);
-
-      const recordStream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(recordStream);
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(getUserMediaMock).toHaveBeenCalledTimes(2);
-      expect(FakeMediaRecorder.instances.length).toBe(1);
-      expect(service.status()).toBe('recording');
-    });
-
-    it('should_also_work_without_the_permissions_api_through_the_in_memory_grant', async () => {
-      permissionsSpy.mockReturnValue(undefined as unknown as Permissions);
-      const permissionStream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(permissionStream);
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-
-      const recordStream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(recordStream);
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(getUserMediaMock).toHaveBeenCalledTimes(2);
-      expect(FakeMediaRecorder.instances.length).toBe(1);
-      expect(service.status()).toBe('recording');
-    });
-  });
-
-  // [AC29]
-  describe('[AC29] permission denied handling', () => {
-    it('should_report_denied_log_and_never_call_getusermedia_when_permissions_api_reports_denied', async () => {
-      queryMock.mockResolvedValue({ state: 'denied' });
-      const service = new VoiceRecorderService();
-
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(service.lastOutcome()?.outcome).toBe('denied');
-      expect(logSpy).toHaveBeenCalled();
-      expect(getUserMediaMock).not.toHaveBeenCalled();
+      expect(failed?.outcome).toBe('failed');
+      expect(service.lastOutcome()).toBe(failed);
       expect(service.latest()).toBeNull();
       expect(service.status()).toBe('idle');
-    });
-
-    it('should_clear_the_in_memory_grant_on_a_notallowederror_so_the_next_press_is_permission_only_again', async () => {
-      permissionsSpy.mockReturnValue(undefined as unknown as Permissions); // rely on the in-memory flag only
-      const permissionStream = new FakeMediaStream(1);
-      getUserMediaMock.mockResolvedValue(permissionStream);
-      const service = new VoiceRecorderService();
-
-      // 1) permission-only press grants the in-memory flag.
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-
-      // 2) record path press is revoked.
-      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotAllowedError'));
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-      expect(service.lastOutcome()?.outcome).toBe('denied');
-      expect(FakeMediaRecorder.instances.length).toBe(0);
-
-      // 3) the next press is permission-only again (status goes to 'requesting', not straight
-      // to a new getUserMedia recorder call for a stream).
-      getUserMediaMock.mockResolvedValue(new FakeMediaStream(1));
-      service.start();
-      await vi.advanceTimersByTimeAsync(0);
-
-      expect(service.lastOutcome()?.outcome).toBe('permission-granted');
-      expect(FakeMediaRecorder.instances.length).toBe(0);
     });
   });
 });

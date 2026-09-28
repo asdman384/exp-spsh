@@ -8,7 +8,7 @@
 * [Manage categories](manage-categories.md) - Add, reorder by drag, and delete-by-swipe on the categories page, including the optimistic reorder and its rollback.
 * [Monthly statistics and drill-down](statistics.md) - Person/year/month selection, client-side aggregation by category, the drill-down into one category, and the View Transitions animation.
 * [Offline behaviour and app updates](offline-and-updates.md) - What the app can and cannot do without a network, how online state is detected, and how a new deployment reaches an installed PWA.
-* [Hold-to-record voice note](voice-recording.md) - The permission-first press, the in-memory clip, and how Gemini turns it into queued expenses.
+* [Hold-to-record voice note](voice-recording.md) - The hold gesture, the in-memory clip, and how Gemini turns it into queued expenses.
 
 # Related
 

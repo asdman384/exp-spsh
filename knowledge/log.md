@@ -1,5 +1,13 @@
 # Knowledge Bundle Update Log
 
+## 2026-09-28 — voice recorder simplified
+
+* **Change**: [voice recording](flows/voice-recording.md) — the permission-first press (D14)
+  is gone: no Permissions API call, no in-memory grant flag, no `requesting` status, and the
+  `permission-granted` outcome is replaced by `released-early` (a release while `starting`).
+  Every exit goes through one `finish(outcome)`; `limit-reached` is derived from the duration.
+  Fixes a hold released during the permission query still starting an unheld recording.
+
 ## 2026-09-27 — bundle re-validation after the NgRx slim-down
 
 Re-read all of `src/` and every concept; removed stale claims and shortened where possible.
