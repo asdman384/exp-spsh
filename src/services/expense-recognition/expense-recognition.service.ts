@@ -36,8 +36,8 @@ export class ExpenseRecognitionService {
    * @param categories the category names the result may use; the model can pick no other
    * @param now what "today" means for relative days ("вчера"), and the time of day every
    *   returned expense gets
-   * @returns the recognized expenses, possibly empty; errors when Gemini fails or replies with
-   *   something other than the requested JSON
+   * @returns the recognized expenses, never empty; errors when Gemini fails, replies with
+   *   something other than the requested JSON, or yields no valid expense
    */
   recognize(recording: VoiceRecording, categories: ReadonlyArray<string>, now: Date): Observable<Array<Expense>> {
     return defer(async () => {
@@ -89,8 +89,13 @@ function systemPrompt(categories: ReadonlyArray<string>, now: Date): string {
     'Rules:',
     '- Return one item per expense. Map each spoken category to the closest allowed category.',
     '- "amount" is a positive number; ignore the currency word (zloty, zł, PLN, грн, etc.).',
-    '- When the speaker says X was spent on category A and Y of it on category B ("из них", "вычесть"),',
-    '  return A with X minus Y and B with Y, so the items still add up to X.',
+    '- When the speaker names a total X for category A and then carves parts out of it',
+    '  ("из них", "отними", "вычесть", "минус", "ещё отними"), every part Y1, Y2, ... becomes its own item,',
+    '  and A gets what is left: X minus the sum of ALL parts. Subtractions accumulate — each one comes',
+    '  out of the same remainder, never out of the original X again. The items must add up to exactly X.',
+    '  Example: "запиши 35 на продукты, отними 10 на хозтовары и ещё отними 7 на сладости" →',
+    '  продукты 18, хозтовары 10, сладости 7 (18 + 10 + 7 = 35). Wrong: продукты 25 (that ignores the 7).',
+    '  If a part has no category of its own, give it category A as well.',
     '- "date" is YYYY-MM-DD only when the speaker names a day ("вчера", "в понедельник"), otherwise null.',
     '- "isInDebt" is true only when the speaker says it was bought on credit or is owed ("в долг").',
     '- "comment" holds any extra detail that is not the amount, category or date, otherwise null.',

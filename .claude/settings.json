@@ -1,6 +1,21 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(bash scripts/harness.sh:*)",
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git show:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(npm run test:coverage:*)",
+      "Bash(npx ng test:*)",
+      "Bash(npx ng build:*)",
+      "Bash(npx ng version)",
+      "Bash(npx tsc:*)"
+    ],
     "deny": [
       "Bash(git push:*)",
       "Bash(git commit --no-verify:*)",
@@ -16,21 +31,6 @@
       "Edit(**/.env)",
       "Read(keys.json)",
       "Edit(keys.json)"
-    ],
-    "allow": [
-      "Bash(cd:*)",
-      "Bash(bash scripts/harness.sh:*)",
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git show:*)",
-      "Bash(npm test:*)",
-      "Bash(npm run build:*)",
-      "Bash(npm run test:coverage:*)",
-      "Bash(npx ng test:*)",
-      "Bash(npx ng build:*)",
-      "Bash(npx ng version)",
-      "Bash(npx tsc:*)"
     ]
   },
   "hooks": {
@@ -58,5 +58,8 @@
         ]
       }
     ]
+  },
+  "enabledPlugins": {
+    "adlc@skills-marketplace": true
   }
 }

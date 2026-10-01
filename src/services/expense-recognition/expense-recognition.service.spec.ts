@@ -42,9 +42,9 @@ describe('ExpenseRecognitionService', () => {
   });
 
   it('sends the audio inline with a JSON response schema limited to the given categories', async () => {
-    replyExpenses([]);
+    replyExpenses([{ amount: 1, category: 'Продукты', comment: null, date: null, isInDebt: false }]);
 
-    expect(await recognize()).toEqual([]);
+    await recognize();
 
     const params = generateContent.mock.calls[0][0] as GenerateContentParameters;
     expect(params.model).toBe(GEMINI_MODEL);
@@ -83,10 +83,23 @@ describe('ExpenseRecognitionService', () => {
   it('drops items with a non-positive amount or an unknown category', async () => {
     replyExpenses([
       { amount: 0, category: 'Продукты', comment: null, date: null, isInDebt: false },
-      { amount: 3, category: 'Такси', comment: null, date: null, isInDebt: false }
+      { amount: 3, category: 'Такси', comment: null, date: null, isInDebt: false },
+      { amount: 7, category: 'Вкусняшки', comment: null, date: null, isInDebt: false }
     ]);
 
-    expect(await recognize()).toEqual([]);
+    expect(await recognize()).toEqual([{ amount: 7, category: 'Вкусняшки', date: NOW }]);
+  });
+
+  it('errors when no item survives the filtering', async () => {
+    replyExpenses([{ amount: 0, category: 'Продукты', comment: null, date: null, isInDebt: false }]);
+
+    await expect(recognize()).rejects.toThrow(/no valid expenses/);
+  });
+
+  it('errors when the reply has an empty "expenses" array', async () => {
+    replyExpenses([]);
+
+    await expect(recognize()).rejects.toThrow(/no valid expenses/);
   });
 
   it('errors with the finish reason when the reply carries no text', async () => {

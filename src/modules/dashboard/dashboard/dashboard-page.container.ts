@@ -11,7 +11,20 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
-import { EMPTY, catchError, filter, finalize, first, skip, switchMap, tap, withLatestFrom } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  filter,
+  finalize,
+  first,
+  retry,
+  skip,
+  switchMap,
+  tap,
+  throwError,
+  timer,
+  withLatestFrom
+} from 'rxjs';
 
 import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
 import { TIME_FORMAT } from 'src/constants';
@@ -20,6 +33,19 @@ import { Expense, Sheet, VoiceRecording } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-button/voice-record-button.component';
 import { ExpensesService } from '../expenses.service';
+
+/** How many times a retryable recognition failure is retried before the failure toast. */
+const RECOGNITION_MAX_RETRIES = 2;
+/** Base back-off; attempt N waits N × this. */
+const RECOGNITION_RETRY_DELAY_MS = 1000;
+
+/**
+ * Decides whether a Gemini recognition failure is worth retrying.
+ * TODO: narrow to the specific error type — until then nothing is retried.
+ */
+function isRetryableRecognitionError(error: unknown): boolean {
+  return error instanceof Error && false;
+}
 
 interface ExpenseFormModel {
   date: Date;
@@ -171,6 +197,17 @@ export class DashboardPageContainer {
         switchMap(([recording, categories]) => {
           this.store.dispatch(AppActions.loading({ loading: true }));
           return this.recognition.recognize(recording, categories.map((c) => c.name), new Date()).pipe(
+            retry({
+              count: RECOGNITION_MAX_RETRIES,
+              delay: (error, retryCount) => {
+                if (!isRetryableRecognitionError(error)) {
+                  return throwError(() => error);
+                }
+                log(`DashboardPageContainer::recognize retry ${retryCount}/${RECOGNITION_MAX_RETRIES}`, error);
+
+                return timer(RECOGNITION_RETRY_DELAY_MS * retryCount);
+              }
+            }),
             catchError((error) => {
               log('DashboardPageContainer::recognize failed', error);
               this.store.dispatch(AppActions.operationFailed({ source: 'Gemini', message: error }));
