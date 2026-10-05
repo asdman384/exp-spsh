@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, input, OnInit } from '@angular/core';
 
 @Component({
   selector: 'app-test-perf',
@@ -9,10 +9,19 @@ import { Component, OnInit } from '@angular/core';
 export class TestPerfComponent implements OnInit {
   items: number[] = [];
 
-  ngOnInit() {
-    this.items = Array.from({ length: 1_000 }, () =>
+  testInput = input.required<string>();
+
+  constructor() {
+    this.items = Array.from({ length: 1_000_000 }, () =>
       Math.floor(Math.random() * 100_000)
     )
     this.items.sort((a, b) => a - b);
+  }
+
+  ngOnInit() {
+    // this.items = Array.from({ length: 1_000_000 }, () =>
+    //   Math.floor(Math.random() * 100_000)
+    // )
+    // this.items.sort((a, b) => a - b);
   }
 }

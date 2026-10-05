@@ -42,7 +42,7 @@ export function retryWithBackoff<T>(max = 3) {
 export class PlaygroundComponent implements OnInit {
   private readonly store = inject(Store);
 
-  protected items: number[] = Array.from({ length: 0 }, () => 1);
+  protected items = signal<number[]>(Array.from({ length: 0 }, () => 1));
 
   private readonly filter1$ = new Subject<string>();
   private readonly filter2$ = new Subject<string>();
@@ -88,6 +88,10 @@ export class PlaygroundComponent implements OnInit {
         console.log('State:', state);
       }
     })
+  }
+
+  onStartClick() {
+    this.items.set(Array.from({ length: 1 }, () => 1));
   }
 
   onFeatureClick(feature: string) {

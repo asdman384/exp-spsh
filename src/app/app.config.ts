@@ -29,6 +29,9 @@ async function getDebugProviders(): Promise<ImportProvidersSource[]> {
     return [];
   }
   const { StoreDevtoolsModule } = await import('@ngrx/store-devtools');
+  const { enableProfiling } = await import('@angular/core');
+  enableProfiling();
+
   return [
     StoreDevtoolsModule.instrument({
       maxAge: 25, // Retains last 25 states

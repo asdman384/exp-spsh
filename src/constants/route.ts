@@ -5,5 +5,4 @@ export enum ROUTE {
   settings = 'settings',
   categories = 'categories',
   stats = 'statistics',
-  playground = 'playground'
 }

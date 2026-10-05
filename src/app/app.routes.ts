@@ -20,8 +20,11 @@ export const routes: Routes = [
     loadChildren: () => import('src/modules/setup/setup.routes').then((m) => m.routes)
   },
   {
-    path: ROUTE.playground,
+    path: 'playground',
     loadComponent: () => import('src/modules/playground/playground.component').then((m) => m.PlaygroundComponent),
-    loadChildren: () => import('src/modules/playground/playground.routes').then((m) => m.routes)
+  },
+  {
+    path: 'playground2',
+    loadComponent: () => import('src/modules/playground2/playground2.component').then((m) => m.Playground2Component),
   }
 ];
