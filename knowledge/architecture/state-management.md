@@ -132,21 +132,23 @@ A root service in `src/modules/dashboard/` that owns the expense list outside Ng
 
 | Member | Behaviour |
 |---|---|
-| `expenses` | read-only signal, the currently displayed set |
+| `expenses` | read-only signal, the loaded date range |
 | `load(filter)` | `switchMap` onto `online$.filter(true)` → `exhaustMap` → `SpreadsheetService.loadExpenses` → `expenses.set` ([load](../flows/load-expenses.md)) |
 | `add(sheetId, expense)` | `OutboxService.add`; never calls Google ([add](../flows/add-expense.md)) |
 | `delete(sheet, expense)` | `exhaustMap`; **optimistic** removal from the signal, re-read, delete by index, re-insert on failure ([delete](../flows/delete-expense.md)) |
 
 It dispatches `loading` and `operationFailed` to the store, and reloads the last sent
-record's day on `OutboxService.sent$` when the route is exactly `/dashboard`. The dashboard and
-statistics pages read `expenses` directly (statistics through `toObservable`); the dashboard
+record's month through its date on `OutboxService.sent$` when the route is exactly `/dashboard`. The dashboard and
+statistics pages use `expenses`: the dashboard filters it to the selected day with `computed`,
+and statistics uses `toObservable`. The dashboard
 also feeds it expenses recognized from [voice notes](../flows/voice-recording.md#recognition).
 
 # Dashboard view-model
 
 `DashboardPageViewModel` is provided by `DashboardPageContainer`, so each page instance owns
 its expense form model and voice-recognition subscription. It selects loading, sheets, and
-categories, reads the expense signal, loads date windows, and delegates additions/deletions
+categories, computes expenses for the selected local calendar day, requests monthly loads,
+and delegates additions/deletions
 to `ExpensesService`. The component owns Signal Forms validation, display settings, and
 action handlers; destroying the page ends the recognition subscription.[^dashboard]
 

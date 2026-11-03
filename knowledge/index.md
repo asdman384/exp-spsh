@@ -33,7 +33,7 @@ repository that contains this bundle.
 
 * [Authentication and token lifecycle](flows/authentication.md) - Redirect and popup OAuth strategies, refresh, and logout.
 * [Initial setup](flows/initial-setup.md) - Picking a spreadsheet with Google Picker, creating tabs, applying validations.
-* [Add an expense](flows/add-expense.md) - Form to inserted row (live or queued), then a one-day re-read.
+* [Add an expense](flows/add-expense.md) - Form to inserted row (live or queued), then a month-to-date re-read.
 * [Delete an expense](flows/delete-expense.md) - Swipe gesture, optimistic removal, index resolution, rollback.
 * [Load expenses](flows/load-expenses.md) - The single read path, its callers, date windows, and the online gate.
 * [Manage categories](flows/manage-categories.md) - Add, reorder, and delete-by-swipe.

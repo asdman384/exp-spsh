@@ -81,7 +81,10 @@ Angular's `HttpClient`.
 
 The dashboard page provides its own `DashboardPageViewModel`
 (`src/modules/dashboard/dashboard/dashboard-page.view-model.ts`) for expense state, loading,
-mutations, and voice recognition. `DashboardPageContainer` owns the form bindings, validation,
+mutations, and voice recognition. Its computed expense signal filters the service list to the
+selected local calendar day. `ExpensesService.load` defaults to the first day of the selected
+month through `to` (or today), inclusive; both `from` and `to` keep the supplied range.
+`DashboardPageContainer` owns the form bindings, validation,
 display configuration, and action handlers. The view-model is destroyed with the page.
 
 ### Things that will surprise you
@@ -108,7 +111,7 @@ display configuration, and action handlers. The view-model is destroyed with the
 - **Adding an expense never touches the network directly.** `ExpensesService.add` calls
   `OutboxService.add` (`src/services/outbox/outbox.service.ts`), and `OutboxService` drains
   that IndexedDB queue serially whenever the app can reach the spreadsheet; `ExpensesService`
-  reloads the day from `OutboxService.sent$` (see `knowledge/architecture/write-outbox.md`).
+  reloads the month through the sent expense date from `OutboxService.sent$` (see `knowledge/architecture/write-outbox.md`).
   The outbox is not NgRx either: the store has **one** feature slice (`app`) and **one**
   effects class (`EffectsModule.forRoot([AppEffects])`); `OutboxService.init()` runs from
   `provideAppInitializer` in `app.config.ts`. The queue lives in IndexedDB

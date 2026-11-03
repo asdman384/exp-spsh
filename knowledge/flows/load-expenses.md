@@ -11,7 +11,7 @@ sources:
     title: ExpensesService.load
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
-    title: DashboardPageViewModel.getInterval
+    title: DashboardPageViewModel.expenses
   - id: stats
     resource: ../../src/modules/dashboard/statistics/statistics.container.ts
     title: StatisticsContainer.formChanged
@@ -27,14 +27,20 @@ The list is the service's `expenses` signal; it is not in the NgRx store.[^expen
 
 | Caller | Window |
 |---|---|
-| `DashboardPageViewModel` constructor (if a current sheet exists) | none — `from` defaults to today, open-ended |
-| dashboard date change | `getInterval(date)` |
-| dashboard person change | `getInterval(current date)` |
-| `OutboxService.sent$` (only on `/dashboard`) | the last sent record's day |
+| `DashboardPageViewModel` constructor (if a current sheet exists) | month start through today, inclusive |
+| dashboard date change | month start through the selected day, inclusive |
+| dashboard person change | month start through the selected day, inclusive |
+| `OutboxService.sent$` (only on `/dashboard`) | month start through the last sent record's date |
 | `StatisticsContainer.formChanged` | the selected month |
 
-`getInterval(from)`: if `from` is today, send only `from` (open-ended); otherwise
-`{ from, to: from + 1 day }`.[^page] Statistics sends `[1st of month, 1st of next month)`.[^stats]
+`load` uses `to` as the selected date, and defaults to today when `to` is absent.
+A lone `from` does not set the selected date.
+It requests `[month start, selected day + 1 day)` using local midnight boundaries.
+Both `from` and `to` must be supplied to preserve a custom range; statistics sends
+`[1st of month, 1st of next month)`.[^expenses][^stats]
+
+The dashboard exposes a computed signal that filters service expenses to the selected local
+calendar day. It includes all times on that day and excludes entries without a date.[^page]
 
 # The pipeline
 
@@ -72,7 +78,7 @@ amount cells become `''`/`0`; a date string that is not `Date(…)` throws and f
 - `loadLastExpenses` (`values.get` on `A1:E<n>`) is a separate read used only by
   [delete](delete-expense.md).
 
-[^page]: DashboardPageViewModel.getInterval
+[^page]: DashboardPageViewModel.expenses
 [^stats]: StatisticsContainer.formChanged
 [^expenses]: ExpensesService.load
 [^svc]: SpreadsheetService.loadExpenses

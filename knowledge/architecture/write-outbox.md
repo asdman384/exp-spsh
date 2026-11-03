@@ -181,7 +181,7 @@ failed record exists.[^notice] Its text differs for `otherSpreadsheet`. Buttons 
   `pendingCount()` / `failedCount()`; clicking calls `sync()`.[^status]
 - A pass that sent something and left nothing pending announces `OUTBOX_MESSAGES.allSent`
   (polite).
-- On `sent$`, `ExpensesService` loads the last sent record's sheet and day once, only when
+- On `sent$`, `ExpensesService` loads the last sent record's sheet from month start through its date, only when
   the current route is exactly `/dashboard`.
 
 # Accepted risks

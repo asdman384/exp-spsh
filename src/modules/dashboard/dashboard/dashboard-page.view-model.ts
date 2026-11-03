@@ -1,4 +1,4 @@
-import { Injectable, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
 import {
@@ -51,7 +51,14 @@ export class DashboardPageViewModel {
   readonly categories$ = this.store.select(categoriesSelector);
 
   private readonly expensesService = inject(ExpensesService);
-  readonly expenses = this.expensesService.expenses;
+  readonly expenses = computed(() => {
+    const date = this.expenseModel().date;
+    const from = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    return this.expensesService.expenses().filter((expense) =>
+      expense.date && expense.date >= from && expense.date < to
+    );
+  });
   private readonly recorder = inject(VoiceRecorderService);
   private readonly recognition = inject(ExpenseRecognitionService);
 
@@ -86,7 +93,7 @@ export class DashboardPageViewModel {
 
   changeSheet(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
-    this.expensesService.load({ sheetId: sheet.id, ...this.getInterval(this.expenseModel().date) });
+    this.expensesService.load({ sheetId: sheet.id, to: this.expenseModel().date });
   }
 
   changeDate(date: Date): void {
@@ -96,7 +103,7 @@ export class DashboardPageViewModel {
       return;
     }
 
-    this.expensesService.load({ sheetId: sheet.id, ...this.getInterval(date) });
+    this.expensesService.load({ sheetId: sheet.id, to: date });
 
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
@@ -160,19 +167,6 @@ export class DashboardPageViewModel {
         const sheet = this.expenseModel().sheet;
         expenses.forEach((expense) => this.expensesService.add(sheet!.id, expense));
       });
-  }
-
-  private getInterval(from: Date): { from: Date; to?: Date } {
-    const currentMonth = new Date().getMonth();
-    const currentDay = new Date().getDate();
-
-    if (from.getMonth() === currentMonth && from.getDate() === currentDay) {
-      return { from };
-    }
-
-    const to = new Date(from);
-    to.setDate(to.getDate() + 1); // add a day
-    return { from, to };
   }
 
   private createExpenseModel(): ExpenseFormModel {

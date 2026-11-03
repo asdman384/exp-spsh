@@ -57,12 +57,12 @@ export class ExpensesService {
 
     this.outbox.sent$
       .pipe(filter(() => this.isOnDashboard()))
-      .subscribe(({ payload }) => this.load(dayWindow(payload.sheetId, payload.expense.date!)));
+      .subscribe(({ payload }) => this.load({ sheetId: payload.sheetId, to: payload.expense.date }));
   }
 
   load(request: ExpensesFilter): void {
     log('ExpensesService::load', request);
-    this.load$.next(request);
+    this.load$.next(request.from && request.to ? request : monthThroughDay(request.sheetId, request.to ?? new Date()));
   }
 
   /** Queues the expense in the outbox; the outbox sends it when the spreadsheet is reachable. */
@@ -117,9 +117,9 @@ export class ExpensesService {
   }
 }
 
-/** The one-day window starting at `from`. */
-function dayWindow(sheetId: number, from: Date): ExpensesFilter {
-  const to = new Date(from);
-  to.setDate(to.getDate() + 1); // add a day
+/** Includes the first day of the month through the selected local calendar day. */
+function monthThroughDay(sheetId: number, date: Date): ExpensesFilter {
+  const from = new Date(date.getFullYear(), date.getMonth(), 1);
+  const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
   return { sheetId, from, to };
 }

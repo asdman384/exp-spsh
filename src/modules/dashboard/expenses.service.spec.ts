@@ -73,13 +73,57 @@ describe('ExpensesService', () => {
   });
 
   describe('load', () => {
+    it('uses today when only from is supplied', () => {
+      const today = new Date();
+      service.load({ sheetId: 1, from: new Date(2024, 0, 16) });
+
+      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
+        sheetId: 1,
+        from: new Date(today.getFullYear(), today.getMonth(), 1),
+        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+      });
+    });
+
+    it('loads only through the selected day in the current month', () => {
+      const today = new Date();
+      const selected = new Date(today.getFullYear(), today.getMonth(), 1, 12);
+      service.load({ sheetId: 1, to: selected });
+
+      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
+        sheetId: 1,
+        from: new Date(today.getFullYear(), today.getMonth(), 1),
+        to: new Date(today.getFullYear(), today.getMonth(), 2)
+      });
+      expect(selected.getHours()).toBe(12);
+    });
+
+    it('loads a past month through the selected day, including leap day', () => {
+      service.load({ sheetId: 1, to: new Date(2024, 1, 29, 15, 30) });
+
+      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
+        sheetId: 1, from: new Date(2024, 1, 1), to: new Date(2024, 2, 1)
+      });
+    });
+
+    it('preserves the explicit statistics range', () => {
+      const request = { sheetId: 1, from: new Date(2024, 0, 1), to: new Date(2024, 1, 1) };
+      service.load(request);
+
+      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith(request);
+    });
+
     it('should_store_the_loaded_expenses_and_toggle_loading', () => {
       const loaded = [makeExpense('a')];
       spreadsheet.loadExpenses.mockReturnValue(of(loaded));
 
       service.load({ sheetId: 1 });
 
-      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({ sheetId: 1 });
+      const today = new Date();
+      expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
+        sheetId: 1,
+        from: new Date(today.getFullYear(), today.getMonth(), 1),
+        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+      });
       expect(service.expenses()).toEqual(loaded);
       expect(dispatch).toHaveBeenCalledWith(AppActions.loading({ loading: true }));
       expect(dispatch).toHaveBeenLastCalledWith(AppActions.loading({ loading: false }));
@@ -172,15 +216,15 @@ describe('ExpensesService', () => {
       attempts: 0
     };
 
-    it('should_load_the_day_of_the_last_sent_record_when_on_dashboard', () => {
+    it('should_load_the_month_through_the_last_sent_record_day_when_on_dashboard', () => {
       outbox.sent$.next(lastSent);
 
-      const to = new Date(lastSent.payload.expense.date!);
-      to.setDate(to.getDate() + 1);
+      const date = lastSent.payload.expense.date!;
+      const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
       expect(spreadsheet.loadExpenses).toHaveBeenCalledTimes(1);
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
         sheetId: 3,
-        from: lastSent.payload.expense.date,
+        from: new Date(date.getFullYear(), date.getMonth(), 1),
         to
       });
     });

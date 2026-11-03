@@ -173,3 +173,25 @@ Earlier log entries were condensed (full text is in git history).
   empty lifecycle method lint error in `test-perf.component.ts:21`. The test fixture stubs
   global `log()` for submit coverage. Architecture and flow references match the new owner;
   the temporary refactoring script is removed. Crapper, dryer, and mutator are unavailable.
+
+* **2026-11-04** - Expense reads cover month start through the selected day, inclusive.
+  The dashboard computes its daily list from the service signal. Explicit statistics ranges
+  stay unchanged; outbox completion uses the same monthly load rule.
+  Work log: read the project and ub-mode rules and the load callers; confirmed the selected-day
+  cutoff and permission to update two test expectations with the user; added regression tests
+  and observed the two expected failures; changed the service and view-model; updated the two
+  existing expectations and the current-behaviour documentation; checked the diff and worktrees
+  (only the active worktree exists, so there is nothing to remove).
+  Verification: typecheck, production build, and 287 tests pass (two skipped); lint for changed
+  TypeScript files passes. Full lint reports the existing empty lifecycle method in
+  `src/modules/playground/test-perf/test-perf.component.ts:21`. The first test process remained
+  open after results and was stopped; later harness runs completed. Crapper, dryer, and mutator
+  are not installed or exposed as tools. The log retains its existing bytes because an older
+  entry contains a non-UTF-8 byte. The change is committed locally for review, without push.
+
+* **2026-11-04** - Follow-up: use `to` for the selected day. Preserve a custom range only
+  when both `from` and `to` are supplied. Update dashboard and outbox callers and load docs.
+  Tests first show three expected failures; after the change, 288 tests pass (two skipped).
+  Typecheck and production build pass. Full lint retains the existing playground lifecycle
+  error. The previous change is staged rather than committed at the start of this follow-up;
+  leave the index and commit history as supplied by the user.

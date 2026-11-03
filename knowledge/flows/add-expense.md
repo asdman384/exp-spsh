@@ -67,14 +67,14 @@ never submits the form, but each expense Gemini recognizes goes to the same
    - `updateCells` at row 0, `fields: 'userEnteredValue'`, with the five cells from
      `toExpenseCells` ([row mapping](../domain/expense.md#row-mapping)).
 5. When a pass has sent at least one record (`OutboxService.sent$`) and the router is on
-   `/dashboard`, `ExpensesService` reloads the day of the last sent record
+   `/dashboard`, `ExpensesService` reloads the month through the date of the last sent record
    ([load expenses](load-expenses.md)).
 
 # Outcomes
 
 | Path | User sees |
 |---|---|
-| queued, then sent | polite announcement "Expense saved on this device…", then the table reloads to that day |
+| queued, then sent | polite announcement "Expense saved on this device…", then the table shows the selected day from the reloaded month |
 | queued, cannot send yet (offline, signed out) | the announcement; outbox badge |
 | send fails `retryable`/`auth` | stays pending; retried on the next trigger |
 | send fails `terminal` | failure notice with Retry / Discard |
