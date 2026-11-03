@@ -229,7 +229,7 @@ and are reused here, not re-derived.
   pattern.
 - `outbox.reducers.spec.ts` follows `app.reducers.spec.ts`'s existing pattern.
 - CLAUDE.md's "never delete or overwrite working tests without explicit permission" and "always
-  run `scripts/harness.sh`" apply as-is; nothing here requires touching an existing test file,
+  run `scripts/harness.mjs`" apply as-is; nothing here requires touching an existing test file,
   though `app.effects.spec.ts`'s `addExpense$`-adjacent behaviour (none tested today) gains new
   coverage.
 - Exact test cases and coverage decisions are the tester's, not this note's.

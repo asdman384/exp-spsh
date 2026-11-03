@@ -28,7 +28,7 @@ sources:
 From `CLAUDE.md` (the source of truth; `AGENTS.md` points to it):[^claudemd]
 
 1. **Never** delete or overwrite working tests without explicit permission.
-2. **Always** run `bash scripts/harness.sh` after any code change.
+2. **Always** run `node scripts/harness.mjs` after any code change.
 3. One task at a time.
 4. If unsure, **ask**.
 5. Update `CLAUDE.md` and `knowledge/` when architecture, infrastructure, or a feature changes.
@@ -43,12 +43,12 @@ Detailed guidance is in `.claude/rules/`: `code-style.md`, `development.md`, `te
 
 - **Deny:** `git push`, `git commit --no-verify`/`-n`, `npm publish`, `npm install -g`,
   `rm -rf`, `Remove-Item -Recurse -Force`, reading or editing `.env` and `keys.json`.
-- **Allow:** `bash scripts/harness.sh`, `git status|diff|log|show`, `npm test`,
+- **Allow:** `node scripts/harness.mjs`, `git status|diff|log|show`, `npm test`,
   `npm run build`, `npm run test:coverage`, `npx ng test|build|version`, `npx tsc`.
 - **`PreToolUse` hook** on Bash/PowerShell: `.claude/hooks/deny-git-push.mjs` parses the
   command and denies any form of `git push` (aliases, wrappers, quoting); it fails closed.
   Its tests are `deny-git-push.test.mjs`.
-- **`SubagentStop` hook:** runs `bash scripts/harness.sh`.
+- **`SubagentStop` hook:** runs `node scripts/harness.mjs`.
 
 # Write-scope policy
 

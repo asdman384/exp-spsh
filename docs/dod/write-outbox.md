@@ -18,7 +18,7 @@ The orchestrator ticks sections 1–6b from cited evidence. Section 7 is **human
 ## Evidence key
 
 - **IMPL-REPORT**: implementer handoff, 2026-09-12 (iteration 3).
-  - Verbatim `bash scripts/harness.sh --all` green: 12 files / 110 tests passed; 1 file / 2 tests skipped.
+  - Verbatim `node scripts/harness.mjs --all` green: 12 files / 110 tests passed; 1 file / 2 tests skipped.
   - Verbatim `git status --porcelain`.
 - **TEST-REPORT**: tester handoff, 2026-09-13 (iteration 4).
   - Verbatim `--all` green: `22 passed | 1 skipped` files, `229 passed | 2 skipped` tests.
@@ -37,7 +37,7 @@ The orchestrator ticks sections 1–6b from cited evidence. Section 7 is **human
   - Verbatim `--all` green: `Test Files 22 passed | 1 skipped (23)`, `Tests 244 passed | 2 skipped (246)`.
   - `git diff --stat -- '*.spec.ts'` empty.
   - No production file touched; no production defect found.
-- **MAIN-AC41**: main session, 2026-09-13, applied the two one-line fixes named in ORCH-VERIFY-AC41 (`state-management.md:173`, `troubleshooting.md:50`), re-read both against `src/@state/app.effects.ts:54-67` and `src/@state/app.reducers.ts:16-32`, and ran `bash scripts/harness.sh --all` (green, 244 passed | 2 skipped). Recorded in `docs/orchestrator-log/write-outbox.md`.
+- **MAIN-AC41**: main session, 2026-09-13, applied the two one-line fixes named in ORCH-VERIFY-AC41 (`state-management.md:173`, `troubleshooting.md:50`), re-read both against `src/@state/app.effects.ts:54-67` and `src/@state/app.reducers.ts:16-32`, and ran `node scripts/harness.mjs --all` (green, 244 passed | 2 skipped). Recorded in `docs/orchestrator-log/write-outbox.md`.
 - **ORCH-VERIFY-AC41**: the orchestrator's own reading, 2026-09-13, of `knowledge/architecture/state-management.md:152-176` and `knowledge/operations/troubleshooting.md:50` against `src/@state/app.effects.ts:40-97`, `src/@state/app.actions.ts`, `src/@state/app.reducers.ts:16-57` and `node_modules/@ngrx/effects/fesm2022/ngrx-effects.mjs:174-185`. Recorded in `docs/orchestrator-log/write-outbox.md`.
 - The `SubagentStop` harness hook ran at every handoff and surfaced no failure. The orchestrator has no shell tool and did not run the harness itself.
 
@@ -200,7 +200,7 @@ These are decisions only, not DoD ticks.
   - Passing: RR-5 (`docs/reviews/write-outbox.md` line 854, "**[AC40]: met.**") (verified 2026-09-13).
   - IMPL-FIX-2 updated `write-outbox.md:88-95` for the `onclose` reset and the synchronous-throw error path. The orchestrator read `:82-95`: it is present tense and consistent with the fix described in IMPL-FIX-2 (verified by orchestrator — re-review waived by Oleg).
 - [x] [AC41] Seven concepts in present tense, with claims that match the code.
-  - **Closed** (MAIN-AC41, building on ORCH-VERIFY-AC41; not independently re-reviewed — waived by Oleg): `knowledge/architecture/state-management.md:173` now names `upsertDataSheet` (matches `src/@state/app.effects.ts:57`); `knowledge/operations/troubleshooting.md:50` now says the value reverts to the last successfully persisted one (matches `src/@state/app.reducers.ts:20-31`). `bash scripts/harness.sh --all` green afterwards: 22 passed | 1 skipped files, 244 passed | 2 skipped tests.
+  - **Closed** (MAIN-AC41, building on ORCH-VERIFY-AC41; not independently re-reviewed — waived by Oleg): `knowledge/architecture/state-management.md:173` now names `upsertDataSheet` (matches `src/@state/app.effects.ts:57`); `knowledge/operations/troubleshooting.md:50` now says the value reverts to the last successfully persisted one (matches `src/@state/app.reducers.ts:20-31`). `node scripts/harness.mjs --all` green afterwards: 22 passed | 1 skipped files, 244 passed | 2 skipped tests.
   - R-4 narration is fixed (RR-5). Re-review 1 item 2's false resubscription claim is **gone**, and its replacement at `state-management.md:161-172` is accurate:
     - outer `catchError` at `app.effects.ts:46,61,78,92`;
     - `defaultEffectsErrorHandler` resubscribes only on an error notification (`ngrx-effects.mjs:174-185`).
@@ -218,11 +218,11 @@ These are decisions only, not DoD ticks.
 
 ## 2. Verification layers
 
-- [x] **Build / type-check**: `bash scripts/harness.sh --build` and `--typecheck` exit 0.
+- [x] **Build / type-check**: `node scripts/harness.mjs --build` and `--typecheck` exit 0.
   - Passing: TEST-REPORT-3 verbatim `typecheck: passed`, `build: passed`; IMPL-FIX-2 `npx tsc -b tsconfig.app.json tsconfig.spec.json` exit 0 (verified 2026-09-13).
-- [x] **Unit tests**: `bash scripts/harness.sh --test` exits 0, no new skipped suites.
+- [x] **Unit tests**: `node scripts/harness.mjs --test` exits 0, no new skipped suites.
   - Passing: TEST-REPORT-3 `Test Files 22 passed | 1 skipped (23)`, `Tests 244 passed | 2 skipped (246)`; skip count unchanged from baseline (verified 2026-09-13).
-- [x] **Full harness**: `bash scripts/harness.sh --all` exits 0.
+- [x] **Full harness**: `node scripts/harness.mjs --all` exits 0.
   - Passing: TEST-REPORT-3 verbatim `lint: passed / typecheck: passed / build: passed / test: passed / harness: green`; IMPL-FIX-2 `npm run lint` exit 0 (verified 2026-09-13).
   - The last independent reviewer run was RR-1 (235 tests). No reviewer ran after fix iteration 2.
 

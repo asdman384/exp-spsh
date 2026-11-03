@@ -1,5 +1,13 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-03 — native Windows verification harness
+
+* Replaced the Bash harness with `scripts/harness.mjs`, using Node.js to launch
+  local CLIs on Windows, Linux, and macOS. Added the `npm run harness` alias.
+* Updated harness references across documentation, agent instructions, permissions,
+  hooks, and the hook test command fixture to the portable invocation. Commands in
+  earlier verification reports use the new spelling; their recorded results are historical.
+
 ## 2026-09-28 — voice recorder simplified
 
 * **Change**: [voice recording](flows/voice-recording.md) — the permission-first press (D14)

@@ -16,7 +16,7 @@ sources:
     resource: ../../.claude/rules/testing.md
     title: Testing conventions
   - id: harness
-    resource: ../../scripts/harness.sh
+    resource: ../../scripts/harness.mjs
     title: Verification harness
   - id: specs
     resource: ../../src
@@ -33,7 +33,7 @@ sources:
 | `npx ng test --watch=false --include <file>` | one spec file |
 | `npx ng test --watch=false --filter "<regex>"` | matching suite/test names |
 | `npx ng test --ui` | Vitest UI |
-| `bash scripts/harness.sh --test [--include <file>]` | the harness's test layer |
+| `node scripts/harness.mjs --test [--include <file>]` | the harness's test layer |
 
 The runner is `@angular/build:unit-test` with `runnerConfig: vitest.config.ts`,
 `browsers: ["chromiumHeadless"]`, and `tsconfig.spec.json`.[^ng] `vitest.config.ts` sets
@@ -90,7 +90,7 @@ There is no end-to-end testing.
 # Rules
 
 `CLAUDE.md`: never delete or overwrite working tests without permission, and run
-`bash scripts/harness.sh` after every change ([working agreements](../constraints/working-agreements.md)).
+`node scripts/harness.mjs` after every change ([working agreements](../constraints/working-agreements.md)).
 CI runs no tests ([CI](ci-and-deployment.md)).
 
 [^ng]: test target configuration

@@ -20,7 +20,7 @@ sources:
 | `tsconfig*.json`, `eslint.config.js`, `vitest.config.ts` | compiler, lint, test config | [toolchain](../systems/toolchain.md), [testing](../operations/testing.md) |
 | `ngsw-config.json` | service worker groups | [PWA](../architecture/pwa-and-service-worker.md) |
 | `keys.json` / `keys.example.json` | Google credentials (untracked / template) | [configuration](../operations/configuration-and-secrets.md) |
-| `scripts/harness.sh` | lint + typecheck + build + test gate | [build and serve](../operations/build-and-serve.md) |
+| `scripts/harness.mjs` | lint + typecheck + build + test gate | [build and serve](../operations/build-and-serve.md) |
 | `scripts/service-worker-ios-workaround.js` | postinstall ngsw patch | [PWA](../architecture/pwa-and-service-worker.md) |
 | `CLAUDE.md`, `AGENTS.md`, `.claude/` | agent instructions, rules, agents, settings, hooks | [working agreements](../constraints/working-agreements.md) |
 | `policy/sprint-window.json` | agent write-scope policy | [working agreements](../constraints/working-agreements.md) |

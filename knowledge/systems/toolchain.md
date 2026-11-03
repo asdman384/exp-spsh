@@ -70,7 +70,7 @@ Ambient `types`: `vitest/globals`, `gapi`, `gapi.client.oauth2-v2`, `gapi.client
 | `viz` | production build with `--stats-json` + `esbuild-visualizer` | bundle analysis |
 | `postinstall` | `node scripts/service-worker-ios-workaround.js` | patches `ngsw-worker.js` |
 
-`scripts/harness.sh` runs lint, `tsc -b tsconfig.app.json tsconfig.spec.json`, a production
+`scripts/harness.mjs` runs lint, `tsc -b tsconfig.app.json tsconfig.spec.json`, a production
 build into `tmp/harness-dist`, and the tests ([build and serve](../operations/build-and-serve.md)).
 
 # Lint and format

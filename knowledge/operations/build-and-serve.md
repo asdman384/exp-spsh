@@ -16,7 +16,7 @@ sources:
     resource: ../../angular.json
     title: Build configurations
   - id: harness
-    resource: ../../scripts/harness.sh
+    resource: ../../scripts/harness.mjs
     title: Verification harness
 ---
 
@@ -47,10 +47,19 @@ live reload; refresh after a rebuild.
 `npm run build` → `dist/exp-spsh`, hashed filenames, budgets enforced.[^ng] CI runs the same
 command.
 
-`bash scripts/harness.sh` runs lint, `tsc -b` over app + specs, a production build into
+`node scripts/harness.mjs` runs lint, `tsc -b` over app + specs, a production build into
 `tmp/harness-dist`, and the tests; flags `--lint`, `--typecheck`, `--build`, `--test`,
 `--include <spec>` select layers. Its build never touches `dist/exp-spsh`, so it can run
 alongside the loop.[^harness]
+
+The harness runs natively on Windows, Linux, and macOS using Node.js and the local
+Angular/TypeScript CLIs, without Bash, WSL, or npx. `npm run harness` is an alias;
+pass flags after `--` (for example, `npm run harness -- --test`). The direct `node`
+command avoids PowerShell's npm shim execution policy. `--all` is the default;
+selected layers run in a fixed order even when a layer fails. Exit codes are 0
+for success, 1 for a failed layer, and 2 for invalid arguments or missing setup.
+The script resolves its repository root independently of the caller's working
+directory. `--include` paths/globs are relative to that root; quote globs.
 
 # Runtime flags
 

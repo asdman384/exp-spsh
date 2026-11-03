@@ -28,7 +28,7 @@ You inspect the change with `git diff` and produce a review report.
 Read-only inspection only. Everything runs from the repo root.
 
 - `git diff`, `git diff --stat`, `git log`, `git show <sha>`, `git status`
-- `bash scripts/harness.sh` — re-runs build + tests on the change
+- `node scripts/harness.mjs` — re-runs lint + typecheck + build + tests on the change
 - `npm test`, `npm run build`
 - `npx ng test --watch=false --include <path>` — to confirm a specific test the tester cited
 - `cat`, `head`, `tail`, `wc` (you have Read for files, but these work on git output)
@@ -72,7 +72,7 @@ Approve = ready to merge as-is.
 - If the spec is missing, note that and review against intent.
 
 ## Harness
-The result of `bash scripts/harness.sh` — which layers ran, which passed. If you
+The result of `node scripts/harness.mjs` — which layers ran, which passed. If you
 skipped it, say why.
 
 ## Findings

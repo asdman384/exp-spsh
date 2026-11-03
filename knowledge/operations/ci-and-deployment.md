@@ -27,7 +27,7 @@ Triggers, the path filter, and secrets are in [the GitHub system record](../syst
 # Release checklist
 
 1. Bump `version` in `package.json` — the only user-visible release marker.[^pkg]
-2. Run `bash scripts/harness.sh` locally; CI runs no tests or lint.
+2. Run `node scripts/harness.mjs` locally; CI runs no tests or lint.
 3. Merge to `master`; check the change matches the path filter.
 4. Watch the `deploy` job.
 5. Installed PWAs get `VERSION_READY` and show an update badge

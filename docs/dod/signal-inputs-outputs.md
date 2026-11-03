@@ -13,7 +13,7 @@ stays `- [ ]`. "I think it works" is not evidence.
 
 ## 1. Acceptance criteria
 
-- [ ] [AC1] `bash scripts/harness.sh` is green — all four layers (lint, typecheck, build, test) — covered by `scripts/harness.sh` full run — not written
+- [ ] [AC1] `node scripts/harness.mjs` is green — all four layers (lint, typecheck, build, test) — covered by `scripts/harness.mjs` full run — not written
 - [ ] [AC2] No `@Input(`, `@Output(`, or `EventEmitter` remain in `src/`; `ExpensesTableComponent` no longer imports or implements `OnChanges`/`SimpleChanges` — covered by `expenses-table.component.ts` source inspection / grep — not written
 - [ ] [AC3] Exactly five `input()`-declared inputs (`showDateCol`, `dataSource`, `draggable`, `selectable`, `selected`) with unchanged names and defaults, none required — covered by `expenses-table.component.ts` source inspection — not written
 - [ ] [AC4] Exactly three outputs with unchanged names/payload types; `deleteRow`/`cellClick` via `output()`, `selectionChange` via `outputFromObservable()` deferred one macrotask per D1 — covered by `expenses-table.component.ts` source inspection — not written
@@ -35,9 +35,9 @@ stays `- [ ]`. "I think it works" is not evidence.
 
 ## 2. Verification layers
 
-- [ ] **Build / type-check** — `bash scripts/harness.sh --build` exits 0
-- [ ] **Unit tests** — `bash scripts/harness.sh --test` exits 0, no new skipped suites
-- [ ] **Full harness** — `bash scripts/harness.sh` exits 0 (this is the gate the reviewer re-runs)
+- [ ] **Build / type-check** — `node scripts/harness.mjs --build` exits 0
+- [ ] **Unit tests** — `node scripts/harness.mjs --test` exits 0, no new skipped suites
+- [ ] **Full harness** — `node scripts/harness.mjs` exits 0 (this is the gate the reviewer re-runs)
 - [ ] **Manual check in the running app** — required: this change is visible in the UI (Statistics table selection/Total, month-carousel auto-scroll, table animation, Dashboard swipe-to-delete). Two terminals: `npm run watch` and `npm run serve`, then http://localhost:4200/exp-spsh/. State what was clicked and what was observed.
       *An agent cannot tick this one — see section 4.*
 

@@ -113,8 +113,8 @@ You do not run subagents in parallel. One subagent at a time, in sequence. Paral
 - **Pass the spec path and the DoD path** to every subagent. Do not paste their contents into the delegation.
 - **Read the subagent's output, not the delta.** If the subagent says "done," verify against the DoD before believing it.
 - **No silent retries.** If a subagent fails, report what failed before re-delegating.
-- **Read the harness gate, not just the claim.** `bash scripts/harness.sh` runs the build
-  (type-check) and the unit tests. You get two signals — what the subagent says, and what the
+- **Read the harness gate, not just the claim.** `node scripts/harness.mjs` runs lint,
+  typecheck, the production build, and the unit tests. You get two signals — what the subagent says, and what the
   harness observed. When they disagree, the harness wins. If the `SubagentStop` hook in
   `.claude/settings.json` is enabled, this runs automatically on every handoff; if it is
   commented out, require the subagent to paste the harness result in its report.
@@ -137,8 +137,8 @@ One `<slug>` threads through all of them. Pick it once, kebab-case, and reuse it
 ## Repo facts you need
 
 A single Angular 21 + NgRx PWA. `src/` and one `package.json` at the repo root. No server — the user's Google Spreadsheet is the datastore.
-Verification is `bash scripts/harness.sh` (build + tests); there is no lint or typecheck
-script. `policy/sprint-window.json` denies writes to `angular.json` and `package.json`, so a
+Verification is `node scripts/harness.mjs` (lint + typecheck + build + tests), also available
+as `npm run harness`. `policy/sprint-window.json` denies writes to `angular.json` and `package.json`, so a
 spec needing either is a human decision, not a delegation. Deeper context is in `CLAUDE.md`
 and the `knowledge/` bundle.
 

@@ -88,7 +88,7 @@ container under `src/modules/`. No state (`src/@state/`), service (`src/services
 spreadsheet-layout work is involved, and no remote I/O is touched — so nothing lands in an NgRx
 effect. ("Effect" below means the Angular `effect()` from `@angular/core` unless stated otherwise.)
 
-- **Sequence the work as two steps,** each finished with `bash scripts/harness.sh` green before the
+- **Sequence the work as two steps,** each finished with `node scripts/harness.mjs` green before the
   next begins, per the one-task-at-a-time rule in `CLAUDE.md`: (1) the input/output migration in
   `src/shared/components/expenses-table/`, (2) the view-query migration in
   `src/modules/dashboard/statistics/statistics.container.ts`. The two touch disjoint files; the only
@@ -187,7 +187,7 @@ effect. ("Effect" below means the Angular `effect()` from `@angular/core` unless
 
 ## Acceptance criteria
 
-- **[AC1]** `bash scripts/harness.sh` is green — all four layers (lint, typecheck, build, test).
+- **[AC1]** `node scripts/harness.mjs` is green — all four layers (lint, typecheck, build, test).
 - **[AC2]** A search of `src/` for `@Input(`, `@Output(`, and `EventEmitter` returns no matches in
   application code. `ExpensesTableComponent` no longer imports `Input`, `Output`, `EventEmitter`,
   `OnChanges`, or `SimpleChanges` from `@angular/core`, and no longer declares

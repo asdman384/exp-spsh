@@ -83,7 +83,7 @@ const MUST_PASS = [
   'git add -A && git commit -m "wip"',
   'npm test',
   'npm run build',
-  'bash scripts/harness.sh',
+  'node scripts/harness.mjs',
   'ls -la',
   'echo "do not git push"',
   'git remote -v',

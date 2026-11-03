@@ -70,7 +70,7 @@ where `FormsModule` used to be.
 
 ## Verification
 
-- `bash scripts/harness.sh --all` (lint, typecheck, `ng build --configuration=production`,
+- `node scripts/harness.mjs --all` (lint, typecheck, `ng build --configuration=production`,
   `ng test --watch=false`) is green: 99 passed / 2 skipped, no lint or type errors.
 - No `.spec.ts` exists for `DashboardPageContainer`, so no test file was touched.
 - **Not verified in a browser.** The app has no backend of its own — every screen is gated

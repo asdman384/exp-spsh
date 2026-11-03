@@ -167,7 +167,7 @@ Add a square hold-to-record button next to **Add Expense** on the dashboard. Whi
 
 **Quality gates**
 
-- [AC23] `bash scripts/harness.sh`, `npm test`, `npm run lint`, and `npx tsc -b tsconfig.app.json tsconfig.spec.json` all pass. No existing spec is deleted or weakened. The new button has an accessible name, and the white icon on red has a contrast of at least 3:1 (no AXE violations).
+- [AC23] `node scripts/harness.mjs`, `npm test`, `npm run lint`, and `npx tsc -b tsconfig.app.json tsconfig.spec.json` all pass. No existing spec is deleted or weakened. The new button has an accessible name, and the white icon on red has a contrast of at least 3:1 (no AXE violations).
 - [AC24] Documentation:
   - A new concept, `knowledge/flows/voice-recording.md`, describes the current behaviour in present tense and cites the service, model, and component in `sources`.
   - `knowledge/index.md` (Flows) links to it.

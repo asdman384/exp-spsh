@@ -53,17 +53,17 @@ stays `- [ ]`. "I think it works" is not evidence.
 
 **Quality gates**
 
-- [x] [AC23] Harness, `npm test`, lint and `tsc -b` all pass, and no existing spec is deleted or weakened. The button has an accessible name, and white on red has ≥ 3:1 contrast. — covered by `bash scripts/harness.sh --all` → lint/typecheck/build/test passed, 24 files passed + 1 skipped (baseline), 312 tests passed + 2 skipped after tester (3 new spec files, no existing spec modified); `aria-label` in `voice-record-button.component.ts`; `#d32f2f` bg / `#fff` in `voice-record-button.component.scss:16-17` ≈ 5:1 — passing (no AXE run; axe check folds into AC25 manual)
+- [x] [AC23] Harness, `npm test`, lint and `tsc -b` all pass, and no existing spec is deleted or weakened. The button has an accessible name, and white on red has ≥ 3:1 contrast. — covered by `node scripts/harness.mjs --all` → lint/typecheck/build/test passed, 24 files passed + 1 skipped (baseline), 312 tests passed + 2 skipped after tester (3 new spec files, no existing spec modified); `aria-label` in `voice-record-button.component.ts`; `#d32f2f` bg / `#fff` in `voice-record-button.component.scss:16-17` ≈ 5:1 — passing (no AXE run; axe check folds into AC25 manual)
 - [x] [AC24] Docs: new `knowledge/flows/voice-recording.md`, plus updates to the index, source map, `add-expense.md` and `log.md`, and a new `CLAUDE.md` bullet. — covered by `git status --short`: new `knowledge/flows/voice-recording.md`; M `knowledge/index.md`, `knowledge/references/source-map.md`, `knowledge/flows/add-expense.md`, `knowledge/log.md`, `CLAUDE.md` — passing
 - [ ] [AC25] Manual Chromium check: first click only requests permission, then a 3 s hold, 0.5 s discard, drag-out release, and denied permission. — **human-only, moved to section 4**
 
 ## 2. Verification layers
 
-- [x] **Lint** — `bash scripts/harness.sh --lint` exits 0 — `bash scripts/harness.sh --all` 2026-09-24: passed
-- [x] **Type-check** — `bash scripts/harness.sh --typecheck` exits 0 — `bash scripts/harness.sh --all` 2026-09-24: passed
-- [x] **Build** — `bash scripts/harness.sh --build` exits 0 — `bash scripts/harness.sh --all` 2026-09-24: passed
-- [x] **Unit tests** — `bash scripts/harness.sh --test` exits 0 — `bash scripts/harness.sh --all` 2026-09-24: passed, no new skipped suites (existing suites only; no new tests this run)
-- [x] **Full harness** — `bash scripts/harness.sh --all` exits 0 — `bash scripts/harness.sh --all` 2026-09-24: passed
+- [x] **Lint** — `node scripts/harness.mjs --lint` exits 0 — `node scripts/harness.mjs --all` 2026-09-24: passed
+- [x] **Type-check** — `node scripts/harness.mjs --typecheck` exits 0 — `node scripts/harness.mjs --all` 2026-09-24: passed
+- [x] **Build** — `node scripts/harness.mjs --build` exits 0 — `node scripts/harness.mjs --all` 2026-09-24: passed
+- [x] **Unit tests** — `node scripts/harness.mjs --test` exits 0 — `node scripts/harness.mjs --all` 2026-09-24: passed, no new skipped suites (existing suites only; no new tests this run)
+- [x] **Full harness** — `node scripts/harness.mjs --all` exits 0 — `node scripts/harness.mjs --all` 2026-09-24: passed
 - Manual check in the running app — applies (a new UI control and microphone access), so it moves to section 4.
 
 ## 3. Explicitly out of scope

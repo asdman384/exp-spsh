@@ -25,14 +25,14 @@ Created: 2026-09-08
 - [x] [AC16] `app.effects.spec.ts` proves `showFailureToast$` behavior via `provideMockActions` + spied `MatSnackBar.open`, incl. two consecutive identical failures both open a toast — `app.effects.spec.ts` (2 tests) — passing
 - [ ] [AC17] `app.config.ts` unchanged (no animations provider — confirmed, code side); snackbar appear/disappear in a manual `npm run watch` + `npm run serve` run — **manual half not yet done** — human-only, section 4
 - [x] [AC18] `@state/index.ts`, `uikit.module.ts`, `spreadsheet.service.ts`, `ngsw-config.json`, `angular.json`, `package.json` all unchanged — confirmed via `git status`/`git diff --stat` — passing
-- [x] [AC19] `npm test` green (13 `isExpenseEqual` + 8 `SpreadsheetService` tests still passing, plus new suites); `npm run lint` and `npx tsc -b tsconfig.app.json tsconfig.spec.json` clean — `bash scripts/harness.sh --all`: lint/typecheck/build/test all passed (9 files / 44 tests passed, 3 files / 4 tests pre-existing-skipped, 0 failed) — passing
+- [x] [AC19] `npm test` green (13 `isExpenseEqual` + 8 `SpreadsheetService` tests still passing, plus new suites); `npm run lint` and `npx tsc -b tsconfig.app.json tsconfig.spec.json` clean — `node scripts/harness.mjs --all`: lint/typecheck/build/test all passed (9 files / 44 tests passed, 3 files / 4 tests pre-existing-skipped, 0 failed) — passing
 - [ ] [AC20] Manual AXE check on a forced failure: no new violations, `role="alert"`, `Dismiss` reachable/operable by keyboard — **not yet done** — human-only, section 4
 
 ## 2. Verification layers
 
-- [x] **Build / type-check** — `bash scripts/harness.sh --build` exits 0 (also `--typecheck` clean)
-- [x] **Unit tests** — `bash scripts/harness.sh --test` exits 0, no new skipped suites (3 pre-existing skipped suites unchanged)
-- [x] **Full harness** — `bash scripts/harness.sh --all` exits 0 — `harness: green`
+- [x] **Build / type-check** — `node scripts/harness.mjs --build` exits 0 (also `--typecheck` clean)
+- [x] **Unit tests** — `node scripts/harness.mjs --test` exits 0, no new skipped suites (3 pre-existing skipped suites unchanged)
+- [x] **Full harness** — `node scripts/harness.mjs --all` exits 0 — `harness: green`
 - [ ] **Manual check in the running app** — snackbar appearance/dismissal (AC17) and AXE scan (AC20) — human-only, see section 4
 
 ## 3. Explicitly out of scope

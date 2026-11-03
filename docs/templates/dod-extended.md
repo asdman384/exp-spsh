@@ -23,9 +23,9 @@ Sections 1–6 are ticked by the orchestrator from cited evidence. Section 7 is 
 
 ## 2. Verification layers
 
-- [ ] **Build / type-check** — `bash scripts/harness.sh --build` exits 0
-- [ ] **Unit tests** — `bash scripts/harness.sh --test` exits 0, no new skipped suites
-- [ ] **Full harness** — `bash scripts/harness.sh` exits 0
+- [ ] **Build / type-check** — `node scripts/harness.mjs --build` exits 0
+- [ ] **Unit tests** — `node scripts/harness.mjs --test` exits 0, no new skipped suites
+- [ ] **Full harness** — `node scripts/harness.mjs` exits 0
 
 ## 3. Data safety
 

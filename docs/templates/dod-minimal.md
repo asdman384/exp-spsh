@@ -24,9 +24,9 @@ Each line ends with the test that proves it and that test's current state.
 
 The harness layers this slice touches. Delete rows that do not apply and say why.
 
-- [ ] **Build / type-check** — `bash scripts/harness.sh --build` exits 0
-- [ ] **Unit tests** — `bash scripts/harness.sh --test` exits 0, no new skipped suites
-- [ ] **Full harness** — `bash scripts/harness.sh` exits 0 (this is the gate the reviewer re-runs)
+- [ ] **Build / type-check** — `node scripts/harness.mjs --build` exits 0
+- [ ] **Unit tests** — `node scripts/harness.mjs --test` exits 0, no new skipped suites
+- [ ] **Full harness** — `node scripts/harness.mjs` exits 0 (this is the gate the reviewer re-runs)
 - [ ] **Manual check in the running app** — only when the change is visible in the UI or
       touches the service worker. Two terminals: `npm run watch` and `npm run serve`, then
       http://localhost:4200/exp-spsh/. State what was clicked and what was observed.

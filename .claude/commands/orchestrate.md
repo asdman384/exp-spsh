@@ -12,7 +12,7 @@ next, or a fix-until-approved loop, stop and tell the human to use the
 Pick one kebab-case `<slug>` from `$ARGUMENTS` and use it for every path.
 
 This repo is a single Angular 22 + NgRx PWA: `src/` and one `package.json` at the
-root, verification via `bash scripts/harness.sh` (build + tests).
+root, verification via `node scripts/harness.mjs` (lint + typecheck + build + tests).
 
 ## Step 0 — spec
 
@@ -57,7 +57,7 @@ Read the DoD once, now. Tick every item the reports demonstrate as passing, citi
 the evidence inline — a test pointer, a command result, or a line from the review.
 Never tick a Human-only item. Never tick anything without a concrete pointer.
 
-Run `bash scripts/harness.sh --all` and record the result against DoD section 2.
+Run `node scripts/harness.mjs --all` and record the result against DoD section 2.
 
 Append to `docs/orchestrator-log/<slug>.md`:
 

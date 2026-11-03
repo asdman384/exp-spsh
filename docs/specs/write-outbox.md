@@ -542,7 +542,7 @@ No dependency is added, and `package.json`, `angular.json` and `ngsw-config.json
   - `src/app/app.component.spec.ts`
 
   Suites that are skipped today stay skipped.
-- `[AC39]` `bash scripts/harness.sh --all` reports lint, typecheck, build and test all `passed` and ends `harness: green`. The new and modified files contain no `any` and no new `eslint-disable` beyond the documented pattern (an inline `eslint-disable-next-line` with a stated reason, per `CLAUDE.md`).
+- `[AC39]` `node scripts/harness.mjs --all` reports lint, typecheck, build and test all `passed` and ends `harness: green`. The new and modified files contain no `any` and no new `eslint-disable` beyond the documented pattern (an inline `eslint-disable-next-line` with a stated reason, per `CLAUDE.md`).
 
 ### Knowledge and CLAUDE.md
 

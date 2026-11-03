@@ -3,7 +3,8 @@
   "permissions": {
     "allow": [
       "Bash(cd:*)",
-      "Bash(bash scripts/harness.sh:*)",
+      "Bash(node scripts/harness.mjs:*)",
+      "PowerShell(node scripts/harness.mjs*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
@@ -52,7 +53,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash scripts/harness.sh",
+            "command": "node scripts/harness.mjs",
             "timeout": 300
           }
         ]

@@ -34,7 +34,7 @@ None of these needs a re-plan. All are local edits inside files this spec alread
 
 | AC | Status | Evidence |
 |---|---|---|
-| **AC1** — harness green, all four layers | check | My own run of `bash scripts/harness.sh`: `lint: passed / typecheck: passed / build: passed / test: passed`, `harness: green`. 12 test files passed, 1 skipped; 99 tests passed, 2 skipped. See **Harness** below. |
+| **AC1** — harness green, all four layers | check | My own run of `node scripts/harness.mjs`: `lint: passed / typecheck: passed / build: passed / test: passed`, `harness: green`. 12 test files passed, 1 skipped; 99 tests passed, 2 skipped. See **Harness** below. |
 | **AC2** — no `@Input(`/`@Output(`/`EventEmitter` in `src/`; no `OnChanges`/`SimpleChanges` | check | `grep -rn "@Input(\|@Output(\|EventEmitter\|SimpleChanges\|ngOnChanges" src/` returns only three **comment** lines in `src/shared/components/expenses-table/expenses-table.component.spec.ts:13,14,263` — no code matches. `expenses-table.component.ts:4-5` imports only `ChangeDetectionStrategy, ChangeDetectorRef, Component, computed, effect, inject, input, output` + `outputFromObservable`. Class declaration at `:24` is bare (`export class ExpensesTableComponent {`). Those comment lines are F3. |
 | **AC3** — exactly five `input()`s, same names/defaults, none required | check | `expenses-table.component.ts:36-40`: `showDateCol = input(true)`, `dataSource = input<ReadonlyArray<Expense>>([])`, `draggable = input(false)`, `selectable = input(false)`, `selected = input<ReadonlyArray<Expense>>([])`. No aliases, no `input.required`. Exercised by `expenses-table.component.spec.ts::should_render_date_column_when_showDateCol_is_true`, `::should_hide_date_column_when_showDateCol_is_false`, `::should_disable_drag_by_default`, `::should_enable_drag_when_draggable_is_true`, `::should_hide_select_column_by_default`, `::should_show_select_column_when_selectable_is_true`. |
 | **AC4** — exactly three outputs, unchanged names and payload types; `selectionChange` via `outputFromObservable`, deferred one macrotask | **cross (minor)** | Names, count and mechanism are right: `:42-49` — `deleteRow = output<Expense>()`, `cellClick = output<{...}>()`, `selectionChange = outputFromObservable(this.selection.changed.pipe(map(() => this.selection.selected), delay(0)))`. The one-macrotask deferral is *asserted*, not just inspected: `expenses-table.component.spec.ts::should_emit_selectionChange_with_updated_selection_after_row_toggle` checks `emitted.length === 0` synchronously after the checkbox `change`, then `=== 1` after a `setTimeout` flush. **But** the payload type is `Expense[]`, not `ReadonlyArray<Expense>` — `SelectionModel.selected` is declared `T[]` (`node_modules/@angular/cdk/types/_selection-model-chunk.d.ts:19`) and no explicit type argument was given to `outputFromObservable`. See **F1**. |
@@ -70,7 +70,7 @@ None of these needs a re-plan. All are local edits inside files this spec alread
 
 ## Harness
 
-`bash scripts/harness.sh`, run by me on the working tree as reviewed:
+`node scripts/harness.mjs`, run by me on the working tree as reviewed:
 
 ```
 === harness summary ===
@@ -251,7 +251,7 @@ I also ran the two touched specs in isolation:
   (`node_modules/@angular/core/fesm2022/_debug_node-chunk.mjs:9497-9503`, `:9532-9537`).
 - `src/@state/app.reducers.ts:14-30`, to establish that the statistics spec's `beforeEach` seeding
   fixes real `localStorage`-dependent flakiness rather than papering over a new failure.
-- Ran `bash scripts/harness.sh` (full, green) and
+- Ran `node scripts/harness.mjs` (full, green) and
   `npx ng test --watch=false --include <the two spec files>` (23/23 green).
 - Did not modify any file other than this review.
 

@@ -46,5 +46,5 @@ Stop and report when **any** of these is true:
 ## Cost note
 
 The full harness runs a production build and the whole test suite (tens of seconds). Prefer
-`bash scripts/harness.sh --test --include <path>` while iterating, and the full
-`bash scripts/harness.sh` at handoff — the reviewer re-runs the full gate regardless.
+`node scripts/harness.mjs --test --include <path>` while iterating, and the full
+`node scripts/harness.mjs` at handoff — the reviewer re-runs the full gate regardless.

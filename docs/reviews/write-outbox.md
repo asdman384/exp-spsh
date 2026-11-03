@@ -26,7 +26,7 @@ Required changes and non-blocking notes are listed in full at the end.
 
 ## Harness
 
-`bash scripts/harness.sh --all` was run once in the background, with its log in the scratchpad. It exited 0. Verbatim:
+`node scripts/harness.mjs --all` was run once in the background, with its log in the scratchpad. It exited 0. Verbatim:
 
 ```
 === harness summary ===
@@ -470,7 +470,7 @@ A related ordering nit, not a drop: until boot hydration completes, `pendingCoun
   - Context around the four stale item-21 citations.
 - **Tests (read only):** the capture-timing and date assertions in `app.effects.add-expense.spec.ts` and `outbox-failure-notice.component.spec.ts`, the R2 test name in `outbox.effects.spec.ts:637`, the [AC7] describe at `indexed-db-outbox-storage.service.spec.ts:40`, and the `SpreadsheetService` stubs in `app.effects.spec.ts`.
 - **Theme:** `angular.json` style entries and `node_modules/@angular/material/prebuilt-themes/deeppurple-amber.css`, for icon-button, toolbar and badge variables.
-- **Commands run:** `bash scripts/harness.sh --all` once (green), `npm run lint` (exit 0), `npx tsc -b tsconfig.app.json tsconfig.spec.json` (exit 0).
+- **Commands run:** `node scripts/harness.mjs --all` once (green), `npm run lint` (exit 0), `npx tsc -b tsconfig.app.json tsconfig.spec.json` (exit 0).
 
 I modified nothing. This review file is my only write.
 
@@ -509,7 +509,7 @@ Everything else REVIEW-1 confirmed still holds (RR-8).
 
 ### RR-1 Harness, lint, tsc, inventory
 
-`bash scripts/harness.sh --all` was run once in the background, with its log in the scratchpad. It exited 0 (`harness-exit:0`). Verbatim:
+`node scripts/harness.mjs --all` was run once in the background, with its log in the scratchpad. It exited 0 (`harness-exit:0`). Verbatim:
 
 ```
 === harness summary ===
@@ -1033,7 +1033,7 @@ That file is outside [AC41]'s list, so this is a note with the same fix directio
 ### RR-11 What I checked (Re-review 1)
 
 - **Commands:**
-  - `bash scripts/harness.sh --all` once (green), `npm run lint` (exit 0), `npx tsc -b tsconfig.app.json tsconfig.spec.json` (exit 0).
+  - `node scripts/harness.mjs --all` once (green), `npm run lint` (exit 0), `npx tsc -b tsconfig.app.json tsconfig.spec.json` (exit 0).
   - Inventory: `git status --porcelain`, `git diff --stat`, `git diff --stat -- '*.spec.ts'` (empty).
   - Diffs: `git diff -U0` hunk headers for `app.effects.ts` and `spreadsheet.service.ts`; full `git diff` for `app.effects.ts` and the 11 modified knowledge files.
   - Baseline comparisons: `git diff --quiet 4f801b2` plus an untracked-file check over 20 stays-unchanged paths; `git show 4f801b2:` for the narration and citation baselines and the [AC36] md5 comparison.

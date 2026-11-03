@@ -32,8 +32,8 @@ existing tests is expected; authoring new ones is not yours.
 
 Everything runs from the **repo root**. There is one `package.json`, at the root.
 
-- `bash scripts/harness.sh` — build (type-check) + tests. Your feedback loop.
-- `bash scripts/harness.sh --build` / `--test` — one layer, when you want a faster cycle.
+- `node scripts/harness.mjs` — lint + typecheck + lint + typecheck + build + tests. Your feedback loop.
+- `node scripts/harness.mjs --build` / `--test` — one layer, when you want a faster cycle.
 - `npm test` — tests only.
 - `npx ng test --watch=false --include src/path/to/file.spec.ts` — a single spec file.
 - `npx ng test --watch=false --filter "<regex>"` — tests matching a name.
@@ -94,7 +94,7 @@ depending on you remembering this list.
 A working change set:
 
 - Code edits/additions per the spec
-- `bash scripts/harness.sh` exits 0
+- `node scripts/harness.mjs` exits 0
 - A short summary of:
   - what you did, file by file
   - which acceptance criteria you believe are met, and how you verified each

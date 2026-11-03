@@ -5,7 +5,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 ## Critical rules
 
 - **NEVER** delete or overwrite working tests without explicit permission.
-- **ALWAYS** `bash scripts/harness.sh` after any code change.
+- **ALWAYS** `node scripts/harness.mjs` after any code change.
 - One task at a time. Do not make multiple unrelated changes simultaneously.
 - If you are unsure — **ASK**, do not guess.
 - Update `CLAUDE.md` and `knowledge/` when architecture or infrastructure changes or a feature is added or modified.
@@ -15,6 +15,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 ## Commands
 
 ```bash
+npm run harness        # lint + typecheck + production build + tests (native on Windows too)
 npm run build          # production build -> dist/exp-spsh
 npm run watch          # incremental development build (leave running)
 npm run serve          # static server on :4200 over dist/  -- NOT `ng serve`
@@ -29,8 +30,10 @@ roots at `dist/` while the build writes to `dist/exp-spsh`, and `angular.json` s
 `baseHref: "/exp-spsh/"`, so every asset URL (including those in the generated `ngsw.json`)
 carries that prefix. The page does not live-reload; refresh after a rebuild.
 
-`scripts/harness.sh` builds production into `tmp/harness-dist` (gitignored), never
+`scripts/harness.mjs` builds production into `tmp/harness-dist` (gitignored), never
 `dist/exp-spsh`, so running it does not disturb the watch loop.
+Run it with `node scripts/harness.mjs` on Windows, Linux, or macOS; no Bash or WSL
+is needed. With the npm alias, pass flags after `--`: `npm run harness -- --test`.
 
 Run a single test file or a single test:
 

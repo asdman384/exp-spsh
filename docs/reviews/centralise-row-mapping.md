@@ -46,7 +46,7 @@ tags as this spec's ACs.
 
 ## Harness
 
-`bash scripts/harness.sh` — **green**, all four layers ran:
+`node scripts/harness.mjs` — **green**, all four layers ran:
 
 ```
 === harness summary ===
@@ -176,7 +176,7 @@ Run separately and also clean:
   `grep -rn "describe.skip\|it.skip\|xdescribe\|xit(" src/ --include=*.spec.ts`.
 - `cat policy/sprint-window.json` — confirmed neither denied path is touched.
 - `sed -n '85,100p' knowledge/domain/spreadsheet-layout.md` — confirmed the D10 staleness.
-- Ran `bash scripts/harness.sh` (green, all four layers), `npm run lint` (clean),
+- Ran `node scripts/harness.mjs` (green, all four layers), `npm run lint` (clean),
   `npx tsc -b tsconfig.app.json tsconfig.spec.json` (exit 0).
 
 I modified nothing. This review file is my only write.
