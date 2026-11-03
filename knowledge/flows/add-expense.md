@@ -9,6 +9,9 @@ sources:
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
     title: DashboardPageContainer
+  - id: vm
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
   - id: html
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.html
     title: Dashboard form template
@@ -26,7 +29,8 @@ sources:
 # The form
 
 A Signal Forms form (`@angular/forms/signals`) over one `expenseModel` signal
-`{ date, sheet, amount, category, comment, isInDebt }`.[^page] `required()` applies to
+`{ date, sheet, amount, category, comment, isInDebt }` owned by the page-scoped
+`DashboardPageViewModel`. The component owns form validation and display bindings.[^page][^vm] `required()` applies to
 `date`, `sheet`, `amount`, `category`. Controls bind with `[formField]`:[^html]
 
 - `date` — Material datepicker (`touchUi`, readonly input, `min` = 1 January this year);
@@ -50,7 +54,8 @@ never submits the form, but each expense Gemini recognizes goes to the same
 # Steps
 
 1. `onSubmit` prevents native submit, returns unless the form is valid, and calls
-   `ExpensesService.add(sheet.id, expense)`, then resets the form.
+   `DashboardPageViewModel.saveExpense()`, which calls `ExpensesService.add(sheet.id, expense)`
+   and resets the model while retaining date and sheet. The component resets form interaction state.
 2. `add` never calls Google. It calls `OutboxService.add`, which builds a pending
    `OutboxRecord` (`attempts: 0`, the five expense fields, the current spreadsheet id), so
    **every** expense goes through the [write outbox](../architecture/write-outbox.md).[^expenses]
@@ -87,3 +92,5 @@ The date is written as local wall-clock time; a queued expense is converted at s
 [^expenses]: ExpensesService.add
 [^svc]: SpreadsheetService.addExpense
 [^outbox]: OutboxService
+
+[^vm]: DashboardPageViewModel

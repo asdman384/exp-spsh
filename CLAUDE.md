@@ -78,6 +78,11 @@ library is never loaded — only its TypeScript types are used; all traffic goes
 Angular's `HttpClient`.
 
 
+The dashboard page provides its own `DashboardPageViewModel`
+(`src/modules/dashboard/dashboard/dashboard-page.view-model.ts`) for expense state, loading,
+mutations, and voice recognition. `DashboardPageContainer` owns the form bindings, validation,
+display configuration, and action handlers. The view-model is destroyed with the page.
+
 ### Things that will surprise you
 
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
@@ -120,7 +125,7 @@ Angular's `HttpClient`.
   (`src/services/voice-recorder/`) holds the latest `VoiceRecording` in a signal — it is not in
   the NgRx store (a `Blob` isn't serialisable) and is never persisted. It survives logout
   (`AppComponent.logout` does not reload) but is lost on an actual page reload.
-- **Voice notes become queued expenses via Gemini.** `DashboardPageContainer` sends each new
+- **Voice notes become queued expenses via Gemini.** `DashboardPageViewModel` sends each new
   recording to `ExpenseRecognitionService`, which calls `gemini-3.5-flash-lite` through
   `@google/genai` with `keys.GGG_KEY` (the SDK uses `fetch`, so `ExpAuthInterceptor` is not
   involved and no OAuth scope is needed). The SDK is loaded by dynamic `import()` — keep it

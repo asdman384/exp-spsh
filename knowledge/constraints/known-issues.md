@@ -13,8 +13,8 @@ sources:
     resource: ../../src/modules/dashboard/expenses.service.ts
     title: ExpensesService
   - id: page
-    resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
-    title: DashboardPageContainer
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
   - id: svc
     resource: ../../src/services/spreadsheet/spreadsheet.service.ts
     title: SpreadsheetService
@@ -40,7 +40,7 @@ are stable IDs — fixed items are removed, never renumbered.
 | 3 | **Row deletion is positional.** The index from a fresh read is the sheet row index; a concurrent edit or sort removes the wrong row. | editing the sheet during a delete | `ExpensesService.delete`, `deleteSheetRow` |
 | 23 | **Queued writes can duplicate.** If Google applied a replayed batch but the response was lost, the record is retried and a second row appears. No dedupe key. | connection drop after the batch lands | `OutboxService` drain pass |
 | 24 | **Outbox order can be "order sent", not "order entered".** A retried failed record lands above later sends. | Retry after other sends | `OutboxService` |
-| 33 | **A voice-recognition failure toasts the raw error.** `DashboardPageContainer` dispatches `operationFailed({ source: 'Gemini', message: error })` with the error object itself, bypassing `FAILURE_MESSAGES`. | Gemini error, or a note with no valid expense | `DashboardPageContainer.logRecognizedExpenses` |
+| 33 | **A voice-recognition failure toasts the raw error.** `DashboardPageViewModel` dispatches `operationFailed({ source: 'Gemini', message: error })` with the error object itself, bypassing `FAILURE_MESSAGES`. | Gemini error, or a note with no valid expense | `DashboardPageViewModel.recognizeExpenses` |
 
 # Fragility and debt
 

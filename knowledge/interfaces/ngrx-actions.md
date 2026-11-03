@@ -21,7 +21,7 @@ One `createActionGroup`: `AppActions` (`source: 'App shell'`); DevTools shows
 
 | Action | Payload | Dispatched by | Consumed by |
 |---|---|---|---|
-| `loading` | `{ loading }` | effects, `ExpensesService`, `OutboxService` (via `reportFailure`), `DashboardPageContainer` (voice recognition) | reducer → toolbar progress bar; disables the form buttons and the voice button |
+| `loading` | `{ loading }` | effects, `ExpensesService`, `OutboxService` (via `reportFailure`), `DashboardPageViewModel` (voice recognition) | reducer → toolbar progress bar; disables the form buttons and the voice button |
 | `setTitle` | `{ title, icon? }` | each page's constructor | reducer → toolbar headline |
 | `spreadsheetId` | `{ spreadsheetId: string \| undefined }` | setup, after `getSpreadsheet` | reducer + persist effect |
 | `upsertDataSheet` | `{ dataSheet: Sheet }` | setup (discovery, creation) | reducer (entity upsert) + persist effect |
@@ -32,7 +32,7 @@ One `createActionGroup`: `AppActions` (`source: 'App shell'`); DevTools shows
 | `addCategory` | `{ newCategory }` | categories page | `addCategory$` |
 | `deleteCategory` | `{ category }` | categories page (drag right) | `deleteCategory$` |
 | `updateCategoryPosition` | `{ categories }` | categories page (reorder) | `updateCategoryPosition$` |
-| `operationFailed` | `{ source: string; message: string }` | remote effects, `ExpensesService`, `OutboxService`, `DashboardPageContainer` | reducer (`lastError`) + `showFailureToast$` |
+| `operationFailed` | `{ source: string; message: string }` | remote effects, `ExpensesService`, `OutboxService`, `DashboardPageViewModel` | reducer (`lastError`) + `showFailureToast$` |
 
 There are no expense or outbox actions: expenses go through `ExpensesService` and the queue
 through `OutboxService` ([state management](../architecture/state-management.md#expensesservice)).

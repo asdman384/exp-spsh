@@ -24,6 +24,9 @@ sources:
   - id: outbox
     resource: ../../src/services/outbox/outbox.service.ts
     title: OutboxService
+  - id: dashboard
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
   - id: expenses
     resource: ../../src/modules/dashboard/expenses.service.ts
     title: ExpensesService
@@ -105,7 +108,7 @@ Other dispatchers:
 
 - `OutboxService`: `source: 'outboxDrain$'` with `OUTBOX_MESSAGES.authBlocked`, and
   `reportFailure('addExpense$')` when an enqueue cannot be persisted;
-- `DashboardPageContainer`: `source: 'Gemini'` with the **raw** recognition error as
+- `DashboardPageViewModel`: `source: 'Gemini'` with the **raw** recognition error as
   `message` ([known issues](../constraints/known-issues.md) #33).
 
 Every remote `catchError` sits on the inner observable inside `exhaustMap`, so a failure ends
@@ -139,6 +142,14 @@ record's day on `OutboxService.sent$` when the route is exactly `/dashboard`. Th
 statistics pages read `expenses` directly (statistics through `toObservable`); the dashboard
 also feeds it expenses recognized from [voice notes](../flows/voice-recording.md#recognition).
 
+# Dashboard view-model
+
+`DashboardPageViewModel` is provided by `DashboardPageContainer`, so each page instance owns
+its expense form model and voice-recognition subscription. It selects loading, sheets, and
+categories, reads the expense signal, loads date windows, and delegates additions/deletions
+to `ExpensesService`. The component owns Signal Forms validation, display settings, and
+action handlers; destroying the page ends the recognition subscription.[^dashboard]
+
 # Selectors
 
 `app`: `loadingSelector`, `titleSelector`, `spreadsheetIdSelector`, `lastErrorSelector`,
@@ -159,3 +170,5 @@ consumers.
 [^selectors]: Selectors
 [^outbox]: OutboxService
 [^expenses]: ExpensesService
+
+[^dashboard]: DashboardPageViewModel

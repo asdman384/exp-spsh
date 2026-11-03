@@ -13,8 +13,8 @@ sources:
     resource: ../../src/services/expense-recognition/expense-recognition.service.spec.ts
     title: ExpenseRecognitionService spec
   - id: page
-    resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
-    title: DashboardPageContainer
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
 ---
 
 `ExpenseRecognitionService.recognize(recording, categories, now)` sends one
@@ -55,7 +55,7 @@ trimmed and omitted when empty; `isInDebt` is set only when `true`.
 
 # Caller
 
-`DashboardPageContainer` queues every returned expense through `ExpensesService.add`; a failure
+`DashboardPageViewModel` queues every returned expense through `ExpensesService.add`; a failure
 becomes a toast with the raw error ([voice recording](../flows/voice-recording.md#recognition)).[^page]
 
 # Limits
@@ -65,4 +65,4 @@ limits are per project; on the free tier Google may use request data.
 
 [^svc]: ExpenseRecognitionService
 [^spec]: ExpenseRecognitionService spec
-[^page]: DashboardPageContainer
+[^page]: DashboardPageViewModel

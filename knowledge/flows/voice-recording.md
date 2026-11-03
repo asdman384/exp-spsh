@@ -16,8 +16,8 @@ sources:
     resource: ../../src/shared/components/voice-record-button/voice-record-button.component.ts
     title: VoiceRecordButtonComponent
   - id: page
-    resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
-    title: DashboardPageContainer
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
 ---
 
 # What it is
@@ -31,7 +31,7 @@ sent to Gemini and every recognized expense is queued like a typed one (see
 |---|---|
 | `VoiceRecorderService` (root) | `getUserMedia`/`MediaRecorder` lifecycle, `status` and `latest` signals, `lastOutcome`[^svc] |
 | `VoiceRecordButtonComponent` | the hold gesture, the indicator, `LiveAnnouncer` messages; `disabled` while `loadingSelector` is true[^btn] |
-| `DashboardPageContainer` | sends each new clip to `ExpenseRecognitionService` and queues the result[^page] |
+| `DashboardPageViewModel` | sends each new clip to `ExpenseRecognitionService` and queues the result[^page] |
 
 `status` is `'idle' | 'starting' | 'recording'`; `latest` is
 `VoiceRecording | null` (`blob`, `mimeType`, `durationMs`, `recordedAt`).[^model] The clip is
@@ -74,7 +74,7 @@ stops a recording.
 
 # Recognition
 
-`DashboardPageContainer` subscribes to `toObservable(recorder.latest)`, skipping the clip
+`DashboardPageViewModel` subscribes to `toObservable(recorder.latest)`, skipping the clip
 already held when the page opens.[^page] For each new clip it dispatches `loading(true)`, calls
 `ExpenseRecognitionService.recognize(clip, categoryNames, new Date())`
 ([Gemini](../interfaces/gemini-api.md)), and `switchMap` drops an older in-flight request.
@@ -90,4 +90,4 @@ already held when the page opens.[^page] For each new clip it dispatches `loadin
 [^svc]: VoiceRecorderService
 [^model]: VoiceRecording
 [^btn]: VoiceRecordButtonComponent
-[^page]: DashboardPageContainer
+[^page]: DashboardPageViewModel

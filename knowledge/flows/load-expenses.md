@@ -10,8 +10,8 @@ sources:
     resource: ../../src/modules/dashboard/expenses.service.ts
     title: ExpensesService.load
   - id: page
-    resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
-    title: DashboardPageContainer.getInterval
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel.getInterval
   - id: stats
     resource: ../../src/modules/dashboard/statistics/statistics.container.ts
     title: StatisticsContainer.formChanged
@@ -27,7 +27,7 @@ The list is the service's `expenses` signal; it is not in the NgRx store.[^expen
 
 | Caller | Window |
 |---|---|
-| `DashboardPageContainer` constructor (if a current sheet exists) | none — `from` defaults to today, open-ended |
+| `DashboardPageViewModel` constructor (if a current sheet exists) | none — `from` defaults to today, open-ended |
 | dashboard date change | `getInterval(date)` |
 | dashboard person change | `getInterval(current date)` |
 | `OutboxService.sent$` (only on `/dashboard`) | the last sent record's day |
@@ -72,7 +72,7 @@ amount cells become `''`/`0`; a date string that is not `Date(…)` throws and f
 - `loadLastExpenses` (`values.get` on `A1:E<n>`) is a separate read used only by
   [delete](delete-expense.md).
 
-[^page]: DashboardPageContainer.getInterval
+[^page]: DashboardPageViewModel.getInterval
 [^stats]: StatisticsContainer.formChanged
 [^expenses]: ExpensesService.load
 [^svc]: SpreadsheetService.loadExpenses

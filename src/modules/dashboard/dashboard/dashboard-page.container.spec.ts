@@ -1,10 +1,12 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
-import { signal } from '@angular/core';
+import { signal, WritableSignal } from '@angular/core';
 
 import { categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
 import { VoiceRecorderOutcomeEvent, VoiceRecorderService, VoiceRecorderStatus } from 'src/services';
+
+import { Expense, Sheet } from 'src/shared/models';
 
 import { ExpensesService } from '../expenses.service';
 import { DashboardPageContainer } from './dashboard-page.container';
@@ -30,7 +32,10 @@ describe('DashboardPageContainer', () => {
   let recorder: FakeVoiceRecorderService;
   let expensesService: FakeExpensesService;
 
+  afterEach(() => vi.unstubAllGlobals());
+
   beforeEach(async () => {
+    vi.stubGlobal('log', vi.fn());
     dispatchSpy = vi.fn();
     recorder = new FakeVoiceRecorderService();
     expensesService = new FakeExpensesService();
@@ -64,6 +69,32 @@ describe('DashboardPageContainer', () => {
     const rows = submitRows();
     return rows[rows.length - 1];
   }
+
+  it('queues a submitted expense and resets fields while retaining the date and sheet', () => {
+    const page = fixture.componentInstance as unknown as {
+      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
+        category: string | null; comment: string; isInDebt: boolean }>;
+    };
+    const date = new Date(2026, 0, 15, 12, 30);
+    const sheet = { id: 7, title: 'data_test' };
+    page.expenseModel.set({ date, sheet, amount: 42, category: 'Food', comment: 'Lunch', isInDebt: true });
+    fixture.detectChanges();
+
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+
+    expect(expensesService.add).toHaveBeenCalledWith(7, expect.objectContaining({
+      date, amount: 42, category: 'Food', comment: 'Lunch', isInDebt: true
+    }));
+    expect(page.expenseModel()).toEqual({ date, sheet, amount: null, category: null, comment: '', isInDebt: false });
+  });
+
+  it('does not submit an incomplete form or delete without a selected sheet', () => {
+    fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
+    const page = fixture.componentInstance as unknown as { handleDeleteExpense(expense: Expense): void };
+    page.handleDeleteExpense({ amount: 10 });
+    expect(expensesService.add).not.toHaveBeenCalled();
+    expect(expensesService.delete).not.toHaveBeenCalled();
+  });
 
   // [AC1]
   describe('[AC1] rendering and wiring', () => {

@@ -164,3 +164,12 @@ Earlier log entries were condensed (full text is in git history).
 * **2026-09-08** — Effect error surfacing: `operationFailed`, `lastError`, fixed-copy toasts.
 * **2026-09-05** — Bundle created (OKF v0.2): architecture, domain, flows, interfaces,
   systems, operations, constraints, source map.
+
+* **2026-11-03** � Dashboard expense state, operations, date windows, and voice recognition
+  live in a page-scoped `DashboardPageViewModel`; the component retains form validation,
+  display configuration, and action handlers. Submission/reset regression tests pin behaviour.
+  Verification: seven dashboard tests pass before extraction; after extraction, typecheck,
+  production build, and 283 tests pass (two skipped). The full harness reports the pre-existing
+  empty lifecycle method lint error in `test-perf.component.ts:21`. The test fixture stubs
+  global `log()` for submit coverage. Architecture and flow references match the new owner;
+  the temporary refactoring script is removed. Crapper, dryer, and mutator are unavailable.
