@@ -4,6 +4,7 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ## Critical rules
 
+- **ALWAYS** use ASD-STE100 Simplified Technical English.
 - **NEVER** delete or overwrite working tests without explicit permission.
 - **ALWAYS** `node scripts/harness.mjs` after any code change.
 - One task at a time. Do not make multiple unrelated changes simultaneously.
