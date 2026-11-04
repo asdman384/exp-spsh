@@ -38,3 +38,15 @@
     height: 56px;
   }
 }
+
+.expense-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  padding: 0 16px 16px;
+
+  span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+}

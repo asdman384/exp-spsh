@@ -42,6 +42,8 @@ confirmation and no offline queueing.
    `loading`. If there is a backup, re-insert the row into the signal at `min(index, length)`
    unless it is already present. The toast source stays `deleteExpense$`.
 
+The dashboard totals react to optimistic removal and rollback through the same expense signal.
+
 # Constraints
 
 - **Only the newest 100 rows are deletable**; older ones roll back with the toast

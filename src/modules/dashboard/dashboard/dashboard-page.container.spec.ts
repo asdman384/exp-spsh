@@ -20,7 +20,7 @@ class FakeVoiceRecorderService {
 }
 
 class FakeExpensesService {
-  readonly expenses = signal([]);
+  readonly expenses = signal<Expense[]>([]);
   readonly load = vi.fn();
   readonly add = vi.fn();
   readonly delete = vi.fn();
@@ -69,6 +69,49 @@ describe('DashboardPageContainer', () => {
     const rows = submitRows();
     return rows[rows.length - 1];
   }
+
+  it('renders the summary after the form and before the table', () => {
+    const summary: HTMLElement = fixture.nativeElement.querySelector('.expense-summary');
+    expect(summary.textContent).toContain('Select a person to view totals');
+    expect(summary.getAttribute('role')).toBe('status');
+    expect(fixture.nativeElement.querySelector('form').compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(summary.compareDocumentPosition(fixture.nativeElement.querySelector('expenses-table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    const page = fixture.componentInstance as unknown as {
+      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
+        category: string | null; comment: string; isInDebt: boolean }>;
+    };
+    const date = new Date(2024, 10, 4, 12);
+    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    expensesService.expenses.set([{ amount: 1234.5, date }, { amount: 24, date, isInDebt: true }]);
+    fixture.detectChanges();
+    expect(summary.textContent?.replace(/\s+/g, ' ').trim()).toBe('Daily: 1258.50 · November: 1258.50 · Debt: 24');
+    expensesService.expenses.set([]);
+    fixture.detectChanges();
+    expect(summary.textContent?.replace(/\s+/g, ' ').trim()).toBe('Daily: 0.00 · November: 0.00 · Debt: 0');
+  });
+
+  it('wraps totals inside 320 CSS pixels with text enlarged to 200 percent', () => {
+    const page = fixture.componentInstance as unknown as {
+      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
+        category: string | null; comment: string; isInDebt: boolean }>;
+    };
+    const date = new Date(2024, 10, 4, 12);
+    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    expensesService.expenses.set([{ amount: 1e100, date, isInDebt: true }]);
+    const host: HTMLElement = fixture.nativeElement;
+    host.style.display = 'block';
+    host.style.width = '320px';
+    const summary = host.querySelector<HTMLElement>('.expense-summary')!;
+    summary.style.fontSize = '32px';
+    fixture.detectChanges();
+    expect(summary.scrollWidth).toBeLessThanOrEqual(summary.clientWidth);
+    const groups = summary.querySelectorAll('span');
+    expect(groups).toHaveLength(3);
+    expect(groups[2].getBoundingClientRect().top).toBeGreaterThan(groups[0].getBoundingClientRect().top);
+    for (const group of groups) {
+      expect(group.getBoundingClientRect().right).toBeLessThanOrEqual(summary.getBoundingClientRect().right);
+    }
+  });
 
   it('queues a submitted expense and resets fields while retaining the date and sheet', () => {
     const page = fixture.componentInstance as unknown as {

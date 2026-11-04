@@ -64,18 +64,37 @@ export class DashboardPageViewModel {
 
   readonly expenseModel = signal<ExpenseFormModel>(this.createExpenseModel());
 
+  readonly summary = computed(() => {
+    const { date, sheet } = this.expenseModel();
+    if (!sheet) return { placeholder: 'Select a person to view totals', totals: null };
+    const from = new Date(date.getFullYear(), date.getMonth(), 1);
+    const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
+    const monthly = this.expensesService.expenses().filter((row) => row.date && row.date >= from && row.date < to);
+    return {
+      placeholder: '',
+      totals: {
+        dailyLabel: date.toDateString() === new Date().toDateString() ? 'Today' : 'Daily',
+        monthLabel: date.toLocaleString('en-US', { month: 'long' }),
+        daily: formatTotal(this.expenses(), 2),
+        monthly: formatTotal(monthly, 2),
+        debt: formatTotal(monthly.filter((row) => row.isInDebt), 0)
+      }
+    };
+  });
+
   constructor() {
     this.store
       .select(currentSheetSelector)
       .pipe(
         first(),
         tap((sheet) => {
+          this.expenseModel.update((model) => ({ ...model, sheet: sheet ?? null }));
           if (sheet) {
-            this.expensesService.load({ sheetId: sheet.id });
+            this.expensesService.load({ sheetId: sheet.id, to: this.expenseModel().date });
           }
         })
       )
-      .subscribe((sheet) => this.expenseModel.update((model) => ({ ...model, sheet: sheet ?? null })));
+      .subscribe();
 
     this.recognizeExpenses();
   }
@@ -93,21 +112,17 @@ export class DashboardPageViewModel {
 
   changeSheet(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
+    this.expenseModel.update((model) => ({ ...model, sheet }));
     this.expensesService.load({ sheetId: sheet.id, to: this.expenseModel().date });
   }
 
   changeDate(date: Date): void {
     log('DashboardPageContainer::onDateChange', date);
-    const sheet = this.expenseModel().sheet;
-    if (!sheet) {
-      return;
-    }
-
-    this.expensesService.load({ sheetId: sheet.id, to: date });
-
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
     this.expenseModel.update((model) => ({ ...model, date: currentTime }));
+    const sheet = this.expenseModel().sheet;
+    if (sheet) this.expensesService.load({ sheetId: sheet.id, to: currentTime });
   }
 
   loadCategories(): void {
@@ -179,4 +194,11 @@ export class DashboardPageViewModel {
       isInDebt: false
     };
   }
+}
+
+function formatTotal(rows: Expense[], minimumFractionDigits: number): string {
+  const total = rows.reduce((sum, row) => sum + (typeof row.amount === 'number' && Number.isFinite(row.amount) ? row.amount : 0), 0);
+  if (!Number.isFinite(total)) return 'Unavailable';
+  const formatted = total.toLocaleString('en-US', { useGrouping: false, minimumFractionDigits, maximumFractionDigits: 2 });
+  return Number(formatted) === 0 ? formatted.replace('-', '') : formatted;
 }

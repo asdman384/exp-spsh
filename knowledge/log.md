@@ -195,3 +195,7 @@ Earlier log entries were condensed (full text is in git history).
   Typecheck and production build pass. Full lint retains the existing playground lifecycle
   error. The previous change is staged rather than committed at the start of this follow-up;
   leave the index and commit history as supplied by the user.
+
+* **2026-11-05** - Add dashboard daily, month-through-day, and signed Debt totals from loaded expense signals. Include local date bounds, finite amount handling, English decimal formatting, and responsive summary text. The owner removes all request tracking and service ownership changes from scope; ExpensesService and its tests remain unchanged. Add summary and layout regression tests. Remove the unused empty playground lifecycle method that blocks lint. Verification results follow after the final harness run.
+
+  Verification: lint and production build pass; 298 tests pass with two pre-existing skips. The final targeted typecheck passes after correcting nullable DOM typing in a test. Chromium layout assertions cover long amounts at 320 CSS pixels and 200% text size. Manual visual inspection is unavailable because the browser tools cannot attach. Existing build warnings concern snow CSS size and p-retry CommonJS.

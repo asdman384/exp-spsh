@@ -78,15 +78,6 @@ Spreadsheet is the database and the browser calls Google APIs directly. The `gap
 library is never loaded — only its TypeScript types are used; all traffic goes through
 Angular's `HttpClient`.
 
-
-The dashboard page provides its own `DashboardPageViewModel`
-(`src/modules/dashboard/dashboard/dashboard-page.view-model.ts`) for expense state, loading,
-mutations, and voice recognition. Its computed expense signal filters the service list to the
-selected local calendar day. `ExpensesService.load` defaults to the first day of the selected
-month through `to` (or today), inclusive; both `from` and `to` keep the supplied range.
-`DashboardPageContainer` owns the form bindings, validation,
-display configuration, and action handlers. The view-model is destroyed with the page.
-
 ### Things that will surprise you
 
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`

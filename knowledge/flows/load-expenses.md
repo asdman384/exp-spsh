@@ -42,6 +42,19 @@ Both `from` and `to` must be supplied to preserve a custom range; statistics sen
 The dashboard exposes a computed signal that filters service expenses to the selected local
 calendar day. It includes all times on that day and excludes entries without a date.[^page]
 
+The summary below the form uses that daily list for its daily total. Month and Debt totals
+filter the service rows from local month start through the selected day. Debt is a signed
+subtotal and also contributes to regular totals. Invalid dates are excluded and missing or
+non-finite amounts contribute zero. Daily/month totals have two decimals; Debt has up to two.
+Formatting uses a decimal point without grouping or currency, and normalizes rounded negative
+zero. An overflowing sum displays `Unavailable`. The day label is `Today` for today and `Daily`
+otherwise; the month label is the full English month name. Without a selected person, the
+summary displays `Select a person to view totals`.[^page]
+
+The summary uses the current loaded rows without request identity or load-status tracking.
+An empty list displays zero. Existing service retention, outbox refresh, and deletion behavior
+also apply to totals. No additional request or expense store is used.
+
 # The pipeline
 
 ```

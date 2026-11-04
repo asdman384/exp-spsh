@@ -61,6 +61,7 @@ export class DashboardPageContainer {
   protected readonly sheets$ = this.viewModel.sheets$;
   protected readonly categories$ = this.viewModel.categories$;
   protected readonly expenses = this.viewModel.expenses;
+  protected readonly summary = this.viewModel.summary;
   protected readonly expenseModel = this.viewModel.expenseModel;
   protected readonly timeFormat = TIME_FORMAT;
   protected readonly minDate = new Date(new Date().getFullYear(), 0, 1);

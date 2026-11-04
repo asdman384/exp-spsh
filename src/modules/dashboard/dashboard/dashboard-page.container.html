@@ -82,6 +82,16 @@
     </div>
   </form>
 
+  <div class="expense-summary" role="status" aria-live="polite">
+    @if (summary().totals; as totals) {
+      <span>{{ totals.dailyLabel }}: {{ totals.daily }}</span>
+      <span>&ngsp;· {{ totals.monthLabel }}: {{ totals.monthly }}</span>
+      <span>&ngsp;· Debt: {{ totals.debt }}</span>
+    } @else {
+      <span>{{ summary().placeholder }}</span>
+    }
+  </div>
+
   <expenses-table
     [dataSource]="expenses()"
     [showDateCol]="false"

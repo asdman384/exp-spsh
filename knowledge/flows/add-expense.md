@@ -81,7 +81,7 @@ never submits the form, but each expense Gemini recognizes goes to the same
 | outbox cannot persist (no IndexedDB) | toast "Couldn't save that expense. Please try again." |
 
 The form was already reset, so an entry that could not be persisted must be retyped. A
-queued expense appears in the table only after it is sent and the post-drain reload runs
+queued expense appears in the table and dashboard totals only after it is sent and the post-drain reload runs
 (only on `/dashboard`).
 
 The date is written as local wall-clock time; a queued expense is converted at send time

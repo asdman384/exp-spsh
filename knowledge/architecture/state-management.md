@@ -147,7 +147,8 @@ also feeds it expenses recognized from [voice notes](../flows/voice-recording.md
 
 `DashboardPageViewModel` is provided by `DashboardPageContainer`, so each page instance owns
 its expense form model and voice-recognition subscription. It selects loading, sheets, and
-categories, computes expenses for the selected local calendar day, requests monthly loads,
+categories, computes expenses for the selected local calendar day and daily/month-through-day/
+Debt totals from current loaded rows, requests monthly loads,
 and delegates additions/deletions
 to `ExpensesService`. The component owns Signal Forms validation, display settings, and
 action handlers; destroying the page ends the recognition subscription.[^dashboard]

@@ -1,4 +1,4 @@
-import { Component, input, OnInit } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 @Component({
   selector: 'app-test-perf',
@@ -6,7 +6,7 @@ import { Component, input, OnInit } from '@angular/core';
   templateUrl: './test-perf.component.html',
   styleUrl: './test-perf.component.scss',
 })
-export class TestPerfComponent implements OnInit {
+export class TestPerfComponent {
   items: number[] = [];
 
   testInput = input.required<string>();
@@ -18,10 +18,4 @@ export class TestPerfComponent implements OnInit {
     this.items.sort((a, b) => a - b);
   }
 
-  ngOnInit() {
-    // this.items = Array.from({ length: 1_000_000 }, () =>
-    //   Math.floor(Math.random() * 100_000)
-    // )
-    // this.items.sort((a, b) => a - b);
-  }
 }
