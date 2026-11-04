@@ -31,10 +31,10 @@ sources:
 
 # Installability
 
-`manifest.webmanifest`: `display: standalone`, `scope`/`start_url` `./`, theme `#1976d2`,
+`manifest.webmanifest`: `display: standalone`, `scope`/`start_url` `./`, theme `#673ab7`,
 background `#fafafa`, eight PNG icons (72–512 px, `purpose: "maskable any"`).[^manifest]
-`index.html` adds the iOS meta tags and a `theme-color` of `#673ab7` — different from the
-manifest's.
+`index.html` adds the iOS meta tags and a `theme-color` of `#673ab7`, matching the manifest.
+Both theme settings use purple for browser and installed-app system UI.
 
 # ngsw groups
 

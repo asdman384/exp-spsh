@@ -137,6 +137,8 @@ Angular's `HttpClient`.
   produces a broken worker.
 - Deployment is a GitHub Pages project site under `/exp-spsh/`. That path is encoded in
   `angular.json`'s `baseHref` and in the Google OAuth redirect URIs. CI **does not run tests**.
+- The manifest `theme_color` and HTML `theme-color` both use `#673ab7` (purple).
+  Keep these values aligned for browser and installed-app system UI.
 - **`ngsw-config.json` `files` globs match paths inside the build output** (`/main.js`), not
   deployed URLs; `baseHref` adds `/exp-spsh/` when `ngsw.json` is generated. Never put
   `/exp-spsh/` in a glob — it matches no file, the asset groups come out with empty `urls`, and

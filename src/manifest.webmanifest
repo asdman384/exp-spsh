@@ -1,7 +1,7 @@
 {
   "name": "exp-spsh",
   "short_name": "exp-spsh",
-  "theme_color": "#1976d2",
+  "theme_color": "#673ab7",
   "background_color": "#fafafa",
   "display": "standalone",
   "scope": "./",
