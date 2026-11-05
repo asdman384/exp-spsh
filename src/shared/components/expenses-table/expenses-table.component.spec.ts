@@ -80,7 +80,7 @@ describe('ExpensesTableComponent', () => {
     fixture.detectChanges();
     const rows = fixture.debugElement.queryAll(By.css('tr[mat-row]'));
     expect(rows.map((row) => row.nativeElement.classList.contains('queued-row'))).toEqual([true, true, false, false]);
-    const icons = fixture.nativeElement.querySelectorAll('.mat-column-amount mat-icon');
+    const icons = fixture.nativeElement.querySelectorAll('.queued-icon');
     expect(icons).toHaveLength(2);
     for (const icon of icons) {
       expect(icon.getAttribute('role')).toBe('img');

@@ -65,7 +65,7 @@ So aggregate rows (`category` + `amount`) show two columns, the drill-down proje
 - `comment`: line-clamped, full text in a tooltip.
 - `isInDebt`: a `check` icon when true.
 - A row with `enqueuedAt !== undefined`, including zero, has grey text and a small
-  `cloud_upload` icon in the amount cell. The icon has `role="img"`, `aria-hidden="false"`,
+  `cloud_upload` icon in the category cell. The icon has `role="img"`, `aria-hidden="false"`,
   and `aria-label="Not sent yet"`. It remains visible when the date column is hidden.
   Pending and failed records use the same display. Plain saved and aggregate rows have no icon.
 - The header checkbox has an indeterminate state; rows whose category is `TOTAL` get no
