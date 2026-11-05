@@ -74,15 +74,18 @@ never submits the form, but each expense Gemini recognizes goes to the same
 
 | Path | User sees |
 |---|---|
-| queued, then sent | polite announcement "Expense saved on this device…", then the table shows the selected day from the reloaded month |
-| queued, cannot send yet (offline, signed out) | the announcement; outbox badge |
+| queued, then sent | a grey row and applicable totals after persistence, then a normal row after the saved list reloads |
+| queued, cannot send yet (offline, signed out) | the announcement, outbox badge, and grey row in the selected Dashboard scope |
 | send fails `retryable`/`auth` | stays pending; retried on the next trigger |
 | send fails `terminal` | failure notice with Retry / Discard |
 | outbox cannot persist (no IndexedDB) | toast "Couldn't save that expense. Please try again." |
 
 The form was already reset, so an entry that could not be persisted must be retyped. A
-queued expense appears in the table and dashboard totals only after it is sent and the post-drain reload runs
-(only on `/dashboard`).
+queued expense appears in the Dashboard list and applicable totals after local persistence.
+This applies to form and voice entries. Pending and failed records remain visible for the
+selected spreadsheet, person, and day. Earlier days in the month contribute only to monthly
+and debt totals. A local discard removes the contribution. After successful send removal,
+the row can disappear until the saved-list reload completes. Statistics uses saved rows only.[^vm]
 
 The date is written as local wall-clock time; a queued expense is converted at send time
 ([known issues](../constraints/known-issues.md) #27).

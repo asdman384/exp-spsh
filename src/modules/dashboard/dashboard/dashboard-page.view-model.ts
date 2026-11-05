@@ -16,9 +16,10 @@ import {
   withLatestFrom
 } from 'rxjs';
 
-import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
+import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector, spreadsheetIdSelector } from 'src/@state';
 import { ExpenseRecognitionService, VoiceRecorderService } from 'src/services';
-import { Expense, Sheet, VoiceRecording } from 'src/shared/models';
+import { OutboxService } from 'src/services/outbox/outbox.service';
+import { Expense, ExpenseTableRow, Sheet, VoiceRecording } from 'src/shared/models';
 import { ExpensesService } from '../expenses.service';
 
 /** How many times a retryable recognition failure is retried before the failure toast. */
@@ -51,11 +52,25 @@ export class DashboardPageViewModel {
   readonly categories$ = this.store.select(categoriesSelector);
 
   private readonly expensesService = inject(ExpensesService);
+  private readonly outbox = inject(OutboxService);
+  private readonly spreadsheetId = this.store.selectSignal(spreadsheetIdSelector);
+  private readonly queuedRecords = computed(() => {
+    const spreadsheetId = this.spreadsheetId();
+    const sheet = this.expenseModel().sheet;
+    if (!spreadsheetId || !sheet) return [];
+    return this.outbox.records().filter((record) =>
+      record.spreadsheetId === spreadsheetId && record.payload.sheetId === sheet.id
+    );
+  });
+  private readonly combinedRows = computed<ExpenseTableRow[]>(() => [
+    ...this.queuedRecords().map((record) => ({ ...record.payload.expense, enqueuedAt: record.enqueuedAt })).reverse(),
+    ...this.expensesService.expenses()
+  ]);
   readonly expenses = computed(() => {
     const date = this.expenseModel().date;
     const from = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    return this.expensesService.expenses().filter((expense) =>
+    return this.combinedRows().filter((expense) =>
       expense.date && expense.date >= from && expense.date < to
     );
   });
@@ -69,7 +84,7 @@ export class DashboardPageViewModel {
     if (!sheet) return { placeholder: 'Select a person to view totals', totals: null };
     const from = new Date(date.getFullYear(), date.getMonth(), 1);
     const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    const monthly = this.expensesService.expenses().filter((row) => row.date && row.date >= from && row.date < to);
+    const monthly = this.combinedRows().filter((row) => row.date && row.date >= from && row.date < to);
     return {
       placeholder: '',
       totals: {
@@ -133,12 +148,19 @@ export class DashboardPageViewModel {
     this.expenseModel.update((model) => ({ ...model, comment: '' }));
   }
 
-  deleteExpense(expense: Expense): void {
+  deleteExpense(expense: ExpenseTableRow): void {
     const sheet = this.expenseModel().sheet;
     if (!sheet) {
       return;
     }
 
+    if (expense.enqueuedAt !== undefined) {
+      const record = this.queuedRecords().find((record) =>
+        record.enqueuedAt === expense.enqueuedAt && isQueuedExpenseEqual(record.payload.expense, expense)
+      );
+      if (record) this.outbox.discard(record.localId);
+      return;
+    }
     this.expensesService.delete(sheet, expense);
   }
 
@@ -201,4 +223,11 @@ function formatTotal(rows: Expense[], minimumFractionDigits: number): string {
   if (!Number.isFinite(total)) return 'Unavailable';
   const formatted = total.toLocaleString('en-US', { useGrouping: false, minimumFractionDigits, maximumFractionDigits: 2 });
   return Number(formatted) === 0 ? formatted.replace('-', '') : formatted;
+}
+
+/** Queue identity uses the full timestamp; saved-row identity uses calendar dates. */
+function isQueuedExpenseEqual(a: Expense, b: Expense): boolean {
+  return a.date?.getTime() === b.date?.getTime()
+    && a.amount === b.amount && a.category === b.category
+    && a.comment === b.comment && a.isInDebt === b.isInDebt;
 }

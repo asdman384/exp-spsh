@@ -130,24 +130,6 @@ nothing here.
 - **Value:** high · **Effort:** S
 - **Type:** data-quality
 
-### 3. "Today / This month" running total on the dashboard
-- **Problem for the user:** After logging, I have no idea where I stand. The only number
-  anywhere is on the Statistics page, three taps and a network round-trip away.
-- **Idea:** Add a single line under the Add button: "Today: 47.30 · October so far:
-  1 240.50 (day 25 of 31)". The today figure is the sum of the visible table (including
-  pending rows from #1). The month figure comes from one month-to-date query when the
-  dashboard opens, and is updated locally on each add.
-- **Why it saves money / effort:** Feedback at the moment of spending is what makes tracking
-  change behaviour. The cited app-data study finds that persistent tracking is linked to lower
-  discretionary spending, and that people revise their budgets after seeing their spending
-  figures. This is also the base that #8 (limits) and #6 (forecast) build on.
-- **Fits the design?** With small changes. The today figure is free. The month figure needs a
-  second, independent read (the expense list is a single shared signal, so it needs its own
-  holder). It becomes free once the local cache from the backend-less assessment (P1 #5)
-  exists.
-- **Value:** high · **Effort:** S (today) / M (month)
-- **Type:** insight
-
 ### 4. Review a voice result before it is filed, with Undo
 - **Problem for the user:** Gemini sometimes mishears ("пятнадцать" becomes 50) or picks the
   neighbouring category. Today that goes straight to the sheet, and fixing it needs a

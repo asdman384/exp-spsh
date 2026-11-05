@@ -12,6 +12,9 @@ sources:
   - id: service
     resource: ../../src/services/outbox/outbox.service.ts
     title: OutboxService
+  - id: dashboard
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
   - id: messages
     resource: ../../src/services/outbox/outbox-messages.ts
     title: OUTBOX_MESSAGES
@@ -87,6 +90,7 @@ A root service, not NgRx; there are no outbox actions, reducer, or selectors.[^s
 | `sent$` | emits the last sent record once per pass that sent anything |
 | `init()` | hydrates and subscribes to the triggers; idempotent. `app.config.ts` calls it from `provideAppInitializer` |
 | `add(sheetId, expense)` | builds and queues a record (below) |
+| `discard(localId)` | removes one local record, then reloads `records`; works offline and logs storage errors |
 | `sync()` | the toolbar "Send now" (T5) |
 
 `records` is replaced from `storage.getAll()` at hydration, at the start and end of every
@@ -105,6 +109,18 @@ Adds go through a `concatMap`, so they persist in call order: `storage.add` → 
 `records` → start a pass (T4) → `LiveAnnouncer` announces `OUTBOX_MESSAGES.queued`
 (polite).[^messages] If `add` fails (for example, no IndexedDB), it runs
 `reportFailure('addExpense$')` and nothing else.
+
+# Dashboard rows
+
+Dashboard selects records for the current spreadsheet and numeric person ID. Both pending
+and failed records contribute to its daily list and month-through-selected-day totals.
+Queued rows precede saved rows in reverse outbox order. A row carries `enqueuedAt`, without
+`localId`. Swipe finds the first record in outbox order with matching scope, addition time,
+full expense date, amount, category, comment, and debt, then calls `discard(localId)`.
+Identical records lose one entry per swipe. An absent match causes no remote delete.
+A failed removal logs the error and retains the record. There is no active-send coordination.
+Statistics receives no queued rows. After send removal, a row can disappear until the
+saved list reloads; there is no transition state.[^dashboard]
 
 # Drain triggers and preconditions
 
@@ -202,3 +218,5 @@ failed record exists.[^notice] Its text differs for `otherSpreadsheet`. Buttons 
 [^helpers]: classifyWriteError
 [^notice]: OutboxFailureNoticeComponent
 [^status]: OutboxStatusComponent
+
+[^dashboard]: DashboardPageViewModel

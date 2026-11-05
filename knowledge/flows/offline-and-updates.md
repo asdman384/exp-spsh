@@ -6,6 +6,9 @@ tags: [flow, offline, pwa, updates, network]
 status: stable
 generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
 sources:
+  - id: dashboard
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel
   - id: net
     resource: ../../src/services/network-status.service.ts
     title: NetworkStatusService
@@ -43,13 +46,24 @@ indicator).
 | Load expenses | **deferred** until online ([load expenses](load-expenses.md)) |
 | Add an expense | **queued** in IndexedDB, sent automatically ([write outbox](../architecture/write-outbox.md)) |
 | Voice note | records; recognition needs the network and fails with a toast offline |
-| Delete an expense | no — the request fails, the row is restored, a toast is shown |
+| Discard a queued expense | yes, for pending and failed records; removes one record from IndexedDB |
+| Delete a saved expense | no — the request fails, the row is restored, a toast is shown |
 | Categories and Statistics pages | blocked by `isOnline` (menu items disabled; guard redirects to root) |
 | Login, Logout | disabled |
 | Setup | not guarded; fails silently ([initial setup](initial-setup.md)) |
 
 Draining runs only while a tab is open; there is no background sync. API responses are never
 cached ([service worker](../architecture/pwa-and-service-worker.md)).
+
+# Queued rows
+
+The Dashboard displays pending and failed records for the selected spreadsheet, numeric person
+ID, and local day as grey rows with an accessible cloud icon. Records appear after persistence
+and return after outbox hydration on reload. They contribute to daily and month-through-day
+totals, including signed debt. Swipe removes one local record offline; it cannot return or
+send after a successful removal. Storage errors retain the record and are logged. Failed
+records still require Retry before send. The existing send triggers and error rules apply.
+After send removal, the row can disappear until the saved list reloads.[^dashboard][^outbox]
 
 # The outbox indicator
 
@@ -70,3 +84,5 @@ The menu footer shows `package.json`'s `version`; bumping it is manual.[^apphtml
 [^appcomp]: AppComponent page state
 [^apphtml]: Toolbar and menu template
 [^outbox]: OutboxService
+
+[^dashboard]: DashboardPageViewModel

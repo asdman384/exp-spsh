@@ -72,6 +72,30 @@ describe('ExpensesTableComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  it('shows accessible queued icons with hidden dates and preserves metadata on swipe', () => {
+    const queued = { ...fullRow(), enqueuedAt: 0 };
+    fixture.componentRef.setInput('showDateCol', false);
+    fixture.componentRef.setInput('draggable', true);
+    fixture.componentRef.setInput('dataSource', [queued, { ...fullRow(), enqueuedAt: 123 }, fullRow(), aggregateRow()]);
+    fixture.detectChanges();
+    const rows = fixture.debugElement.queryAll(By.css('tr[mat-row]'));
+    expect(rows.map((row) => row.nativeElement.classList.contains('queued-row'))).toEqual([true, true, false, false]);
+    const icons = fixture.nativeElement.querySelectorAll('.mat-column-amount mat-icon');
+    expect(icons).toHaveLength(2);
+    for (const icon of icons) {
+      expect(icon.getAttribute('role')).toBe('img');
+      expect(icon.getAttribute('aria-label')).toBe('Not sent yet');
+      expect(icon.getAttribute('aria-hidden')).toBe('false');
+    }
+    expect(renderedHeaderColumns(fixture)).not.toContain('date');
+    const deleted = vi.fn();
+    component.deleteRow.subscribe(deleted);
+    rows[0].triggerEventHandler('cdkDragEnded', {
+      distance: { x: 150, y: 0 }, source: { data: queued, setFreeDragPosition: vi.fn(), reset: vi.fn() }
+    });
+    expect(deleted).toHaveBeenCalledExactlyOnceWith(queued);
+  });
+
   // [AC7 / showDateCol input]
   describe('showDateCol input', () => {
     it('should_render_date_column_when_showDateCol_is_true', () => {

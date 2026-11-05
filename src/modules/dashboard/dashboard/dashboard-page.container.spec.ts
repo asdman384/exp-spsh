@@ -1,3 +1,4 @@
+import { CdkDrag } from '@angular/cdk/drag-drop';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Store } from '@ngrx/store';
 import { of } from 'rxjs';
@@ -6,7 +7,9 @@ import { signal, WritableSignal } from '@angular/core';
 import { categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector } from 'src/@state';
 import { VoiceRecorderOutcomeEvent, VoiceRecorderService, VoiceRecorderStatus } from 'src/services';
 
-import { Expense, Sheet } from 'src/shared/models';
+import { By } from '@angular/platform-browser';
+import { OutboxService } from 'src/services/outbox/outbox.service';
+import { Expense, OutboxRecord, Sheet } from 'src/shared/models';
 
 import { ExpensesService } from '../expenses.service';
 import { DashboardPageContainer } from './dashboard-page.container';
@@ -31,6 +34,8 @@ describe('DashboardPageContainer', () => {
   let dispatchSpy: ReturnType<typeof vi.fn>;
   let recorder: FakeVoiceRecorderService;
   let expensesService: FakeExpensesService;
+  let records: WritableSignal<OutboxRecord[]>;
+  let discard: ReturnType<typeof vi.fn>;
 
   afterEach(() => vi.unstubAllGlobals());
 
@@ -39,6 +44,8 @@ describe('DashboardPageContainer', () => {
     dispatchSpy = vi.fn();
     recorder = new FakeVoiceRecorderService();
     expensesService = new FakeExpensesService();
+    records = signal([]);
+    discard = vi.fn((id: string) => records.update((all) => all.filter((r) => r.localId !== id)));
 
     const selectMock = vi.fn((selector: unknown) => {
       if (selector === sheetsSelector) return of([]);
@@ -51,9 +58,10 @@ describe('DashboardPageContainer', () => {
     await TestBed.configureTestingModule({
       imports: [DashboardPageContainer],
       providers: [
-        { provide: Store, useValue: { select: selectMock, dispatch: dispatchSpy } },
+        { provide: Store, useValue: { select: selectMock, selectSignal: () => signal('book'), dispatch: dispatchSpy } },
         { provide: VoiceRecorderService, useValue: recorder },
-        { provide: ExpensesService, useValue: expensesService }
+        { provide: ExpensesService, useValue: expensesService },
+        { provide: OutboxService, useValue: { records, discard } }
       ]
     }).compileComponents();
 
@@ -137,6 +145,28 @@ describe('DashboardPageContainer', () => {
     page.handleDeleteExpense({ amount: 10 });
     expect(expensesService.add).not.toHaveBeenCalled();
     expect(expensesService.delete).not.toHaveBeenCalled();
+  });
+
+  it.each(['pending', 'failed'] as const)('routes a %s table swipe to local discard', (status) => {
+    const page = fixture.componentInstance as unknown as {
+      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
+        category: string | null; comment: string; isInDebt: boolean }>;
+    };
+    const date = new Date(2026, 10, 5, 12);
+    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    const expense = { date, amount: 42, category: 'Food' };
+    records.set([{ localId: 'queued', kind: 'addExpense', spreadsheetId: 'book', enqueuedAt: 0,
+      attempts: 0, status, payload: { sheetId: 1, expense } }]);
+    fixture.detectChanges();
+    const row = fixture.debugElement.query(By.css('tr.queued-row'));
+    expect(row).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('td.mat-column-date')).toBeNull();
+    row.triggerEventHandler('cdkDragEnded', { distance: { x: 150, y: 0 }, source: row.injector.get(CdkDrag) });
+    fixture.detectChanges();
+    expect(discard).toHaveBeenCalledExactlyOnceWith('queued');
+    expect(expensesService.delete).not.toHaveBeenCalled();
+    expect(fixture.nativeElement.querySelector('tr.queued-row')).toBeNull();
+    expect(fixture.nativeElement.querySelector('.expense-summary').textContent).toContain('0.00');
   });
 
   // [AC1]

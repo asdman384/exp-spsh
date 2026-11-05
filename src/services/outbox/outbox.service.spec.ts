@@ -847,3 +847,50 @@ describe('OutboxService drain pass with the real IndexedDbOutboxStorage (RR-9 it
     15000
   );
 });
+
+
+describe('OutboxService public offline discard', () => {
+  it.each(['pending', 'failed'] as const)('persists removal of a %s row across reinitialization and reconnect', async (status) => {
+    const storage = new IndexedDbOutboxStorage();
+    const discarded = makeRecord({ localId: crypto.randomUUID(), status });
+    const retained = makeRecord({ localId: crypto.randomUUID(), status: 'failed' });
+    await seed(storage, discarded, retained);
+    const h = setup({ storage });
+    h.online$.next(false);
+    h.service.init();
+    await waitFor(() => h.service.records().some((r) => r.localId === discarded.localId));
+    h.service.discard(discarded.localId);
+    await waitFor(() => !h.service.records().some((r) => r.localId === discarded.localId));
+    expect((await readAll(storage)).some((r) => r.localId === discarded.localId)).toBe(false);
+    TestBed.resetTestingModule();
+    const restored = setup({ storage });
+    restored.online$.next(false);
+    restored.service.init();
+    await waitFor(() => restored.service.records().some((r) => r.localId === retained.localId));
+    expect(restored.service.records().some((r) => r.localId === discarded.localId)).toBe(false);
+    restored.online$.next(true);
+    await waitFor(() => restored.completedPasses() > 0);
+    expect(restored.addExpense).not.toHaveBeenCalled();
+    expect(h.addExpense).not.toHaveBeenCalled();
+    await new Promise<void>((resolve) => storage.remove(retained.localId).subscribe(() => resolve()));
+  });
+
+  it('logs a failed removal and retains the record without a new toast', async () => {
+    const storage = new ControllableOutboxStorage();
+    const record = makeRecord();
+    const error = new Error('Storage failed');
+    storage.getAll.mockReturnValue(of([record]));
+    storage.remove.mockReturnValue(throwError(() => error));
+    const h = setup({ storage });
+    h.online$.next(false);
+    h.service.init();
+    await waitFor(() => h.service.records().length === 1);
+    const logSpy = vi.fn();
+    globalThis.log = logSpy;
+    h.service.discard(record.localId);
+    expect(h.service.records()).toEqual([record]);
+    expect(logSpy).toHaveBeenCalledWith(error);
+    expect(h.dispatch).not.toHaveBeenCalled();
+    expect(h.addExpense).not.toHaveBeenCalled();
+  });
+});

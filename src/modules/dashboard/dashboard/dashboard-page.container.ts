@@ -12,7 +12,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
 import { AppActions } from 'src/@state';
 import { TIME_FORMAT } from 'src/constants';
-import { Expense, Sheet } from 'src/shared/models';
+import { ExpenseTableRow, Sheet } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-button/voice-record-button.component';
 import { DashboardPageViewModel } from './dashboard-page.view-model';
@@ -100,7 +100,7 @@ export class DashboardPageContainer {
     this.viewModel.clearComment();
   }
 
-  protected handleDeleteExpense(expense: Expense): void {
+  protected handleDeleteExpense(expense: ExpenseTableRow): void {
     this.viewModel.deleteExpense(expense);
   }
 }

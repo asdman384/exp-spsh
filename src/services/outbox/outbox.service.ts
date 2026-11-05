@@ -151,7 +151,7 @@ export class OutboxService {
       .subscribe();
   }
 
-  private discard(localId: string): void {
+  discard(localId: string): void {
     log('OutboxService::discard', localId);
     this.storage
       .remove(localId)

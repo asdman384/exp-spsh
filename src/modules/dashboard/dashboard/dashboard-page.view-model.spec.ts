@@ -5,7 +5,8 @@ import { of } from 'rxjs';
 
 import { currentSheetSelector } from 'src/@state';
 import { ExpenseRecognitionService, VoiceRecorderService } from 'src/services';
-import { Expense } from 'src/shared/models';
+import { OutboxService } from 'src/services/outbox/outbox.service';
+import { Expense, OutboxRecord } from 'src/shared/models';
 import { ExpensesService } from '../expenses.service';
 import { DashboardPageViewModel } from './dashboard-page.view-model';
 
@@ -22,9 +23,10 @@ describe('DashboardPageViewModel expense dates', () => {
     TestBed.configureTestingModule({
       providers: [
         DashboardPageViewModel,
+        { provide: OutboxService, useValue: { records: signal([]) } },
         { provide: Store, useValue: {
           select: (selector: unknown) => of(selector === currentSheetSelector ? undefined : []),
-          dispatch: vi.fn()
+          selectSignal: () => signal('book'), dispatch: vi.fn()
         } },
         { provide: ExpensesService, useValue: { expenses } },
         { provide: VoiceRecorderService, useValue: { latest: signal(null) } },
@@ -60,7 +62,8 @@ describe('Dashboard running totals', () => {
     recording = signal(null);
     recognize = vi.fn(() => of([{ amount: 9, date: day }]));
     TestBed.configureTestingModule({ providers: [DashboardPageViewModel,
-      { provide: Store, useValue: { select: (selector: unknown) => of(selector === currentSheetSelector ? { id: 1, title: 'A' } : []), dispatch: vi.fn() } },
+        { provide: OutboxService, useValue: { records: signal([]) } },
+      { provide: Store, useValue: { select: (selector: unknown) => of(selector === currentSheetSelector ? { id: 1, title: 'A' } : []), selectSignal: () => signal('book'), dispatch: vi.fn() } },
       { provide: ExpensesService, useValue: { expenses: rows, load, add } },
       { provide: VoiceRecorderService, useValue: { latest: recording } },
       { provide: ExpenseRecognitionService, useValue: { recognize } }
@@ -129,5 +132,123 @@ describe('Dashboard running totals', () => {
     expect(model.summary().totals?.daily).toBe('1.00');
     rows.set([{ amount: 1, date: day }, { amount: 9, date: day }]);
     expect(model.summary().totals?.daily).toBe('10.00');
+  });
+});
+
+
+describe('Dashboard queued expenses', () => {
+  const day = new Date(2026, 10, 5, 12);
+  let model: DashboardPageViewModel;
+  let records: ReturnType<typeof signal<OutboxRecord[]>>;
+  let saved: ReturnType<typeof signal<Expense[]>>;
+  let spreadsheet: ReturnType<typeof signal<string | undefined>>;
+  let discard: ReturnType<typeof vi.fn>;
+  let remoteDelete: ReturnType<typeof vi.fn>;
+  let add: ReturnType<typeof vi.fn>;
+  let recording: ReturnType<typeof signal<import('src/shared/models').VoiceRecording | null>>;
+  function record(id: string, expense: Expense = { date: day, amount: 10 }, overrides: Partial<OutboxRecord> = {}): OutboxRecord {
+    return { localId: id, kind: 'addExpense', spreadsheetId: 'book', payload: { sheetId: 1, expense },
+      enqueuedAt: 0, status: 'pending', attempts: 0, ...overrides };
+  }
+  beforeEach(() => {
+    vi.stubGlobal('log', vi.fn());
+    records = signal([]); saved = signal([]); spreadsheet = signal('book'); recording = signal(null);
+    discard = vi.fn((id: string) => records.update((all) => all.filter((r) => r.localId !== id)));
+    remoteDelete = vi.fn();
+    add = vi.fn((sheetId: number, expense: Expense) => records.update((all) => [...all,
+      record(String(all.length), expense, { payload: { sheetId, expense } })]));
+    TestBed.configureTestingModule({ providers: [DashboardPageViewModel,
+      { provide: Store, useValue: { selectSignal: () => spreadsheet,
+        select: (selector: unknown) => of(selector === currentSheetSelector ? { id: 1, title: 'A' } : []), dispatch: vi.fn() } },
+      { provide: OutboxService, useValue: { records, discard } },
+      { provide: ExpensesService, useValue: { expenses: saved, load: vi.fn(), add, delete: remoteDelete } },
+      { provide: VoiceRecorderService, useValue: { latest: recording } },
+      { provide: ExpenseRecognitionService, useValue: { recognize: () => of([{ date: day, amount: 7 }]) } }
+    ] });
+    model = TestBed.inject(DashboardPageViewModel);
+    model.expenseModel.update((v) => ({ ...v, date: day }));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('shows persisted form and voice rows before saved rows without sorting expense dates', () => {
+    saved.set([{ date: day, amount: 1 }, { date: day, amount: 2 }]);
+    model.expenseModel.update((v) => ({ ...v, amount: 9, category: 'Food' }));
+    expect(model.saveExpense()).toBe(true);
+    TestBed.tick();
+    recording.set({ blob: new Blob(), mimeType: 'audio/webm', durationMs: 1000, recordedAt: day });
+    TestBed.tick();
+    expect(model.expenses().map((r) => r.amount)).toEqual([7, 9, 1, 2]);
+    expect(model.summary().totals?.daily).toBe('19.00');
+    records.update((all) => all.map((r) => ({ ...r, status: 'failed' })));
+    expect(model.expenses().map((r) => r.amount)).toEqual([7, 9, 1, 2]);
+    expect(model.summary().totals?.daily).toBe('19.00');
+  });
+
+  it('filters restored records by reactive spreadsheet, numeric person, day and month', () => {
+    records.set([
+      record('start', { date: new Date(2026, 10, 5), amount: 1 }),
+      record('end', { date: new Date(2026, 10, 5, 23, 59, 59, 999), amount: 2 }),
+      record('earlier', { date: new Date(2026, 10, 1), amount: -4, isInDebt: true }),
+      record('tomorrow', { date: new Date(2026, 10, 6), amount: 100 }),
+      record('month', { date: new Date(2026, 9, 31), amount: 100 }),
+      record('person', undefined, { payload: { sheetId: 2, expense: { date: day, amount: 100 } } }),
+      record('book', undefined, { spreadsheetId: 'other' })
+    ]);
+    expect(model.expenses().map((r) => r.amount)).toEqual([2, 1]);
+    expect(model.summary().totals).toMatchObject({ daily: '3.00', monthly: '-1.00', debt: '-4' });
+    spreadsheet.set('other');
+    expect(model.expenses().map((r) => r.amount)).toEqual([10]);
+    spreadsheet.set(undefined);
+    expect(model.expenses()).toEqual([]);
+    spreadsheet.set('book');
+    model.changeSheet({ id: 2, title: 'A' });
+    expect(model.expenses().map((r) => r.amount)).toEqual([100]);
+    model.expenseModel.update((v) => ({ ...v, sheet: null }));
+    expect(model.expenses()).toEqual([]);
+    expect(model.summary().totals).toBeNull();
+  });
+
+  it.each(['pending', 'failed'] as const)('discards one %s row locally and updates totals', (status) => {
+    records.set([record('a', undefined, { status }), record('b', undefined, { status })]);
+    model.deleteExpense(model.expenses()[0]);
+    expect(discard).toHaveBeenCalledExactlyOnceWith('a');
+    expect(records().map((r) => r.localId)).toEqual(['b']);
+    expect(model.summary().totals?.daily).toBe('10.00');
+    expect(remoteDelete).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    { date: new Date(2026, 10, 5, 13) }, { amount: 11 }, { category: 'Food' },
+    { comment: 'Lunch' }, { isInDebt: true }
+  ])('resolves equal timestamps using all expense fields: %s', (difference) => {
+    const expense = { date: day, amount: 10, ...difference };
+    records.set([record('a'), record('b', expense)]);
+    model.deleteExpense(model.expenses()[0]);
+    expect(discard).toHaveBeenCalledExactlyOnceWith('b');
+    expect(remoteDelete).not.toHaveBeenCalled();
+  });
+
+  it('never sends a stale queued-row delete and keeps the saved-row delete path', () => {
+    records.set([record('a')]);
+    const queued = model.expenses()[0];
+    records.set([]);
+    model.deleteExpense(queued);
+    expect(discard).not.toHaveBeenCalled();
+    expect(remoteDelete).not.toHaveBeenCalled();
+    const expense = { date: day, amount: 10 };
+    model.deleteExpense(expense);
+    expect(remoteDelete).toHaveBeenCalledExactlyOnceWith({ id: 1, title: 'A' }, expense);
+  });
+
+  it('shows one normal row and one total after send removal and saved-list reload', () => {
+    const expense = { date: day, amount: 10, isInDebt: true };
+    records.set([record('a', expense)]);
+    expect(model.summary().totals?.daily).toBe('10.00');
+    records.set([]);
+    expect(model.expenses()).toEqual([]);
+    saved.set([expense]);
+    expect(model.expenses()).toEqual([expense]);
+    expect(model.expenses()[0]).not.toHaveProperty('enqueuedAt');
+    expect(model.summary().totals).toMatchObject({ daily: '10.00', monthly: '10.00', debt: '10' });
   });
 });

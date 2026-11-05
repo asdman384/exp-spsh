@@ -22,7 +22,7 @@ sources:
 
 # Callers
 
-`ExpensesService.load({ sheetId, from?, to? })` is the only way expenses enter the list.
+`ExpensesService.load({ sheetId, from?, to? })` fills the saved-expense list.
 The list is the service's `expenses` signal; it is not in the NgRx store.[^expenses]
 
 | Caller | Window |
@@ -39,11 +39,13 @@ It requests `[month start, selected day + 1 day)` using local midnight boundarie
 Both `from` and `to` must be supplied to preserve a custom range; statistics sends
 `[1st of month, 1st of next month)`.[^expenses][^stats]
 
-The dashboard exposes a computed signal that filters service expenses to the selected local
-calendar day. It includes all times on that day and excludes entries without a date.[^page]
+The dashboard combines saved expenses with pending and failed outbox records for the selected
+spreadsheet and numeric person ID. No spreadsheet or person means no queued rows. Queued rows
+come first in reverse outbox order; saved order stays the same. Its computed daily list
+filters these combined rows to the selected local calendar day. It includes all times on that day and excludes entries without a date.[^page]
 
 The summary below the form uses that daily list for its daily total. Month and Debt totals
-filter the service rows from local month start through the selected day. Debt is a signed
+filter the combined rows from local month start through the selected day. Debt is a signed
 subtotal and also contributes to regular totals. Invalid dates are excluded and missing or
 non-finite amounts contribute zero. Daily/month totals have two decimals; Debt has up to two.
 Formatting uses a decimal point without grouping or currency, and normalizes rounded negative

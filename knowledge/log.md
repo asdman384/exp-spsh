@@ -1,5 +1,12 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-05 - queued expenses on Dashboard
+
+- Added pending and failed outbox rows to Dashboard lists and totals, with grey text and
+  an accessible cloud icon. Added local swipe discard with full-field timestamp matching.
+- Updated the table contract, outbox, state, and add/load/delete/offline concepts. The
+  saved-expense service, Statistics, and send rules remain unchanged.
+
 ## 2026-11-03 — native Windows verification harness
 
 * Replaced the Bash harness with `scripts/harness.mjs`, using Node.js to launch

@@ -9,7 +9,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { delay, map } from 'rxjs';
 import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
-import { Expense } from 'src/shared/models';
+import { Expense, ExpenseTableRow } from 'src/shared/models';
 
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment', 'isInDebt'];
 const DELETE_THRESHOLD = 100;
@@ -28,15 +28,15 @@ export class ExpensesTableComponent {
   protected readonly dragPlaceholderY = signal(0);
   protected readonly dragging = signal(false);
   protected readonly isDelete = signal(false);
-  protected readonly lastDeletedDragRow = signal<CdkDrag<Expense> | undefined>(undefined);
+  protected readonly lastDeletedDragRow = signal<CdkDrag<ExpenseTableRow> | undefined>(undefined);
 
   readonly showDateCol = input(true);
-  readonly dataSource = input<ReadonlyArray<Expense>>([]);
+  readonly dataSource = input<ReadonlyArray<ExpenseTableRow>>([]);
   readonly draggable = input(false);
   readonly selectable = input(false);
   readonly selected = input<ReadonlyArray<Expense>>([]);
 
-  readonly deleteRow = output<Expense>();
+  readonly deleteRow = output<ExpenseTableRow>();
   readonly cellClick = output<{ field: keyof Expense; cellData: unknown; rowData: Expense }>();
   readonly selectionChange = outputFromObservable<ReadonlyArray<Expense>>(
     this.selection.changed.pipe(
@@ -75,16 +75,16 @@ export class ExpensesTableComponent {
     this.cellClick.emit({ field, cellData, rowData });
   }
 
-  protected cdkDragMoved(event: CdkDragMove<Expense>): void {
+  protected cdkDragMoved(event: CdkDragMove<ExpenseTableRow>): void {
     this.isDelete.set(event.distance.x > DELETE_THRESHOLD);
   }
 
-  protected cdkDragStarted(event: CdkDragStart<Expense>): void {
+  protected cdkDragStarted(event: CdkDragStart<ExpenseTableRow>): void {
     this.dragPlaceholderY.set(event.source.element.nativeElement.offsetTop);
     this.dragging.set(true);
   }
 
-  protected cdkDragEnded(event: CdkDragEnd<Expense>): void {
+  protected cdkDragEnded(event: CdkDragEnd<ExpenseTableRow>): void {
     setTimeout(() => this.dragging.set(false), 250);
     this.isDelete.set(false);
 

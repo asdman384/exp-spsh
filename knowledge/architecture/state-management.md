@@ -139,7 +139,7 @@ A root service in `src/modules/dashboard/` that owns the expense list outside Ng
 
 It dispatches `loading` and `operationFailed` to the store, and reloads the last sent
 record's month through its date on `OutboxService.sent$` when the route is exactly `/dashboard`. The dashboard and
-statistics pages use `expenses`: the dashboard filters it to the selected day with `computed`,
+statistics pages use `expenses`: the dashboard combines it with selected outbox records and filters to the selected day with `computed`,
 and statistics uses `toObservable`. The dashboard
 also feeds it expenses recognized from [voice notes](../flows/voice-recording.md#recognition).
 
@@ -147,10 +147,12 @@ also feeds it expenses recognized from [voice notes](../flows/voice-recording.md
 
 `DashboardPageViewModel` is provided by `DashboardPageContainer`, so each page instance owns
 its expense form model and voice-recognition subscription. It selects loading, sheets, and
-categories, computes expenses for the selected local calendar day and daily/month-through-day/
-Debt totals from current loaded rows, requests monthly loads,
-and delegates additions/deletions
-to `ExpensesService`. The component owns Signal Forms validation, display settings, and
+categories, and the spreadsheet ID. It combines loaded rows with pending and failed outbox
+records for the selected spreadsheet and numeric person ID. Queued rows come first in reverse
+outbox order. It computes the local daily list and daily/month-through-day/Debt totals from
+these rows and requests monthly loads. Additions and saved-row deletions use `ExpensesService`.
+Queued-row swipes resolve one current record by scope, addition time, and all expense fields,
+then call `OutboxService.discard`. An absent match causes no remote delete. The component owns Signal Forms validation, display settings, and
 action handlers; destroying the page ends the recognition subscription.[^dashboard]
 
 # Selectors

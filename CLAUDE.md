@@ -110,6 +110,12 @@ Angular's `HttpClient`.
   DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. There is no cross-tab
   coordination: the app is a phone PWA used in a single tab, so only the in-tab single-flight
   guards a drain pass.
+- **Dashboard includes queued expenses in its list and totals.** Its view-model combines
+  pending and failed outbox records for the selected spreadsheet and numeric person ID with
+  loaded expenses. Queued rows come first in reverse outbox order. `ExpenseTableRow.enqueuedAt`
+  marks a grey row with an accessible cloud icon. Swipe resolves one current record by scope,
+  addition time, and all expense fields, then calls public `OutboxService.discard(localId)`.
+  A missing queued record does not cause a remote delete. Statistics uses loaded expenses only.
 - **The service worker runs only in production builds.** `SERVICE_WORKER_IN_DEV` in
   `src/shared/helpers/service-worker-mode.ts` (default `false`) is the one switch for
   development builds. With it off, `main.ts` unregisters any worker scoped to `/exp-spsh/`

@@ -18,13 +18,17 @@ sources:
 statistics. It imports `DatePipe`, `DragDropModule`, and Material checkbox, icon, table, and
 tooltip modules directly.[^comp]
 
+`ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`. Plain expenses and
+Statistics aggregate rows remain valid inputs. Column keys come from `Expense`; the metadata
+is not a column. Drag data and the delete output retain the original row and its metadata.[^comp]
+
 # Inputs
 
 All are `input()` signals; none is required.
 
 | Input | Type | Default | Meaning |
 |---|---|---|---|
-| `dataSource` | `ReadonlyArray<Expense>` | `[]` | rows to render |
+| `dataSource` | `ReadonlyArray<ExpenseTableRow>` | `[]` | rows to render |
 | `showDateCol` | `boolean` | `true` | `false` hides the date column (dashboard) |
 | `draggable` | `boolean` | `false` | enables swipe-to-delete |
 | `selectable` | `boolean` | `false` | adds the checkbox column |
@@ -34,7 +38,7 @@ All are `input()` signals; none is required.
 
 | Output | Payload | Used by |
 |---|---|---|
-| `deleteRow` | `Expense` | dashboard → [delete flow](../flows/delete-expense.md) |
+| `deleteRow` | `ExpenseTableRow` | dashboard → [delete flow](../flows/delete-expense.md) |
 | `cellClick` | `{ field, cellData, rowData }` | statistics drill-down; wired only on the category cell |
 | `selectionChange` | `ReadonlyArray<Expense>` | statistics total |
 
@@ -60,6 +64,10 @@ So aggregate rows (`category` + `amount`) show two columns, the drill-down proje
 - `date`: `dd MMM`, tooltip `dd MMM HH:mm` (`DATE_FORMAT` / `DATE_TIME_FORMAT`).
 - `comment`: line-clamped, full text in a tooltip.
 - `isInDebt`: a `check` icon when true.
+- A row with `enqueuedAt !== undefined`, including zero, has grey text and a small
+  `cloud_upload` icon in the amount cell. The icon has `role="img"`, `aria-hidden="false"`,
+  and `aria-label="Not sent yet"`. It remains visible when the date column is hidden.
+  Pending and failed records use the same display. Plain saved and aggregate rows have no icon.
 - The header checkbox has an indeterminate state; rows whose category is `TOTAL` get no
   checkbox.
 

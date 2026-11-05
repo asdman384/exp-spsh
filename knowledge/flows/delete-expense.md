@@ -12,6 +12,12 @@ sources:
   - id: table
     resource: ../../src/shared/components/expenses-table/expenses-table.component.ts
     title: ExpensesTableComponent drag handling
+  - id: dashboard
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
+    title: DashboardPageViewModel.deleteExpense
+  - id: outbox
+    resource: ../../src/services/outbox/outbox.service.ts
+    title: OutboxService.discard
   - id: helpers
     resource: ../../src/shared/helpers/index.ts
     title: isExpenseEqual
@@ -21,8 +27,22 @@ sources:
 
 Dashboard only (`[draggable]="true"`). A row dragged horizontally past 100 px is flung
 off-screen and `deleteRow` emits; below that it springs back.[^table] The container
-calls `ExpensesService.delete(sheet, expense)` with the current sheet. There is no
-confirmation and no offline queueing.
+calls `DashboardPageViewModel.deleteExpense`. There is no confirmation.[^dashboard]
+
+# Queued rows
+
+An `enqueuedAt` field, including zero, marks a queued row. The view-model finds one current
+record by selected spreadsheet, numeric person ID, addition time, full expense date, amount,
+category, comment, and debt. It removes the first matching record with
+`OutboxService.discard(localId)`. This works offline for pending and failed records. An
+absent match causes no remote delete. Identical records lose only one entry per swipe.
+Storage removal completes before records and totals update. A removal failure logs the error
+and retains the record. There is no undo or active-send coordination.[^dashboard][^outbox]
+
+# Saved rows
+
+Saved rows use `ExpensesService.delete(sheet, expense)` with the current sheet.
+This remote operation is not queued.
 
 # Steps
 
@@ -56,3 +76,6 @@ The dashboard totals react to optimistic removal and rollback through the same e
 
 [^table]: ExpensesTableComponent drag handling
 [^expenses]: ExpensesService.delete
+
+[^dashboard]: DashboardPageViewModel.deleteExpense
+[^outbox]: OutboxService.discard
