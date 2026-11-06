@@ -13,6 +13,10 @@
     gap: 10px;
   }
 
+  .input-user {
+    width: 140px;
+  }
+
   .input-amount {
     width: 100px;
   }
@@ -23,7 +27,7 @@
 
   .submit-row {
     display: flex;
-    align-items: flex-start;;
+    align-items: flex-start;
     gap: 10px;
   }
 
@@ -53,6 +57,13 @@
 
 .date-field {
   position: relative;
+  display: flex;
+  flex-grow: 1;
+
+  .input-date {
+    width: 0;
+    flex-grow: 1;
+  }
 }
 
 .date-swipe-overlay {
@@ -66,9 +77,4 @@
   cursor: pointer;
   touch-action: pan-y;
   background: linear-gradient(90deg, transparent 35%, rgb(103 58 183 / 60%) 50%, transparent 65%) 100% 0 / 300% 100%;
-
-  &:focus-visible {
-    outline: 2px solid #673ab7;
-    outline-offset: 2px;
-  }
 }

@@ -138,9 +138,10 @@ A root service in `src/modules/dashboard/` that owns the expense list outside Ng
 | `delete(sheet, expense)` | `exhaustMap`; **optimistic** removal from the signal, re-read, delete by index, re-insert on failure ([delete](../flows/delete-expense.md)) |
 
 It dispatches `loading` and `operationFailed` to the store, and reloads the last sent
-record's month through its date on `OutboxService.sent$` when the route is exactly `/dashboard`. The dashboard and
-statistics pages use `expenses`: the dashboard combines it with selected outbox records and filters to the selected day with `computed`,
-and statistics uses `toObservable`. The dashboard
+record's month through its date on `OutboxService.sent$` when the route is exactly `/dashboard`.
+The dashboard combines `expenses` with selected outbox records and filters to the selected day
+with `computed`. Statistics owns an independent page-scoped `StatisticsDataService` with
+a two-month snapshot and loading/error state; see [statistics](../flows/statistics.md). The dashboard
 also feeds it expenses recognized from [voice notes](../flows/voice-recording.md#recognition).
 
 # Dashboard view-model

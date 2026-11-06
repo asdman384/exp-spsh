@@ -7,9 +7,9 @@ import { FormsModule } from '@angular/forms';
 import { Store, StoreModule } from '@ngrx/store';
 import { AppActions } from 'src/@state';
 import { metaReducers, reducers } from 'src/@state/app.reducers';
-import { Sheet } from 'src/shared/models';
+import { Expense, Sheet } from 'src/shared/models';
 import { signal } from '@angular/core';
-import { ExpensesService } from '../expenses.service';
+import { StatisticsDataService } from './statistics-data.service';
 
 // `scrollToCurrentMonth` (`statistics.container.ts`) schedules its `_tabHeader.scrollDistance`
 // write via a zero-delay `setTimeout`; this waits out that macrotask, mirroring the pattern in
@@ -24,11 +24,18 @@ describe('StatisticsContainer', () => {
   let component: StatisticsContainer;
   let fixture: ComponentFixture<StatisticsContainer>;
   let viewTransitionSpy: ReturnType<typeof vi.spyOn>;
+  const monthState = signal<{ status: 'ready'; current: Expense[]; previous: Expense[] }>({
+    status: 'ready', current: [], previous: []
+  });
 
   beforeEach(async () => {
+    monthState.set({ status: 'ready', current: [], previous: [] });
     await TestBed.configureTestingModule({
       imports: [FormsModule, StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })],
-      providers: [{ provide: ExpensesService, useValue: { expenses: signal([]), load: vi.fn() } }]
+    }).overrideComponent(StatisticsContainer, {
+      set: { providers: [{ provide: StatisticsDataService, useValue: {
+        state: monthState, load: vi.fn()
+      } }] }
     }).compileComponents();
 
     // The container's constructor synchronously reads `sheetsSelector`/`currentSheetSelector` and
@@ -70,6 +77,35 @@ describe('StatisticsContainer', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows shares and deltas, and includes debt rows in category statistics', async () => {
+    monthState.set({ status: 'ready', current: [
+      { category: 'Food', amount: 70, comment: 'Spending', date: new Date(2026, 0, 2) },
+      { category: 'Travel', amount: 30 },
+      { category: 'Food', amount: 200, isInDebt: true, comment: 'Loan', date: new Date(2026, 0, 3) }
+    ], previous: [{ category: 'Food', amount: 50 }] });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const root: HTMLElement = fixture.nativeElement;
+    const tables = root.querySelectorAll('expenses-table');
+    expect(tables[0].textContent).toContain('90% of spending');
+    expect(tables[0].textContent).toContain('+220');
+    expect(root.querySelector('.statistics-summary')?.textContent).toContain('Spending ·');
+    expect(root.textContent).toContain('Debt · 200');
+    (tables[0].querySelector('td.mat-column-category') as HTMLElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(root.textContent).toContain('Spending');
+    expect(root.textContent).toContain('Loan');
+    await flushMacrotasks();
+    fixture.detectChanges();
+    expect(root.querySelector('.statistics-summary')?.textContent).toContain('270');
+    (root.querySelector('[aria-label="Back to categories"]') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    expect(root.querySelectorAll('expenses-table')).toHaveLength(1);
+    expect(root.querySelector('.statistics-summary')?.textContent).toContain('Debt · 200');
   });
 
   // [AC15] `tableAnimation()` still adds/removes the right CSS classes on the summary table

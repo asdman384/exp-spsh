@@ -1,6 +1,6 @@
 import { HashLocationStrategy, LocationStrategy } from '@angular/common';
 import { HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withJsonpSupport, withXhr } from '@angular/common/http';
-import { ApplicationConfig, importProvidersFrom, ImportProvidersSource, inject, provideAppInitializer } from '@angular/core';
+import { ApplicationConfig, importProvidersFrom, ImportProvidersSource, inject, LOCALE_ID, provideAppInitializer } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
 import { ServiceWorkerModule } from '@angular/service-worker';
@@ -48,6 +48,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
   const debug = await getDebugProviders();
   return {
     providers: [
+      { provide: LOCALE_ID, useValue: 'en-US' },
       withViewTransitions({
         onViewTransitionCreated: () => {
           // playing around with view transitions

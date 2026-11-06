@@ -1,6 +1,7 @@
+import '@angular/common/locales/global/pl';
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -18,7 +19,7 @@ const DELETE_THRESHOLD = 100;
   selector: 'expenses-table',
   templateUrl: './expenses-table.component.html',
   styleUrl: './expenses-table.component.scss',
-  imports: [DatePipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
+  imports: [DatePipe, DecimalPipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
 })
 export class ExpensesTableComponent {
   protected readonly dateFormat = DATE_FORMAT;

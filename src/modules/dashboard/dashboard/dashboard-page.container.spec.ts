@@ -102,22 +102,24 @@ describe('DashboardPageContainer', () => {
       return overlay;
     }
 
-    it.each([{ x: 80, direction: 'right' }, { x: -80, direction: 'left' }])('logs a $direction swipe and animates without opening the calendar', ({ x, direction }) => {
-      const logger = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    it.each([{ x: 80, direction: 'right' }, { x: -80, direction: 'left' }])('changes the date on a $direction swipe and animates without opening the calendar', ({ x }) => {
+      const model = fixture.debugElement.injector.get(DashboardPageViewModel);
+      const changeDate = vi.spyOn(model, 'changeDate');
       const overlay = gesture(x);
-      expect(logger).toHaveBeenCalledExactlyOnceWith('Date swipe', direction);
+      expect(changeDate).toHaveBeenCalledExactlyOnceWith(model.expenseModel().date);
       expect(overlay.getAnimations()).toHaveLength(1);
       expect(document.querySelector('mat-calendar')).toBeNull();
-      logger.mockRestore();
+      changeDate.mockRestore();
     });
 
     it.each([{ x: 10, y: 80, end: 'pointerup' }, { x: 80, y: 0, end: 'pointercancel' }])('ignores vertical and cancelled gestures', ({ x, y, end }) => {
-      const logger = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+      const model = fixture.debugElement.injector.get(DashboardPageViewModel);
+      const changeDate = vi.spyOn(model, 'changeDate');
       const overlay = gesture(x, y, end);
-      expect(logger).not.toHaveBeenCalled();
+      expect(changeDate).not.toHaveBeenCalled();
       expect(overlay.getAnimations()).toHaveLength(0);
       expect(document.querySelector('mat-calendar')).toBeNull();
-      logger.mockRestore();
+      changeDate.mockRestore();
     });
 
     it('opens the calendar on a tap', () => {

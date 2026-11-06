@@ -7,6 +7,9 @@ export interface Expense {
 }
 
 export interface ExpenseTableRow extends Expense {
+  // Statistics-only values. They are never written to the spreadsheet.
+  share?: number;
+  delta?: number;
   // Queue entry time in milliseconds. Marks an unsent row and helps find it for discard.
   // Times can be equal, so discard also compares expense fields. Absent for saved rows.
   enqueuedAt?: number;

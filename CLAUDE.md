@@ -80,6 +80,12 @@ Angular's `HttpClient`.
 
 ### Things that will surprise you
 
+- **Angular uses `en-US` with Polish number formatting.** `app.config.ts` provides
+  `LOCALE_ID: 'en-US'`. The shared table and Statistics import the standard `pl` locale.
+  Their number pipes explicitly select `pl`: a decimal comma and a non-breaking space
+  between thousands (`1 026,2`).
+  Date pipes use English month names.
+
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
   *before* bootstrap). It is used without import across effects, services, and guards, and
   writes to both the console and an always-on overlay in the page.
@@ -124,6 +130,11 @@ Angular's `HttpClient`.
   marks a grey row with an accessible cloud icon. Swipe resolves one current record by scope,
   addition time, and all expense fields, then calls public `OutboxService.discard(localId)`.
   A missing queued record does not cause a remote delete. Statistics uses loaded expenses only.
+- **Statistics owns a page-scoped two-month snapshot.** `StatisticsDataService` reads the
+  previous and selected months in one range query and cancels obsolete requests. Categories
+  sort by amount, with spending shares and deltas against the full previous month. Debt
+  appears only as a separate total in the summary header. The debt flag has no effect on category totals, shares, deltas, or detail rows. It does not
+  read or replace the Dashboard expense signal. See `knowledge/flows/statistics.md`.
 - **The service worker runs only in production builds.** `SERVICE_WORKER_IN_DEV` in
   `src/shared/helpers/service-worker-mode.ts` (default `false`) is the one switch for
   development builds. With it off, `main.ts` unregisters any worker scoped to `/exp-spsh/`

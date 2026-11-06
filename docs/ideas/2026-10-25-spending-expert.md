@@ -106,22 +106,6 @@ nothing here.
 - **Value:** high · **Effort:** S–M
 - **Type:** data-quality
 
-### 5. Statistics that answer "is that a lot?"
-- **Problem for the user:** The month view lists categories in whatever order the data
-  arrived, with bare sums. I cannot see at a glance where most of the money goes, or whether
-  this month is worse than the last one.
-- **Idea:** On the existing Statistics table:
-  - sort categories by amount, largest first;
-  - add each category's share of the total ("Food 1 240 · 38 %");
-  - add a delta against the previous month ("+210 ↑");
-  - show debt rows separately from spending (or exclude them, see open questions).
-- **Why it saves money / effort:** The Pareto view, "two or three categories are most of the
-  money", tells the user where cutting is worth the effort. Comparing with last month is the
-  simplest anomaly detector there is.
-- **Fits the design?** Yes. Sorting and percentages are pure client-side aggregation. The
-  delta needs one extra month query per view (or the local cache). No sheet change.
-- **Value:** high · **Effort:** S (sort, %) / M (delta)
-- **Type:** insight
 
 ### 6. Daily burn rate and month-end forecast
 - **Problem for the user:** On the 12th, I don't know whether I am on track. By the time the

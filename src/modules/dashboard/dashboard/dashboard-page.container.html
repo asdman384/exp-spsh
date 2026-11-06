@@ -2,7 +2,7 @@
   <div class="form-row">
     <!-- DATE -->
     <div class="date-field">
-      <mat-form-field appearance="outline">
+      <mat-form-field appearance="outline" class="input-date">
         <mat-label>Date</mat-label>
         <input matInput [formField]="expenseForm.date" [matDatepicker]="picker" [min]="minDate" (click)=" picker.open()"
           (dateChange)="onDateChange($event.value)" readonly />
@@ -21,7 +21,7 @@
     </div>
 
     <!-- USER -->
-    <mat-form-field appearance="outline">
+    <mat-form-field appearance="outline" class="input-user">
       <mat-label>User</mat-label>
       <mat-select [formField]="expenseForm.sheet" (valueChange)="onSheetChange($event)">
         @for (sheet of sheets$ | async; track sheet.id) {

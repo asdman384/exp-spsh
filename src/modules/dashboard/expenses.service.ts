@@ -17,7 +17,7 @@ export interface ExpensesFilter {
 }
 
 /**
- * Owns the list of expenses shown on the dashboard and the statistics page. The list lives in a
+ * Owns the list of expenses shown on the dashboard. The list lives in a
  * signal, not in the NgRx store. Every new expense goes through the write outbox; the list is
  * reloaded once the outbox has sent it.
  */

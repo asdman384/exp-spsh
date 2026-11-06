@@ -72,13 +72,14 @@ describe('Dashboard running totals', () => {
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
 
-  it('uses fresh time for repeated automatic submissions without reloading the same day', () => {
+  it('keeps the form date for repeated submissions without reloading', () => {
     for (const hour of [13, 14]) {
       const now = new Date(2026, 10, 4, hour, 15, 32);
       vi.setSystemTime(now);
       model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
       model.saveExpense();
-      expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: now }));
+      expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: day }));
+      expect(model.expenseModel().date).toEqual(day);
     }
     expect(load).toHaveBeenCalledTimes(1);
   });
@@ -86,32 +87,34 @@ describe('Dashboard running totals', () => {
   it.each([
     [new Date(2024, 2, 1, 12), new Date(2024, 1, 29, 12)],
     [new Date(2026, 2, 30, 12), new Date(2026, 2, 29, 12)]
-  ])('selects the previous local day from %s', (now, yesterday) => {
+  ])('accepts the previous local day through changeDate from %s', (now, yesterday) => {
     vi.setSystemTime(now);
-    model.selectYesterday();
+    model.changeDate(yesterday);
     expect(model.expenseModel().date).toEqual(yesterday);
     expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: yesterday });
   });
 
-  it('stamps untouched dates at submit, including after midnight', () => {
+  it('keeps the form date when submitting after midnight without a resume', () => {
     const now = new Date(2027, 0, 1, 0, 5, 12);
     vi.setSystemTime(now);
     model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
     expect(model.saveExpense()).toBe(true);
-    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: now }));
-    expect(model.expenseModel().date).toEqual(now);
-    expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: now });
+    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: day }));
+    expect(model.expenseModel().date).toEqual(day);
+    expect(load).toHaveBeenCalledExactlyOnceWith({ sheetId: 1, to: day });
   });
 
-  it('keeps an explicit date through submit and resume on a later day', () => {
+  it('refreshes an explicit date on visible resume before submit', () => {
     model.changeDate(new Date(2025, 11, 31));
-    const selected = model.expenseModel().date;
-    vi.setSystemTime(new Date(2027, 0, 1));
+    const now = new Date(2027, 0, 1);
+    vi.setSystemTime(now);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
     document.dispatchEvent(new Event('visibilitychange'));
     model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
     model.saveExpense();
-    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: selected }));
-    expect(model.expenseModel().date).toEqual(selected);
+    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: now }));
+    expect(model.expenseModel().date).toEqual(now);
+    expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: now });
   });
 
   it('refreshes the untouched day and table only on visible next-day resume', () => {

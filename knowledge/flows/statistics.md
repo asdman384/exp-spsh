@@ -12,69 +12,64 @@ sources:
   - id: statshtml
     resource: ../../src/modules/dashboard/statistics/statistics.container.html
     title: Statistics template
-  - id: consts
-    resource: ../../src/constants/UI.ts
-    title: TOTAL constant
-  - id: expenses
-    resource: ../../src/modules/dashboard/expenses.service.ts
-    title: ExpensesService
+  - id: data
+    resource: ../../src/modules/dashboard/statistics/statistics-data.service.ts
+    title: StatisticsDataService
+  - id: summary
+    resource: ../../src/modules/dashboard/statistics/statistics-summary.ts
+    title: summarizeMonth
 ---
 
-# Selection
+# Selection and loading
 
-Three `mat-tab-group`s used as carousels:[^statshtml]
+The user, year, and month tabs select a numeric sheet ID and a local calendar month.
+Years run from the current year to 2019. The month carousel scrolls to the current month.
+A selection change returns to the category summary.
 
-| Carousel | Items |
-|---|---|
-| User | one tab per data sheet, labelled `title.split('_')[1]` |
-| Year | current year down to 2019 |
-| Month | `Jan`–`Dec` from `toLocaleString('default', { month: 'short' })` |
+`StatisticsDataService` belongs to the page. It reads one range from the start of the
+previous month to the start of the following month, exclusive. It splits the result at
+the selected month start. January includes December of the previous year. The Dashboard
+expense signal is independent of these reads. Only saved rows enter statistics.
 
-Any change calls `formChanged`, which clears the table animation and calls
-[`ExpensesService.load`](load-expenses.md) for the whole month.[^expenses] The initial selection is the current
-sheet and the current month; `ngAfterViewInit` scrolls the month carousel so the current
-month is visible (`MONTH_BUTTON_WIDTH = 50`, `PADDINGS = 76`).[^stats]
+A new selection cancels the previous request and clears its rows. Going offline clears
+the rows and waits for a connection. Reconnect reloads the latest selection. The summary header is hidden while data is
+unavailable. Failure dispatches the fixed `loadExpenses$` toast. Page destruction cancels subscriptions.
 
 # Aggregation
 
-Displayed rows come from an aggregator held in a `BehaviorSubject`:
+`summarizeMonth` is a pure function. It groups all rows by category, regardless of `isInDebt`.
+Missing or empty category names display as `Uncategorized`. The summary contains the union
+of categories in both months, sorted by current amount descending, then category name.
+A category present only in the previous month has a current amount of zero.
 
-```
-aggregator$ --switchMap--> toObservable(ExpensesService.expenses) --map(fn)--> startViewTransition --> table
-```
+Spending rows show their percentage of the current spending total, with one decimal at
+most. A zero total gives zero shares. Flagged rows enter totals and shares exactly like all other rows.
+Spending rows show current minus previous amount, with a sign and direction arrow. No
+previous entries means a zero baseline. The comparison is against the full previous
+calendar month, including when the selected month is still in progress.
 
-- **`groupByCategory`** (default) — one `{ category, amount }` per category, amounts summed.
-  The table hides the other columns because they have no data.
-- **`filterByCategoryName(name)`** — that category's rows, newest-first, projected to
-  `{ amount, comment, date }`.
+The table displays share and delta below the amount to keep the column count small.
+The summary header shows `Debt · amount`, the signed sum of current-month debt.
+There is no debt table or debt drill-down. The flag does not affect spending deltas.
 
-All aggregation is client-side.
+# Drill-down and totals
 
-# Drill-down and back
+Clicking a category shows all its current-month rows, newest first.
+The debt flag does not filter the detail list or change its total. Back restores the category summary. Detail rows contain amount, comment,
+and date; they do not show category shares or deltas.
 
-Clicking a **category** cell (not `TOTAL`, not another column)[^consts] sets
-`selectable = false`, plays the `straight` animation, records `selectedCategory`, and pushes
-the filter aggregator. The undo button (`unCategory()`) restores grouping and plays `reverse`.
-
-# Total
-
-The table gets `[selected]="expenses"` (all rows pre-selected) and
-`[selectable]="selectable"`. `selectionChange` sets `total = sum(Number(amount))` of the
-checked rows, so unticking categories shows a partial sum. The label is
-`selectedCategory ?? 'Total'`.
+All spending summary rows start selected. The `Spending` figure sums checked
+rows. Shares always use the whole spending total, independent of checkbox selection.
+In detail mode the total sums all rows of that category.
 
 # Animation
 
-Each emission runs inside `document.startViewTransition(...)` when supported; otherwise it
-updates directly and warns `View transitions unsupported`. `tableAnimation(direction)`
-toggles `summary-table-straight` / `summary-table-reverse` on the table element; the route's
-`canDeactivate` clears them ([routing](../architecture/routing-and-guards.md)).
-
-`summaryTable` is an optional `viewChild` read with `()?.`, because `formChanged` runs from
-the constructor before the view exists. `monthSelector` is `viewChild.required`, read only
-after view init.
+The page keeps the straight and reverse View Transitions animations for drill-down and
+back. A new emission cancels an obsolete pending table update. `summaryTable` is an
+optional view query because selection can run before the view exists. The month selector
+is read after view init.
 
 [^statshtml]: Statistics template
 [^stats]: StatisticsContainer
-[^consts]: TOTAL constant
-[^expenses]: ExpensesService
+[^data]: StatisticsDataService
+[^summary]: summarizeMonth

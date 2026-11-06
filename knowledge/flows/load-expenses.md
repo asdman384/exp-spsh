@@ -1,7 +1,7 @@
 ---
 type: Flow
 title: Load expenses
-description: The single read path for the expense table - who triggers it, the date window rules, and the online gate.
+description: The dashboard read path for the expense table - who triggers it, the date window rules, and the online gate.
 tags: [flow, expense, read, gviz, offline]
 status: stable
 generated: { by: claude_code/claude-opus-5-5, at: 2026-09-23T00:00:00Z }
@@ -32,13 +32,12 @@ The list is the service's `expenses` signal; it is not in the NgRx store.[^expen
 | automatic date moves to a new day on resume or submit | month start through today, inclusive |
 | dashboard person change | month start through the selected day, inclusive |
 | `OutboxService.sent$` (only on `/dashboard`) | month start through the last sent record's date |
-| `StatisticsContainer.formChanged` | the selected month |
 
 `load` uses `to` as the selected date, and defaults to today when `to` is absent.
 A lone `from` does not set the selected date.
 It requests `[month start, selected day + 1 day)` using local midnight boundaries.
-Both `from` and `to` must be supplied to preserve a custom range; statistics sends
-`[1st of month, 1st of next month)`.[^expenses][^stats]
+Both `from` and `to` must be supplied to preserve a custom range.[^expenses]
+Statistics uses its own page-scoped two-month read; see [statistics](statistics.md).
 
 The dashboard combines saved expenses with pending and failed outbox records for the selected
 spreadsheet and numeric person ID. No spreadsheet or person means no queued rows. Queued rows

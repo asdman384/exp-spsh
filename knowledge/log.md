@@ -226,3 +226,65 @@ Earlier log entries were condensed (full text is in git history).
 - Added calendar-boundary gesture tests to check date changes and expense reloads.
 - Changed the swipe handler to copy the selected date, move it by one local day, and call onDateChange.
 - Updated the current-behavior documentation. Existing view-model tests reference the removed selectYesterday method and block test compilation.
+
+
+## 2026-11-06 - Statistics comparison (spending-expert idea 5)
+
+- Read CLAUDE.md, ub-mode, ADLC tracker/workcycle/check-health/reply-format, the idea,
+  statistics flow, expense mapping, and shared table contracts to define scope.
+- Checked task inventory and Git state. No matching open task or initial file changes.
+  The repository has no ADLC health configuration, so used the documented harness.
+- Added pure summary tests first. Confirmed three assertion failures against an empty
+  implementation with an isolated test configuration under tmp/.
+- Added category ranking, spending shares, and signed previous-month deltas. Included
+  previous-only categories to show spending that stops. Used Map for arbitrary names.
+- Kept debt in its own table and total. Kept drill-down restricted to its expense group.
+- Added a page-scoped two-month range read to avoid sharing Dashboard data or combining
+  responses from different selections. Tested January rollover, stale responses, failure,
+  reconnect, and subscription cleanup. Added visible loading/error states and Retry.
+- Kept share and delta below the amount to avoid extra table columns on small screens.
+  Preserved checkbox selection, category detail, and transition animations.
+- Updated project instructions and knowledge concepts to state current behavior.
+- Final harness: lint and production build pass. Typecheck and test compilation are blocked
+  by the existing selectYesterday call in dashboard-page.view-model.spec.ts:91. Left that
+  unrelated test unchanged. Production build retains snow CSS and p-retry warnings.
+- Browser inspection is omitted at the user's request. Automated tests use the existing
+  headless Chromium runner. Crapper, Dryer, and Mutator are not installed or available as
+  connected tools; their checks are not run.
+- Worktree review finds only the active main worktree; nothing can be reclaimed. All
+  temporary test configuration stays in tmp/. No user watch or serve process is stopped.
+- Targeted statistics and shared-table suite: 30 tests pass. The broader run uses a
+  temporary config that excludes only the pre-existing uncompilable view-model spec:
+  308 pass, 2 skip, and 2 fail in unchanged Dashboard swipe logging tests. The existing
+  swipe handler has no console.log call; those assertions are unrelated to statistics.
+- Reviewed the diff and ran git diff --check. Saved the implementation in one local
+  commit for review; no push is made.
+
+
+## 2026-11-06 - Exclude debt from category details
+
+- Inspected the owner's staged layout changes and confirmed the requested behavior:
+  keep the Debt total in the header, exclude debt from spending statistics and detail.
+- Updated the stale component test for the current single-table layout. Normalized new
+  test text to UTF-8. Reproduced a debt row appearing in the category detail.
+- Added the missing debt filter before detail rows and their total are built. Kept the
+  header, summary calculations, staged files, and layout unchanged.
+- Updated CLAUDE.md and the statistics concept to describe the current header and detail.
+- All 12 statistics tests pass. Browser inspection is omitted at the owner's request.
+- No commit or staging changes are made because the index contains the owner's work.
+- Final harness: lint and production build pass. Typecheck and full test compilation
+  remain blocked by the unchanged selectYesterday call in dashboard-page.view-model.spec.ts:91.
+  git diff --check passes. Crapper, Dryer, and Mutator remain unavailable.
+
+
+## 2026-11-06 - Debt flag does not affect statistics
+
+- Corrected the previous interpretation after the owner's explicit instruction: all rows
+  contribute to category totals, shares, month deltas, and detail, regardless of isInDebt.
+- Updated regression tests first and observed the old filtering fail. Removed debt filtering
+  from category aggregation and detail. Removed unused debt-category comparisons.
+- Kept isInDebt only in the separate current-month Debt header sum. Kept the layout intact.
+- Added a regression test that toggles flags in either month and verifies identical statistics.
+  All 13 statistics tests pass. Updated current-behavior documentation.
+- Preserved the owner's staged changes. No commit, staging, or browser inspection.
+- Harness: lint and production build pass; typecheck and full test compilation still fail on the existing selectYesterday test call. Source search confirms the only remaining isInDebt use in Statistics is the Debt header sum.

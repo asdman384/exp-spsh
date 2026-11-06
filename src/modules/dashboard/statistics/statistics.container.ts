@@ -1,5 +1,6 @@
-import { AsyncPipe } from '@angular/common';
-import { AfterViewInit, Component, ElementRef, inject, viewChild } from '@angular/core';
+import '@angular/common/locales/global/pl';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
+import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, computed, inject, viewChild } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,13 +8,13 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
-import { BehaviorSubject, Observable, combineLatest, map, mergeMap, switchMap, take } from 'rxjs';
+import { BehaviorSubject, Observable, combineLatest, map, switchMap, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, sheetsSelector } from 'src/@state';
-import { TOTAL } from 'src/constants';
 import { ExpensesTableComponent } from 'src/shared/components';
-import { Expense, Sheet } from 'src/shared/models';
-import { ExpensesService } from '../expenses.service';
+import { Expense, ExpenseTableRow, Sheet } from 'src/shared/models';
+import { StatisticsDataService } from './statistics-data.service';
+import { categoryName, summarizeMonth } from './statistics-summary';
 
 const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
@@ -22,12 +23,17 @@ const PADDINGS = 76;
   selector: 'exp-statistics-container',
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
-  imports: [FormsModule, AsyncPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
+  imports: [FormsModule, AsyncPipe, DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
+  providers: [StatisticsDataService],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatisticsContainer implements AfterViewInit {
   private readonly store = inject(Store);
-  private readonly expensesService = inject(ExpensesService);
-  private readonly expensesList$ = toObservable(this.expensesService.expenses);
+  protected readonly data = inject(StatisticsDataService);
+  protected readonly debtTotal = computed(() => this.data.state().current
+    .filter((row) => row.isInDebt)
+    .reduce((sum, row) => sum + Number(row.amount ?? 0), 0));
+  private readonly expensesList$ = toObservable(this.data.state);
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
@@ -44,7 +50,7 @@ export class StatisticsContainer implements AfterViewInit {
 
   protected readonly expenses$ = this.aggregator$.pipe(
     switchMap((fn) => this.expensesList$.pipe(map(fn))),
-    mergeMap(this.startViewTransition.bind(this))
+    switchMap(this.startViewTransition.bind(this))
   );
 
   protected sheets: Array<Sheet> = [];
@@ -79,16 +85,17 @@ export class StatisticsContainer implements AfterViewInit {
 
   protected formChanged(sheetIndex: number, yearIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
     this.tableAnimation('none');
+    this.selectedCategory = undefined;
+    this.selectable = true;
+    this.total = 0;
+    this.aggregator$.next(groupByCategory);
     const year = this.yearsTabs[yearIndex];
-    this.expensesService.load({
-      sheetId: sheets[sheetIndex].id,
-      from: new Date(year, monthIndex, 1),
-      to: new Date(year, monthIndex + 1, 1)
-    });
+    const sheet = sheets[sheetIndex];
+    if (sheet) this.data.load(sheet.id, year, monthIndex);
   }
 
   protected expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
-    if (event.cellData === TOTAL || event.field !== 'category') {
+    if (event.field !== 'category') {
       return;
     }
 
@@ -111,7 +118,7 @@ export class StatisticsContainer implements AfterViewInit {
     this.aggregator$.next(groupByCategory);
   }
 
-  private startViewTransition(data: Array<Expense>): Observable<Array<Expense>> {
+  private startViewTransition(data: Array<ExpenseTableRow>): Observable<Array<ExpenseTableRow>> {
     return new Observable((subscriber) => {
       transitionHelper(() => {
         subscriber.next(data);
@@ -129,49 +136,18 @@ export class StatisticsContainer implements AfterViewInit {
   }
 }
 
-type AggregatorFn = (data: Array<Expense>) => Array<Expense>;
+interface MonthRows { current: Expense[]; previous: Expense[] }
+type AggregatorFn = (data: MonthRows) => ExpenseTableRow[];
 
-function filterByCategoryName(categoryName: string): AggregatorFn {
-  return function (data: Array<Expense>): Array<Expense> {
-    const result: Array<Expense> = data
-      .filter((d) => d.category === categoryName)
-      .sort((a, b) => {
-        if (!a.date || !b.date) return 0;
-        return b.date?.getTime() - a.date?.getTime();
-      })
-      .map((r) => ({ amount: r.amount, comment: r.comment, date: r.date }));
-
-    return result;
-  };
+function filterByCategoryName(name: string): AggregatorFn {
+  return ({ current }) => current
+    .filter((row) => categoryName(row) === name)
+    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+    .map((row) => ({ amount: row.amount, comment: row.comment, date: row.date }));
 }
 
-function groupByCategory(data: Array<Expense>): Array<Expense> {
-  return sumByAmount(groupBy(data, 'category'));
-}
-
-function groupBy<T>(xs: Array<T>, key: keyof T): { [key: string]: Array<T> } {
-  return xs.reduce(
-    function (rv, x) {
-      const aggr = x[key as keyof T];
-      if (typeof aggr === 'string') {
-        (rv[aggr] = rv[aggr] || []).push(x);
-      }
-      return rv;
-    },
-    {} as { [key: string]: Array<T> }
-  );
-}
-
-function sumByAmount(xs: { [key: string]: Array<Expense> }): Array<Expense> {
-  const result: Array<Expense> = [];
-  for (const field in xs) {
-    result.push({
-      category: field,
-      amount: xs[field].reduce((p, c) => p + Number(c.amount), 0)
-    });
-  }
-
-  return result;
+function groupByCategory({ current, previous }: MonthRows): ExpenseTableRow[] {
+  return summarizeMonth(current, previous).spending;
 }
 
 function transitionHelper(updateDOM: () => void): void {

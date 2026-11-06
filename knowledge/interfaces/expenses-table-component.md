@@ -15,10 +15,12 @@ sources:
 ---
 
 `<expenses-table>` is the one shared feature component, used by the dashboard and
-statistics. It imports `DatePipe`, `DragDropModule`, and Material checkbox, icon, table, and
+statistics. It imports `DatePipe`, `DecimalPipe`, `DragDropModule`, and Material checkbox, icon, table, and
 tooltip modules directly.[^comp]
 
-`ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`. Plain expenses and
+`ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`, `share`, and `delta`.
+Share and delta render below the amount only when supplied. They are display metadata,
+not spreadsheet fields. Plain expenses and
 Statistics aggregate rows remain valid inputs. Column keys come from `Expense`; the metadata
 is not a column. Drag data and the delete output retain the original row and its metadata.[^comp]
 
@@ -60,6 +62,10 @@ So aggregate rows (`category` + `amount`) show two columns, the drill-down proje
 `date`, `amount`, `comment`, and the **Debt** column appears only when a debt row exists.
 
 # Rendering
+
+Amounts and deltas explicitly select the Polish locale in the number pipe: a decimal comma, up to two decimal places,
+and a non-breaking space between thousands (for example, `1 026,2`). Shares use up to one
+decimal place. Statistics totals use the same format. Date pipes use the global `en-US` locale and English month names.
 
 - `date`: `dd MMM`, tooltip `dd MMM HH:mm` (`DATE_FORMAT` / `DATE_TIME_FORMAT`).
 - `comment`: line-clamped, full text in a tooltip.
