@@ -1,5 +1,11 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-05 - dates you can trust
+
+- Added submit-time dates, visible next-day refresh, and a Yesterday action.
+- Removed the calendar lower bound. Explicit date choices remain fixed.
+- Updated the add/load flows, glossary, and project instructions.
+
 ## 2026-11-05 - queued expenses on Dashboard
 
 - Added pending and failed outbox rows to Dashboard lists and totals, with grey text and
@@ -206,3 +212,17 @@ Earlier log entries were condensed (full text is in git history).
 * **2026-11-05** - Add dashboard daily, month-through-day, and signed Debt totals from loaded expense signals. Include local date bounds, finite amount handling, English decimal formatting, and responsive summary text. The owner removes all request tracking and service ownership changes from scope; ExpensesService and its tests remain unchanged. Add summary and layout regression tests. Remove the unused empty playground lifecycle method that blocks lint. Verification results follow after the final harness run.
 
   Verification: lint and production build pass; 298 tests pass with two pre-existing skips. The final targeted typecheck passes after correcting nullable DOM typing in a test. Chromium layout assertions cover long amounts at 320 CSS pixels and 200% text size. Manual visual inspection is unavailable because the browser tools cannot attach. Existing build warnings concern snow CSS size and p-retry CommonJS.
+
+
+## 2026-11-06 - Date swipe overlay
+
+- Added gesture tests first and confirmed failure without the overlay.
+- Added a Date overlay, component handlers, and a directional wave.
+- Kept tap-to-open and vertical scrolling; cancelled gestures do not open the calendar.
+- Updated the add-expense flow and project instructions.
+
+## 2026-11-06 - Date swipe navigation
+
+- Added calendar-boundary gesture tests to check date changes and expense reloads.
+- Changed the swipe handler to copy the selected date, move it by one local day, and call onDateChange.
+- Updated the current-behavior documentation. Existing view-model tests reference the removed selectYesterday method and block test compilation.

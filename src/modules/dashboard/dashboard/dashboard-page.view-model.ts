@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
@@ -7,6 +8,7 @@ import {
   filter,
   finalize,
   first,
+  fromEvent,
   retry,
   skip,
   switchMap,
@@ -47,6 +49,7 @@ interface ExpenseFormModel {
 @Injectable()
 export class DashboardPageViewModel {
   private readonly store = inject(Store);
+  private readonly document = inject(DOCUMENT);
   readonly loading$ = this.store.select(loadingSelector);
   readonly sheets$ = this.store.select(sheetsSelector);
   readonly categories$ = this.store.select(categoriesSelector);
@@ -111,6 +114,15 @@ export class DashboardPageViewModel {
       )
       .subscribe();
 
+    fromEvent(this.document, 'visibilitychange').pipe(
+      filter(() => this.document.visibilityState === 'visible'),
+      takeUntilDestroyed()
+    ).subscribe(() => {
+      if (this.expenseModel().date.toDateString() !== new Date().toDateString()) {
+        const now = new Date();
+        this.updateDate(now);
+      }
+    });
     this.recognizeExpenses();
   }
 
@@ -135,9 +147,14 @@ export class DashboardPageViewModel {
     log('DashboardPageContainer::onDateChange', date);
     const currentTime = new Date(date);
     currentTime.setHours(new Date().getHours(), new Date().getMinutes());
-    this.expenseModel.update((model) => ({ ...model, date: currentTime }));
+    this.updateDate(currentTime);
+  }
+
+
+  private updateDate(date: Date): void {
+    this.expenseModel.update((model) => ({ ...model, date }));
     const sheet = this.expenseModel().sheet;
-    if (sheet) this.expensesService.load({ sheetId: sheet.id, to: currentTime });
+    if (sheet) this.expensesService.load({ sheetId: sheet.id, to: date });
   }
 
   loadCategories(): void {

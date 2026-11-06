@@ -110,6 +110,14 @@ Angular's `HttpClient`.
   DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. There is no cross-tab
   coordination: the app is a phone PWA used in a single tab, so only the in-tab single-flight
   guards a drain pass.
+- **Dashboard dates default to the current local time at submit.** A visible next-day resume
+  moves an automatic date and its table to today. Calendar and Yesterday selections remain
+  fixed through submit and resume. The calendar has no lower bound. Date mode belongs to the
+  page-scoped view-model and resets when the Dashboard page is created.
+- **Dashboard Date has a swipe overlay.** Horizontal gestures of at least 40 CSS pixels
+  call the component handler, log the direction, and show a wave in that direction.
+  A tap opens the calendar. Left subtracts one local calendar day; right adds one.
+  Both call `changeDate`. Arrow keys also call the handler.
 - **Dashboard includes queued expenses in its list and totals.** Its view-model combines
   pending and failed outbox records for the selected spreadsheet and numeric person ID with
   loaded expenses. Queued rows come first in reverse outbox order. `ExpenseTableRow.enqueuedAt`

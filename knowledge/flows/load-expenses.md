@@ -29,6 +29,7 @@ The list is the service's `expenses` signal; it is not in the NgRx store.[^expen
 |---|---|
 | `DashboardPageViewModel` constructor (if a current sheet exists) | month start through today, inclusive |
 | dashboard date change | month start through the selected day, inclusive |
+| automatic date moves to a new day on resume or submit | month start through today, inclusive |
 | dashboard person change | month start through the selected day, inclusive |
 | `OutboxService.sent$` (only on `/dashboard`) | month start through the last sent record's date |
 | `StatisticsContainer.formChanged` | the selected month |

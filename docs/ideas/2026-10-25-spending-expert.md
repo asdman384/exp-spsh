@@ -12,9 +12,6 @@ forecast. And whatever you just logged (typed offline, or recognised by voice) i
 until the spreadsheet confirms it.
 
 Top 3 ideas:
-1. Show queued expenses in the list right away, and let the user discard them offline (#1).
-2. Make the recorded date trustworthy: a stale form date and the January cut-off put
-   expenses on the wrong day (#2).
 3. Add a "Today / This month" running total under the form, which later carries per-category
    limits (#3, then #8).
 
@@ -93,42 +90,6 @@ nothing here.
 
 ## Ideas
 
-### 1. Show queued expenses in the list immediately, with offline discard
-- **Problem for the user:** At the till with poor signal, I log a coffee and nothing appears
-  in the list. Did it work? I enter it again, and now it is counted twice. The same happens
-  after a voice note: the recognised items stay invisible until they are sent and the day
-  reloads, so I cannot see what Gemini actually understood.
-- **Idea:** Merge pending outbox records for the current person and day into the dashboard
-  table as greyed rows with a small cloud icon ("not sent yet"). Swiping a pending row
-  discards it from the outbox, and that works offline. When the record is sent, the
-  grey row turns into the real one.
-- **Why it saves money / effort:** Duplicate and phantom entries make every total wrong, and
-  research on tracking apps links the benefit of tracking to *accurate, consistent* records
-  (UW-Madison work on expense tracking as self-regulation, see Sources). Seeing an entry at
-  once is also the feedback loop that keeps the logging habit going.
-- **Fits the design?** Yes. The outbox already holds `records` as a signal, and the dashboard
-  list is a signal. This is a client-side merge plus "discard pending" in the outbox. No sheet
-  change.
-- **Value:** high · **Effort:** S
-- **Type:** tracking-friction
-
-### 2. Dates you can trust
-- **Problem for the user:** The form's date and time are fixed when the dashboard opens and
-  kept after every submit. An installed PWA can stay open in the background for days, so the
-  morning coffee is recorded on *yesterday's* date and with yesterday's time. Separately, the
-  date picker's minimum is 1 January of the current year, so on 2 January I cannot log the
-  New Year's Eve receipt.
-- **Idea:** If the user did not touch the date, stamp the current time at submit. When the
-  app becomes visible again on a new day, move the form date and the table to today. Allow
-  dates in the previous year (for example, the last 60 days, or no lower bound). Add a
-  one-tap "Yesterday" chip next to the date, since yesterday is the most common back-dated
-  entry.
-- **Why it saves money / effort:** Wrong-day entries corrupt daily and monthly totals without
-  anyone noticing. Statistics and any future budget or forecast are only as good as the
-  dates.
-- **Fits the design?** Yes. It affects the dashboard form only. No sheet change.
-- **Value:** high · **Effort:** S
-- **Type:** data-quality
 
 ### 4. Review a voice result before it is filed, with Undo
 - **Problem for the user:** Gemini sometimes mishears ("пятнадцать" becomes 50) or picks the

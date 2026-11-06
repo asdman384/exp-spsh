@@ -1,101 +1,93 @@
 <form class="main-form" novalidate (submit)="onSubmit($event)">
   <div class="form-row">
     <!-- DATE -->
-    <mat-form-field appearance="outline">
-      <mat-label>Date</mat-label>
-      <input
-        matInput
-        [formField]="expenseForm.date"
-        [matDatepicker]="picker"
-        [min]="minDate"
-        (click)=" picker.open()"
-        (dateChange)="onDateChange($event.value)"
-        readonly
-        />
+    <div class="date-field">
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput [formField]="expenseForm.date" [matDatepicker]="picker" [min]="minDate" (click)=" picker.open()"
+          (dateChange)="onDateChange($event.value)" readonly />
         <div class="date-suffix" matSuffix>
           {{ expenseForm.date().value() | date: timeFormat }}
           <mat-datepicker-toggle [for]="picker"></mat-datepicker-toggle>
         </div>
         <mat-datepicker [touchUi]="true" #picker></mat-datepicker>
       </mat-form-field>
-
-      <!-- USER -->
-      <mat-form-field appearance="outline">
-        <mat-label>User</mat-label>
-        <mat-select [formField]="expenseForm.sheet" (valueChange)="onSheetChange($event)">
-          @for (sheet of sheets$ | async; track sheet.id) {
-            <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
+      <button #dateOverlay type="button" class="date-swipe-overlay"
+        aria-label="Open calendar. Swipe left or right on Date." (pointerdown)="startDateSwipe($event)"
+        (pointerup)="finishDateSwipe($event, dateOverlay)" (pointercancel)="cancelDateSwipe()"
+        (lostpointercapture)="cancelDateSwipe()" (click)="openDateCalendar($event, picker)"
+        (keydown.arrowleft)="onDateSwipe('left', dateOverlay)"
+        (keydown.arrowright)="onDateSwipe('right', dateOverlay)"></button>
     </div>
 
-    <div class="form-row">
-      <!-- AMOUNT -->
-      <mat-form-field appearance="outline" class="input-amount">
-        <mat-label>Amount</mat-label>
-        <input type="number" matInput [formField]="expenseForm.amount" autocomplete="off" />
-      </mat-form-field>
-
-      <!-- CATEGORY -->
-      <mat-form-field appearance="outline" class="input-category">
-        <mat-label>Category</mat-label>
-        <mat-select [formField]="expenseForm.category">
-          @for (category of categories$ | async; track category.name) {
-            <mat-option [value]="category.name"> {{ category.name }} </mat-option>
-            }@empty {
-            <mat-option [value]="null" (click)="loadCategories()"> Click to Load </mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    <div class="submit-row">
-      <!-- COMMENT -->
-      <mat-form-field appearance="outline" class="full-width">
-        <mat-label>Comment</mat-label>
-        <textarea matInput [formField]="expenseForm.comment" cdkTextareaAutosize></textarea>
-        @if (expenseForm.comment().value()) {
-          <mat-icon matSuffix (click)="clearComment()" aria-label="Clear">close</mat-icon>
+    <!-- USER -->
+    <mat-form-field appearance="outline">
+      <mat-label>User</mat-label>
+      <mat-select [formField]="expenseForm.sheet" (valueChange)="onSheetChange($event)">
+        @for (sheet of sheets$ | async; track sheet.id) {
+        <mat-option [value]="sheet"> {{ sheet.title.split('_')[1] }} </mat-option>
         }
-      </mat-form-field>
-    
-      <!-- DEBT -->
-      <div class="debt-field">
-        <label class="debt-field__label" for="debt-input">Debt</label>
-        <mat-checkbox id="debt" color="primary" [formField]="expenseForm.isInDebt"></mat-checkbox>
-      </div>
-    </div>
-
-    <div class="submit-row">
-      <button
-        mat-stroked-button
-        color="primary"
-        class="submit-button"
-        type="submit"
-        [disabled]="!expenseForm().valid() || (loading$ | async)"
-        >
-        Add Expense
-      </button>
-
-      <voice-record-button></voice-record-button>
-    </div>
-  </form>
-
-  <div class="expense-summary" role="status" aria-live="polite">
-    @if (summary().totals; as totals) {
-      <span>{{ totals.dailyLabel }}: {{ totals.daily }}</span>
-      <span>&ngsp;· {{ totals.monthLabel }}: {{ totals.monthly }}</span>
-      <span>&ngsp;· Debt: {{ totals.debt }}</span>
-    } @else {
-      <span>{{ summary().placeholder }}</span>
-    }
+      </mat-select>
+    </mat-form-field>
   </div>
 
-  <expenses-table
-    [dataSource]="expenses()"
-    [showDateCol]="false"
-    [draggable]="true"
-    (deleteRow)="handleDeleteExpense($event)"
-    >
-  </expenses-table>
+  <div class="form-row">
+    <!-- AMOUNT -->
+    <mat-form-field appearance="outline" class="input-amount">
+      <mat-label>Amount</mat-label>
+      <input type="number" matInput [formField]="expenseForm.amount" autocomplete="off" />
+    </mat-form-field>
+
+    <!-- CATEGORY -->
+    <mat-form-field appearance="outline" class="input-category">
+      <mat-label>Category</mat-label>
+      <mat-select [formField]="expenseForm.category">
+        @for (category of categories$ | async; track category.name) {
+        <mat-option [value]="category.name"> {{ category.name }} </mat-option>
+        }@empty {
+        <mat-option [value]="null" (click)="loadCategories()"> Click to Load </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <div class="submit-row">
+    <!-- COMMENT -->
+    <mat-form-field appearance="outline" class="full-width">
+      <mat-label>Comment</mat-label>
+      <textarea matInput [formField]="expenseForm.comment" cdkTextareaAutosize></textarea>
+      @if (expenseForm.comment().value()) {
+      <mat-icon matSuffix (click)="clearComment()" aria-label="Clear">close</mat-icon>
+      }
+    </mat-form-field>
+
+    <!-- DEBT -->
+    <div class="debt-field">
+      <label class="debt-field__label" for="debt-input">Debt</label>
+      <mat-checkbox id="debt" color="primary" [formField]="expenseForm.isInDebt"></mat-checkbox>
+    </div>
+  </div>
+
+  <div class="submit-row">
+    <button mat-stroked-button color="primary" class="submit-button" type="submit"
+      [disabled]="!expenseForm().valid() || (loading$ | async)">
+      Add Expense
+    </button>
+
+    <voice-record-button></voice-record-button>
+  </div>
+</form>
+
+<div class="expense-summary" role="status" aria-live="polite">
+  @if (summary().totals; as totals) {
+  <span>{{ totals.dailyLabel }}: {{ totals.daily }}</span>
+  <span>&ngsp;· {{ totals.monthLabel }}: {{ totals.monthly }}</span>
+  <span>&ngsp;· Debt: {{ totals.debt }}</span>
+  } @else {
+  <span>{{ summary().placeholder }}</span>
+  }
+</div>
+
+<expenses-table [dataSource]="expenses()" [showDateCol]="false" [draggable]="true"
+  (deleteRow)="handleDeleteExpense($event)">
+</expenses-table>

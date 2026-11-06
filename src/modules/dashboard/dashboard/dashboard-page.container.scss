@@ -50,3 +50,25 @@
     overflow-wrap: anywhere;
   }
 }
+
+.date-field {
+  position: relative;
+}
+
+.date-swipe-overlay {
+  position: absolute;
+  inset: 0 0 auto;
+  height: 56px;
+  z-index: 1;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  cursor: pointer;
+  touch-action: pan-y;
+  background: linear-gradient(90deg, transparent 35%, rgb(103 58 183 / 60%) 50%, transparent 65%) 100% 0 / 300% 100%;
+
+  &:focus-visible {
+    outline: 2px solid #673ab7;
+    outline-offset: 2px;
+  }
+}

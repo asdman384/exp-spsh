@@ -70,7 +70,70 @@ describe('Dashboard running totals', () => {
     ] });
     model = TestBed.inject(DashboardPageViewModel);
   });
-  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); vi.restoreAllMocks(); });
+
+  it('uses fresh time for repeated automatic submissions without reloading the same day', () => {
+    for (const hour of [13, 14]) {
+      const now = new Date(2026, 10, 4, hour, 15, 32);
+      vi.setSystemTime(now);
+      model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
+      model.saveExpense();
+      expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: now }));
+    }
+    expect(load).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    [new Date(2024, 2, 1, 12), new Date(2024, 1, 29, 12)],
+    [new Date(2026, 2, 30, 12), new Date(2026, 2, 29, 12)]
+  ])('selects the previous local day from %s', (now, yesterday) => {
+    vi.setSystemTime(now);
+    model.selectYesterday();
+    expect(model.expenseModel().date).toEqual(yesterday);
+    expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: yesterday });
+  });
+
+  it('stamps untouched dates at submit, including after midnight', () => {
+    const now = new Date(2027, 0, 1, 0, 5, 12);
+    vi.setSystemTime(now);
+    model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
+    expect(model.saveExpense()).toBe(true);
+    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: now }));
+    expect(model.expenseModel().date).toEqual(now);
+    expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: now });
+  });
+
+  it('keeps an explicit date through submit and resume on a later day', () => {
+    model.changeDate(new Date(2025, 11, 31));
+    const selected = model.expenseModel().date;
+    vi.setSystemTime(new Date(2027, 0, 1));
+    document.dispatchEvent(new Event('visibilitychange'));
+    model.expenseModel.update((value) => ({ ...value, amount: 9, category: 'Food' }));
+    model.saveExpense();
+    expect(add).toHaveBeenLastCalledWith(1, expect.objectContaining({ date: selected }));
+    expect(model.expenseModel().date).toEqual(selected);
+  });
+
+  it('refreshes the untouched day and table only on visible next-day resume', () => {
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    const now = new Date(2027, 0, 1, 8);
+    vi.setSystemTime(now);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(load).toHaveBeenCalledTimes(1);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('visible');
+    rows.set([{ date: now, amount: 7 }]);
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(model.expenseModel().date).toEqual(now);
+    expect(model.expenses()).toEqual([{ date: now, amount: 7 }]);
+    expect(load).toHaveBeenLastCalledWith({ sheetId: 1, to: now });
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(load).toHaveBeenCalledTimes(2);
+    TestBed.resetTestingModule();
+    vi.setSystemTime(new Date(2027, 0, 2));
+    document.dispatchEvent(new Event('visibilitychange'));
+    expect(load).toHaveBeenCalledTimes(2);
+    vi.restoreAllMocks();
+  });
 
   it('uses one request on open and each date/person change and none to calculate totals', () => {
     expect(load).toHaveBeenCalledTimes(1);

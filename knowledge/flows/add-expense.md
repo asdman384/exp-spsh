@@ -33,10 +33,18 @@ A Signal Forms form (`@angular/forms/signals`) over one `expenseModel` signal
 `DashboardPageViewModel`. The component owns form validation and display bindings.[^page][^vm] `required()` applies to
 `date`, `sheet`, `amount`, `category`. Controls bind with `[formField]`:[^html]
 
-- `date` — Material datepicker (`touchUi`, readonly input, `min` = 1 January this year);
+- `date` — Material datepicker (`touchUi`, readonly input, no lower date bound);
 - `sheet` — person select, labelled `title.split('_')[1]`;
 - `amount` — number input; `category` — select over store categories;
 - `comment` — autosizing textarea with a clear icon; `isInDebt` — checkbox.
+
+The Date field has a transparent swipe button over it. A horizontal gesture of at least
+40 CSS pixels logs `Date swipe` and `left` or `right` in the component and runs a wave in
+that direction. Left subtracts one local calendar day from the selected date; right adds one.
+The handler calls `changeDate`, which updates the date and loads expenses for the selected
+person. Swipes do not open the calendar. A tap opens the calendar.
+Vertical gestures can scroll the page. Left and right arrow keys also run the handler.
+The wave has zero duration when the user requests reduced motion.[^page][^html]
 
 `sheet`, `amount`, and `category` are typed `| null`, not `| undefined`: Signal Forms treats
 an `undefined`-able value as an optional field, which breaks `[formField]` and `required()`.
@@ -45,7 +53,12 @@ asterisk is not shown.
 
 - When the category list is empty, the select shows a **"Click to Load"** option that
   dispatches `loadCategories`; normally the list comes from localStorage.
-- After submit the form resets but keeps `date` and `sheet`.
+- An automatic date uses the current local time at submit. On a visible next-day resume,
+  it moves to today and reloads the selected person's month through today.
+- A date selected in the calendar or with **Yesterday** stays selected through submit and
+  resume. Yesterday means the previous local calendar day, including across a year boundary.
+- After submit the form resets but keeps the resolved `date`, date mode, and `sheet`.
+  A new Dashboard page starts in automatic date mode.
 
 The [voice note](voice-recording.md) button after **Add Expense** is a second entry point: it
 never submits the form, but each expense Gemini recognizes goes to the same

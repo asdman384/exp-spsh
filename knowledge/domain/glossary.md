@@ -34,3 +34,6 @@ sources:
 | **playground** | An unguarded sandbox route for trying Angular features; not part of the product. |
 | **setup** | The flow that binds a spreadsheet picked through Google Picker, creates the tabs, and applies validations. |
 | **popup / redirect strategy** | The two `AbstractSecurityService` implementations. Redirect is wired in `app.config.ts`. |
+
+Dashboard **automatic date** uses the current local time at submit and follows the day on resume.
+A **selected date** is a calendar or Yesterday choice that stays fixed while the page is open.
