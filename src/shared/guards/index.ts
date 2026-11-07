@@ -12,7 +12,7 @@ export function isLoggedIn(): Observable<boolean | UrlTree> {
   const securityService = inject(AbstractSecurityService);
   const router = inject(Router);
   return securityService.user$.pipe(
-    map((user) => {
+    map(user => {
       if (!user) {
         log(`isLoggedIn :: user not found ${user}`);
         return router.createUrlTree([ROUTE.setup]);
@@ -20,7 +20,7 @@ export function isLoggedIn(): Observable<boolean | UrlTree> {
 
       log(`isLoggedIn :: user found [${user.name}]`);
       return true;
-    })
+    }),
   );
 }
 
@@ -28,13 +28,13 @@ export function isOnline(): Observable<boolean | UrlTree> {
   const networkStatus = inject(NetworkStatusService);
   const router = inject(Router);
 
-  return networkStatus.online$.pipe(map((online) => online || router.createUrlTree([])));
+  return networkStatus.online$.pipe(map(online => online || router.createUrlTree([])));
 }
 
 export function isSetupReady(): Observable<boolean | UrlTree> {
   const store = inject(Store);
   const router = inject(Router);
   return combineLatest([store.select(spreadsheetIdSelector), store.select(categoriesSheetIdSelector)]).pipe(
-    map((ids) => (ids.every((id) => id) ? true : router.createUrlTree([ROUTE.setup])))
+    map(ids => (ids.every(id => id) ? true : router.createUrlTree([ROUTE.setup]))),
   );
 }

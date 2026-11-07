@@ -42,7 +42,7 @@ describe('[AC5] app reducers - operationFailed / lastError', () => {
       spreadsheetId: 'sheet-abc',
       categoriesSheetId: 7,
       categories: [{ id: 0, name: 'Food' }],
-      lastError: null
+      lastError: null,
     };
 
     const next = reducer(start, AppActions.operationFailed({ source: 'addExpense$', message: 'Nope' }));

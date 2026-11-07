@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.12.0",
+  "version": "0.13.0",
   "scripts": {
     "harness": "node scripts/harness.mjs",
     "ng": "ng",
@@ -12,6 +12,8 @@
     "test:coverage": "ng test --coverage",
     "postinstall": "node scripts/service-worker-ios-workaround.js",
     "lint": "ng lint",
+    "format": "prettier --write \"**/*.{js,mjs,cjs,ts,html,css,scss}\"",
+    "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,html,css,scss}\"",
     "viz": "npx ng build --configuration production --stats-json && npx esbuild-visualizer --metadata ./dist/exp-spsh/stats.json --filename ./dist/exp-spsh/stats.html"
   },
   "private": true,
@@ -52,6 +54,7 @@
     "eslint": "^10.3.0",
     "http-server": "^14.1.1",
     "jsdom": "^27.0.1",
+    "prettier": "3.9.10",
     "typescript": "~6.0.3",
     "typescript-eslint": "8.59.2",
     "vitest": "^4.1.11"

@@ -21,6 +21,10 @@ const PADDINGS = 76;
 
 @Component({
   selector: 'exp-statistics-container',
+  host: {
+    '[class.category-view]': 'selectedCategory !== undefined',
+    '[class.summary-view]': 'selectedCategory === undefined',
+  },
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
   imports: [FormsModule, AsyncPipe, DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
@@ -30,27 +34,26 @@ const PADDINGS = 76;
 export class StatisticsContainer implements AfterViewInit {
   private readonly store = inject(Store);
   protected readonly data = inject(StatisticsDataService);
-  protected readonly debtTotal = computed(() => this.data.state().current
-    .filter((row) => row.isInDebt)
-    .reduce((sum, row) => sum + Number(row.amount ?? 0), 0));
+  protected readonly debtTotal = computed(() =>
+    this.data
+      .state()
+      .current.filter(row => row.isInDebt)
+      .reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
+  );
   private readonly expensesList$ = toObservable(this.data.state);
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
   private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
 
   // [Jan Feb ... Dec]
-  protected readonly monthTabs = new Array(12)
-    .fill(0)
-    .map((v, i) => new Date(0, i).toLocaleString('default', { month: 'short' }));
+  protected readonly monthTabs = new Array(12).fill(0).map((v, i) => new Date(0, i).toLocaleString('default', { month: 'short' }));
 
   // [2024, 2023 ... 2019]
-  protected readonly yearsTabs = new Array(new Date().getFullYear() - 2018)
-    .fill(0)
-    .map((v, i) => new Date().getFullYear() - i);
+  protected readonly yearsTabs = new Array(new Date().getFullYear() - 2018).fill(0).map((v, i) => new Date().getFullYear() - i);
 
   protected readonly expenses$ = this.aggregator$.pipe(
-    switchMap((fn) => this.expensesList$.pipe(map(fn))),
-    switchMap(this.startViewTransition.bind(this))
+    switchMap(fn => this.expensesList$.pipe(map(fn))),
+    switchMap(this.startViewTransition.bind(this)),
   );
 
   protected sheets: Array<Sheet> = [];
@@ -119,7 +122,7 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   private startViewTransition(data: Array<ExpenseTableRow>): Observable<Array<ExpenseTableRow>> {
-    return new Observable((subscriber) => {
+    return new Observable(subscriber => {
       transitionHelper(() => {
         subscriber.next(data);
         subscriber.complete();
@@ -136,14 +139,18 @@ export class StatisticsContainer implements AfterViewInit {
   }
 }
 
-interface MonthRows { current: Expense[]; previous: Expense[] }
+interface MonthRows {
+  current: Expense[];
+  previous: Expense[];
+}
 type AggregatorFn = (data: MonthRows) => ExpenseTableRow[];
 
 function filterByCategoryName(name: string): AggregatorFn {
-  return ({ current }) => current
-    .filter((row) => categoryName(row) === name)
-    .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
-    .map((row) => ({ amount: row.amount, comment: row.comment, date: row.date }));
+  return ({ current }) =>
+    current
+      .filter(row => categoryName(row) === name)
+      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+      .map(row => ({ amount: row.amount, comment: row.comment, date: row.date }));
 }
 
 function groupByCategory({ current, previous }: MonthRows): ExpenseTableRow[] {

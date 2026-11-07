@@ -17,7 +17,7 @@ describe('ExpenseRecognitionService', () => {
     blob: new Blob(['abc'], { type: 'audio/webm;codecs=opus' }),
     mimeType: 'audio/webm;codecs=opus',
     durationMs: 3000,
-    recordedAt: NOW
+    recordedAt: NOW,
   };
 
   function reply(response: Partial<GenerateContentResponse>): void {
@@ -50,7 +50,7 @@ describe('ExpenseRecognitionService', () => {
     expect(params.model).toBe(GEMINI_MODEL);
     expect(params.contents).toEqual({
       role: 'user',
-      parts: [{ inlineData: { data: btoa('abc'), mimeType: 'audio/webm' } }]
+      parts: [{ inlineData: { data: btoa('abc'), mimeType: 'audio/webm' } }],
     });
     expect(params.config?.responseMimeType).toBe('application/json');
     const schema = params.config?.responseJsonSchema as {
@@ -63,12 +63,12 @@ describe('ExpenseRecognitionService', () => {
   it('maps a split ("25, of which 5 on snacks") into two expenses dated now', async () => {
     replyExpenses([
       { amount: 20, category: 'Продукты', comment: null, date: null, isInDebt: false },
-      { amount: 5, category: 'Вкусняшки', comment: null, date: null, isInDebt: false }
+      { amount: 5, category: 'Вкусняшки', comment: null, date: null, isInDebt: false },
     ]);
 
     expect(await recognize()).toEqual([
       { amount: 20, category: 'Продукты', date: NOW },
-      { amount: 5, category: 'Вкусняшки', date: NOW }
+      { amount: 5, category: 'Вкусняшки', date: NOW },
     ]);
   });
 
@@ -76,7 +76,7 @@ describe('ExpenseRecognitionService', () => {
     replyExpenses([{ amount: 12.5, category: 'Продукты', comment: '  хлеб ', date: '2026-09-23', isInDebt: true }]);
 
     expect(await recognize()).toEqual([
-      { amount: 12.5, category: 'Продукты', comment: 'хлеб', isInDebt: true, date: new Date(2026, 8, 23, 18, 30, 5) }
+      { amount: 12.5, category: 'Продукты', comment: 'хлеб', isInDebt: true, date: new Date(2026, 8, 23, 18, 30, 5) },
     ]);
   });
 
@@ -84,7 +84,7 @@ describe('ExpenseRecognitionService', () => {
     replyExpenses([
       { amount: 0, category: 'Продукты', comment: null, date: null, isInDebt: false },
       { amount: 3, category: 'Такси', comment: null, date: null, isInDebt: false },
-      { amount: 7, category: 'Вкусняшки', comment: null, date: null, isInDebt: false }
+      { amount: 7, category: 'Вкусняшки', comment: null, date: null, isInDebt: false },
     ]);
 
     expect(await recognize()).toEqual([{ amount: 7, category: 'Вкусняшки', date: NOW }]);

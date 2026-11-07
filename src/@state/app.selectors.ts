@@ -15,15 +15,12 @@ export const lastErrorSelector = createSelector(selectAppFeature, (state: AppSta
 const { selectEntities, selectAll } = sheetsAdapter.getSelectors();
 const sheetsStateSelector = createSelector(selectAppFeature, (state: AppState) => state.dataSheets);
 const sheetEntitiesSelector = createSelector(sheetsStateSelector, selectEntities);
-export const currentSheetIdSelector = createSelector(sheetsStateSelector, (state) => state.selectedSheetId);
+export const currentSheetIdSelector = createSelector(sheetsStateSelector, state => state.selectedSheetId);
 export const sheetsSelector = createSelector(sheetsStateSelector, selectAll);
-export const currentSheetSelector = createSelector(
-  sheetEntitiesSelector,
-  currentSheetIdSelector,
-  (sheetEntities, selectedSheetId) => (selectedSheetId === null ? undefined : sheetEntities[selectedSheetId])
+export const currentSheetSelector = createSelector(sheetEntitiesSelector, currentSheetIdSelector, (sheetEntities, selectedSheetId) =>
+  selectedSheetId === null ? undefined : sheetEntities[selectedSheetId],
 );
-export const byIdSheetSelector = (id: string) =>
-  createSelector(sheetEntitiesSelector, (sheetEntities) => sheetEntities[id]);
+export const byIdSheetSelector = (id: string) => createSelector(sheetEntitiesSelector, sheetEntities => sheetEntities[id]);
 
 // categories
 export const categoriesSheetIdSelector = createSelector(selectAppFeature, (state: AppState) => state.categoriesSheetId);

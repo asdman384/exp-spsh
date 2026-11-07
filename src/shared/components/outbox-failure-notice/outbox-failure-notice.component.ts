@@ -1,13 +1,7 @@
 import { DatePipe } from '@angular/common';
 import { Component, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
-import {
-  MAT_SNACK_BAR_DATA,
-  MatSnackBarAction,
-  MatSnackBarActions,
-  MatSnackBarLabel,
-  MatSnackBarRef
-} from '@angular/material/snack-bar';
+import { MAT_SNACK_BAR_DATA, MatSnackBarAction, MatSnackBarActions, MatSnackBarLabel, MatSnackBarRef } from '@angular/material/snack-bar';
 import { OutboxRecord } from 'src/shared/models';
 
 export interface OutboxFailureNoticeData {
@@ -27,8 +21,8 @@ export interface OutboxFailureNoticeData {
     <span matSnackBarLabel>
       @if (record.failure === 'otherSpreadsheet') {
         A saved expense ({{ record.payload.expense.category }}, {{ record.payload.expense.amount }},
-        {{ record.enqueuedAt | date: 'd MMM, HH:mm' }}) belongs to a different spreadsheet from the one you're
-        using now. Retry, or discard it?
+        {{ record.enqueuedAt | date: 'd MMM, HH:mm' }}) belongs to a different spreadsheet from the one you're using now. Retry, or discard
+        it?
       } @else {
         Couldn't send a saved expense: {{ record.payload.expense.category }}, {{ record.payload.expense.amount }},
         {{ record.enqueuedAt | date: 'd MMM, HH:mm' }}. Retry, or discard it?
@@ -39,7 +33,7 @@ export interface OutboxFailureNoticeData {
       <button mat-button matSnackBarAction type="button" (click)="choose('discard')">Discard</button>
       <button mat-button matSnackBarAction type="button" (click)="choose('close')">Close</button>
     </div>
-  `
+  `,
 })
 export class OutboxFailureNoticeComponent {
   private readonly snackBarRef = inject(MatSnackBarRef<OutboxFailureNoticeComponent>);

@@ -9,7 +9,7 @@ import {
   fromExpenseGvizRow,
   fromExpenseValueRow,
   GvizCell,
-  toExpenseCells
+  toExpenseCells,
 } from './expense-row';
 
 describe('expense-row', () => {
@@ -17,7 +17,7 @@ describe('expense-row', () => {
     category: 'Food',
     comment: 'lunch',
     amount: 12.5,
-    date: new Date(2024, 0, 16, 12, 14, 23)
+    date: new Date(2024, 0, 16, 12, 14, 23),
   };
 
   // [AC1] the column order is declared exactly once, as an ordered keyof-Expense list in the
@@ -38,7 +38,7 @@ describe('expense-row', () => {
         comment: 1,
         amount: 2,
         date: 3,
-        isInDebt: 4
+        isInDebt: 4,
       });
     });
 
@@ -209,9 +209,7 @@ describe('expense-row', () => {
   // [AC10] fromExpenseGvizRow: the gviz row parser.
   describe('[AC10] fromExpenseGvizRow', () => {
     it('should_coerce_category_with_String_and_default_a_missing_cell_to_empty_string', () => {
-      expect(fromExpenseGvizRow([{ v: 42 }, { v: 'lunch' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).category).toBe(
-        '42'
-      );
+      expect(fromExpenseGvizRow([{ v: 42 }, { v: 'lunch' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).category).toBe('42');
       expect(fromExpenseGvizRow([] as ReadonlyArray<GvizCell>).category).toBe('');
     });
 
@@ -222,29 +220,18 @@ describe('expense-row', () => {
     });
 
     it('should_coerce_a_falsy_comment_to_undefined_and_a_truthy_comment_to_a_string', () => {
-      expect(fromExpenseGvizRow([{ v: 'Food' }, { v: '' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).comment).toBe(
-        undefined
-      );
+      expect(fromExpenseGvizRow([{ v: 'Food' }, { v: '' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).comment).toBe(undefined);
       expect(fromExpenseGvizRow([{ v: 'Food' }] as ReadonlyArray<GvizCell>).comment).toBeUndefined();
       expect(fromExpenseGvizRow([{ v: 'Food' }, { v: 7 }, { v: 12.5 }] as ReadonlyArray<GvizCell>).comment).toBe('7');
     });
 
     it('should_guard_the_date_and_leave_it_undefined_when_the_4th_cell_is_absent_or_null', () => {
-      expect(
-        fromExpenseGvizRow([{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).date
-      ).toBeUndefined();
-      expect(
-        fromExpenseGvizRow([{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, null as unknown as GvizCell]).date
-      ).toBeUndefined();
+      expect(fromExpenseGvizRow([{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }] as ReadonlyArray<GvizCell>).date).toBeUndefined();
+      expect(fromExpenseGvizRow([{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, null as unknown as GvizCell]).date).toBeUndefined();
     });
 
     it('should_parse_a_Date_string_cell_via_secureParseDate', () => {
-      const cells: ReadonlyArray<GvizCell> = [
-        { v: 'Food' },
-        { v: 'lunch' },
-        { v: 12.5 },
-        { v: 'Date(2024,0,16,12,14,23)' }
-      ];
+      const cells: ReadonlyArray<GvizCell> = [{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, { v: 'Date(2024,0,16,12,14,23)' }];
       const decoded = fromExpenseGvizRow(cells).date!;
       expect(decoded.getFullYear()).toBe(2024);
       expect(decoded.getMonth()).toBe(0);
@@ -257,32 +244,15 @@ describe('expense-row', () => {
     it('should_derive_isInDebt_true_when_the_5th_cell_is_present_even_with_a_falsy_value', () => {
       // D4: isInDebt is "cell is neither undefined nor null" -- a present-but-zero cell must
       // still read as true, distinguishing it from a merely-truthy check.
-      const cells: ReadonlyArray<GvizCell> = [
-        { v: 'Food' },
-        { v: 'lunch' },
-        { v: 12.5 },
-        { v: 'Date(2024,0,16,12,14,23)' },
-        { v: 0 }
-      ];
+      const cells: ReadonlyArray<GvizCell> = [{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, { v: 'Date(2024,0,16,12,14,23)' }, { v: 0 }];
       expect(fromExpenseGvizRow(cells).isInDebt).toBe(true);
     });
 
     it('should_derive_isInDebt_false_when_the_5th_cell_is_absent_or_null', () => {
-      const withoutCell: ReadonlyArray<GvizCell> = [
-        { v: 'Food' },
-        { v: 'lunch' },
-        { v: 12.5 },
-        { v: 'Date(2024,0,16,12,14,23)' }
-      ];
+      const withoutCell: ReadonlyArray<GvizCell> = [{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, { v: 'Date(2024,0,16,12,14,23)' }];
       expect(fromExpenseGvizRow(withoutCell).isInDebt).toBe(false);
 
-      const withNullCell = [
-        { v: 'Food' },
-        { v: 'lunch' },
-        { v: 12.5 },
-        { v: 'Date(2024,0,16,12,14,23)' },
-        null as unknown as GvizCell
-      ];
+      const withNullCell = [{ v: 'Food' }, { v: 'lunch' }, { v: 12.5 }, { v: 'Date(2024,0,16,12,14,23)' }, null as unknown as GvizCell];
       expect(fromExpenseGvizRow(withNullCell).isInDebt).toBe(false);
     });
   });

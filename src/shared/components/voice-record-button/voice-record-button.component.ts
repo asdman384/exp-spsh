@@ -18,7 +18,7 @@ const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
   denied: 'Microphone permission denied',
   unsupported: 'Microphone unavailable',
   'no-device': 'Microphone unavailable',
-  failed: 'Microphone unavailable'
+  failed: 'Microphone unavailable',
 };
 
 /**
@@ -52,7 +52,7 @@ const OUTCOME_MESSAGES: Record<VoiceRecorderOutcome, string> = {
       <mat-icon aria-hidden="true">{{ icon() }}</mat-icon>
     </button>
   `,
-  styleUrl: './voice-record-button.component.scss'
+  styleUrl: './voice-record-button.component.scss',
 })
 export class VoiceRecordButtonComponent {
   private readonly store = inject(Store);
@@ -60,7 +60,6 @@ export class VoiceRecordButtonComponent {
   private readonly liveAnnouncer = inject(LiveAnnouncer);
   private readonly destroyRef = inject(DestroyRef);
   protected readonly loading$ = this.store.select(loadingSelector);
-
 
   protected readonly isRecording = computed(() => this.recorder.status() === 'recording');
   protected readonly isBusy = computed(() => this.recorder.status() === 'starting');

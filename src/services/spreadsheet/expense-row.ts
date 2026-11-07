@@ -8,9 +8,7 @@ import { Expense } from 'src/shared/models';
  * indices, the column count, and the gviz column-list fragment are all derived below --
  * inserting a column is a one-line edit to this list.
  */
-const EXPENSE_COLUMNS = ['category', 'comment', 'amount', 'date', 'isInDebt'] as const satisfies ReadonlyArray<
-  keyof Expense
->;
+const EXPENSE_COLUMNS = ['category', 'comment', 'amount', 'date', 'isInDebt'] as const satisfies ReadonlyArray<keyof Expense>;
 
 type ExpenseColumn = (typeof EXPENSE_COLUMNS)[number];
 
@@ -22,18 +20,18 @@ export const EXPENSE_COLUMN_COUNT = EXPENSE_COLUMNS.length;
  */
 const EXPENSE_COLUMN_LETTERS = EXPENSE_COLUMNS.reduce(
   (letters, column, index) => ({ ...letters, [column]: String.fromCharCode(65 + index) }),
-  {} as Record<ExpenseColumn, string>
+  {} as Record<ExpenseColumn, string>,
 );
 
 const EXPENSE_COLUMN_INDEXES = EXPENSE_COLUMNS.reduce(
   (indexes, column, index) => ({ ...indexes, [column]: index }),
-  {} as Record<ExpenseColumn, number>
+  {} as Record<ExpenseColumn, number>,
 );
 
 export const EXPENSE_COLUMN_INDEX: Readonly<Record<ExpenseColumn, number>> = EXPENSE_COLUMN_INDEXES;
 
 /** e.g. `A, B, C, D, E` -- for the gviz `select` clause. */
-export const EXPENSE_GVIZ_COLUMNS = EXPENSE_COLUMNS.map((column) => EXPENSE_COLUMN_LETTERS[column]).join(', ');
+export const EXPENSE_GVIZ_COLUMNS = EXPENSE_COLUMNS.map(column => EXPENSE_COLUMN_LETTERS[column]).join(', ');
 
 /** The gviz `where` clause filters on this column's letter. */
 export const EXPENSE_DATE_COLUMN_LETTER = EXPENSE_COLUMN_LETTERS.date;
@@ -52,11 +50,11 @@ export function expenseValuesRange(sheetName: string, take: number): string {
 type ExpenseCellWriter = (expense: Expense) => gapi.client.sheets.CellData;
 
 const EXPENSE_CELL_WRITERS: Record<ExpenseColumn, ExpenseCellWriter> = {
-  category: (expense) => ({ userEnteredValue: { stringValue: expense.category } }),
-  comment: (expense) => ({ userEnteredValue: { stringValue: expense.comment } }),
-  amount: (expense) => ({ userEnteredValue: { numberValue: expense.amount } }),
-  date: (expense) => ({ userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } }),
-  isInDebt: (expense) => ({ userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined })
+  category: expense => ({ userEnteredValue: { stringValue: expense.category } }),
+  comment: expense => ({ userEnteredValue: { stringValue: expense.comment } }),
+  amount: expense => ({ userEnteredValue: { numberValue: expense.amount } }),
+  date: expense => ({ userEnteredValue: { numberValue: getSerialNumberFromDate(expense.date!) } }),
+  isInDebt: expense => ({ userEnteredValue: expense.isInDebt ? { numberValue: expense.amount } : undefined }),
 };
 
 /**
@@ -64,7 +62,7 @@ const EXPENSE_CELL_WRITERS: Record<ExpenseColumn, ExpenseCellWriter> = {
  * `Expense` -> the 5 `CellData` entries `addExpense` writes, in {@link EXPENSE_COLUMNS} order.
  */
 export function toExpenseCells(expense: Expense): Array<gapi.client.sheets.CellData> {
-  return EXPENSE_COLUMNS.map((column) => EXPENSE_CELL_WRITERS[column](expense));
+  return EXPENSE_COLUMNS.map(column => EXPENSE_CELL_WRITERS[column](expense));
 }
 
 /**
@@ -85,7 +83,7 @@ export function fromExpenseValueRow(row: ReadonlyArray<unknown>): Expense {
     comment: comment ? String(comment) : undefined,
     amount,
     date: getDateFromSerialNumber(date),
-    isInDebt: isInDebt !== undefined && isInDebt !== null
+    isInDebt: isInDebt !== undefined && isInDebt !== null,
   };
 }
 
@@ -111,7 +109,7 @@ export function fromExpenseGvizRow(cells: ReadonlyArray<GvizCell>): Expense {
     comment: comment ? String(comment) : undefined,
     amount: Number(cells[EXPENSE_COLUMN_INDEX.amount]?.v ?? 0),
     date: date !== undefined && date !== null ? secureParseDate(date as string) : undefined,
-    isInDebt: isInDebt !== undefined && isInDebt !== null
+    isInDebt: isInDebt !== undefined && isInDebt !== null,
   };
 }
 
@@ -151,7 +149,7 @@ function secureParseDate(value: string): Date {
       parseInt(day, 10),
       parseInt(hours, 10),
       parseInt(minutes, 10),
-      parseInt(seconds, 10)
+      parseInt(seconds, 10),
     );
   }
 

@@ -39,7 +39,7 @@ describe('[AC16] AppEffects.showFailureToast$', () => {
 
     const storeStub: Pick<Store, 'select' | 'dispatch'> = {
       select: vi.fn().mockReturnValue(of(undefined)),
-      dispatch: vi.fn()
+      dispatch: vi.fn(),
     };
     const networkStub: Pick<NetworkStatusService, 'online$'> = { online$: of(true) };
     const spreadsheetStub = {} as SpreadsheetService;
@@ -52,8 +52,8 @@ describe('[AC16] AppEffects.showFailureToast$', () => {
         { provide: Store, useValue: storeStub },
         { provide: NetworkStatusService, useValue: networkStub },
         { provide: SpreadsheetService, useValue: spreadsheetStub },
-        { provide: MatSnackBar, useValue: snackBarStub }
-      ]
+        { provide: MatSnackBar, useValue: snackBarStub },
+      ],
     });
 
     effects = TestBed.inject(AppEffects);
@@ -89,13 +89,13 @@ describe('[AC16] AppEffects.showFailureToast$', () => {
       1,
       FAILURE_MESSAGES.loadExpenses$,
       'Dismiss',
-      expect.objectContaining({ politeness: 'assertive' })
+      expect.objectContaining({ politeness: 'assertive' }),
     );
     expect(snackBarOpen).toHaveBeenNthCalledWith(
       2,
       FAILURE_MESSAGES.loadExpenses$,
       'Dismiss',
-      expect.objectContaining({ politeness: 'assertive' })
+      expect.objectContaining({ politeness: 'assertive' }),
     );
   });
 });
@@ -127,7 +127,7 @@ describe('AppEffects.deleteCategory$ — sheet-row index arithmetic', () => {
 
     const storeStub: Pick<Store, 'select' | 'dispatch'> = {
       select: select as unknown as Store['select'],
-      dispatch: dispatch as unknown as Store['dispatch']
+      dispatch: dispatch as unknown as Store['dispatch'],
     };
     const networkStub: Pick<NetworkStatusService, 'online$'> = { online$: of(true) };
     const spreadsheetStub = { deleteSheetRow } as unknown as SpreadsheetService;
@@ -140,8 +140,8 @@ describe('AppEffects.deleteCategory$ — sheet-row index arithmetic', () => {
         { provide: Store, useValue: storeStub },
         { provide: NetworkStatusService, useValue: networkStub },
         { provide: SpreadsheetService, useValue: spreadsheetStub },
-        { provide: MatSnackBar, useValue: snackBarStub }
-      ]
+        { provide: MatSnackBar, useValue: snackBarStub },
+      ],
     });
 
     effects = TestBed.inject(AppEffects);
@@ -156,25 +156,23 @@ describe('AppEffects.deleteCategory$ — sheet-row index arithmetic', () => {
       { name: 'Food', id: 0 },
       { name: 'Transport', id: 1 },
       { name: 'Bills', id: 2 },
-      { name: 'Other', id: 3 }
+      { name: 'Other', id: 3 },
     ];
     configure(categories);
 
     const emitted: Array<Action> = [];
-    effects.deleteCategory$.subscribe((action) => emitted.push(action));
+    effects.deleteCategory$.subscribe(action => emitted.push(action));
 
     actions$.next(AppActions.deleteCategory({ category: categories[2] })); // middle item, index 2
 
     expect(deleteSheetRow).toHaveBeenCalledWith(sheetId, 2);
-    expect(emitted).toContainEqual(
-      AppActions.storeCategories({ categories: [categories[0], categories[1], categories[3]] })
-    );
+    expect(emitted).toContainEqual(AppActions.storeCategories({ categories: [categories[0], categories[1], categories[3]] }));
   });
 
   it('should_not_delete_and_should_report_failure_when_category_is_not_found', () => {
     const categories: Array<Category> = [
       { name: 'Food', id: 0 },
-      { name: 'Transport', id: 1 }
+      { name: 'Transport', id: 1 },
     ];
     configure(categories);
 
@@ -184,7 +182,7 @@ describe('AppEffects.deleteCategory$ — sheet-row index arithmetic', () => {
 
     expect(deleteSheetRow).not.toHaveBeenCalled();
     expect(dispatch).toHaveBeenCalledWith(
-      AppActions.operationFailed({ source: 'deleteCategory$', message: FAILURE_MESSAGES.deleteCategory$ })
+      AppActions.operationFailed({ source: 'deleteCategory$', message: FAILURE_MESSAGES.deleteCategory$ }),
     );
   });
 });

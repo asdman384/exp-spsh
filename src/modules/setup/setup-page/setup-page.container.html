@@ -1,7 +1,7 @@
 <div class="info">
   <div class="loading-container">
     @if (loading()) {
-    <mat-progress-spinner color="primary" mode="indeterminate" [value]="0"> </mat-progress-spinner>
+      <mat-progress-spinner color="primary" mode="indeterminate" [value]="0"> </mat-progress-spinner>
     }
     <mat-icon class="doc-icon" color="primary">description</mat-icon>
   </div>
@@ -10,8 +10,7 @@
 <form class="info full-width">
   <mat-form-field appearance="outline" class="readonly full-width">
     <mat-label>Spreadsheet</mat-label>
-    <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" readonly
-      placeholder="Not picked yet" />
+    <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" readonly placeholder="Not picked yet" />
     <mat-icon matSuffix>description</mat-icon>
   </mat-form-field>
 

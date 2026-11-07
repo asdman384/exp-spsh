@@ -19,7 +19,7 @@ statistics. It imports `DatePipe`, `DecimalPipe`, `DragDropModule`, and Material
 tooltip modules directly.[^comp]
 
 `ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`, `share`, and `delta`.
-Share and delta render below the amount only when supplied. They are display metadata,
+Share and delta render beside the amount only when supplied. They are display metadata,
 not spreadsheet fields. Plain expenses and
 Statistics aggregate rows remain valid inputs. Column keys come from `Expense`; the metadata
 is not a column. Drag data and the delete output retain the original row and its metadata.[^comp]
@@ -62,6 +62,9 @@ So aggregate rows (`category` + `amount`) show two columns, the drill-down proje
 `date`, `amount`, `comment`, and the **Debt** column appears only when a debt row exists.
 
 # Rendering
+
+Amount data cells use `display: inline-flex`, selected through Material's generated
+`mat-column-amount` class. The Amount header keeps its table-cell layout.
 
 Amounts and deltas explicitly select the Polish locale in the number pipe: a decimal comma, up to two decimal places,
 and a non-breaking space between thousands (for example, `1 026,2`). Shares use up to one

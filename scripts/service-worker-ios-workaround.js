@@ -6,7 +6,7 @@ let ngswWorkerFile = fs.readFileSync(ngswWorkerFilePath).toString();
 const regExps = [
   [/await cache\.(match|put)\((.*)\)/gm, 'await cache.$1($2).catch((e) => console.log(e))'],
   [/this\.cache\.(delete|match|put)\((.*)\);/gm, 'this.cache.$1($2).catch((e) => console.log(e));'],
-  [/this\.cache\.(delete|match|put)\((.*)\)\.then/gm, 'this.cache.$1($2).catch((e) => console.log(e)).then']
+  [/this\.cache\.(delete|match|put)\((.*)\)\.then/gm, 'this.cache.$1($2).catch((e) => console.log(e)).then'],
 ];
 for (const r of regExps) {
   console.log(`RegExp '${r[0].toString()}'`, ngswWorkerFile.match(r[0]));

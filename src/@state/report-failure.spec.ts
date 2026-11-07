@@ -25,7 +25,7 @@ describe('reportFailure', () => {
       updateCategoryPosition$: "Couldn't save the new order. Your categories were put back the way they were.",
       addExpense$: "Couldn't save that expense. Please try again.",
       deleteExpense$: "Couldn't delete that expense. It's back in your list.",
-      loadExpenses$: "Couldn't load your expenses. Check your connection and try again."
+      loadExpenses$: "Couldn't load your expenses. Check your connection and try again.",
     });
   });
 
@@ -34,9 +34,12 @@ describe('reportFailure', () => {
     let emitted = false;
     let completed = false;
 
-    reportFailure('addCategory$', store)(new Error('boom')).subscribe({
+    reportFailure(
+      'addCategory$',
+      store,
+    )(new Error('boom')).subscribe({
       next: () => (emitted = true),
-      complete: () => (completed = true)
+      complete: () => (completed = true),
     });
 
     expect(emitted).toBe(false);
@@ -45,7 +48,7 @@ describe('reportFailure', () => {
     expect(dispatch).toHaveBeenNthCalledWith(1, AppActions.loading({ loading: false }));
     expect(dispatch).toHaveBeenNthCalledWith(
       2,
-      AppActions.operationFailed({ source: 'addCategory$', message: FAILURE_MESSAGES.addCategory$ })
+      AppActions.operationFailed({ source: 'addCategory$', message: FAILURE_MESSAGES.addCategory$ }),
     );
   });
 
@@ -56,7 +59,7 @@ describe('reportFailure', () => {
 
     expect(dispatch).toHaveBeenNthCalledWith(
       2,
-      AppActions.operationFailed({ source: 'loadExpenses$', message: FAILURE_MESSAGES.loadExpenses$ })
+      AppActions.operationFailed({ source: 'loadExpenses$', message: FAILURE_MESSAGES.loadExpenses$ }),
     );
   });
 
@@ -66,7 +69,7 @@ describe('reportFailure', () => {
     const error = new HttpErrorResponse({
       status: 503,
       statusText: 'Service Unavailable',
-      error: { error: { message: rawEnvelopeMessage } }
+      error: { error: { message: rawEnvelopeMessage } },
     });
 
     reportFailure('loadExpenses$', store)(error).subscribe();

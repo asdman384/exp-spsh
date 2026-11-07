@@ -53,7 +53,14 @@ const INTERPRETERS = new Set(['bash', 'sh', 'zsh', 'dash', 'ksh', 'fish', 'pwsh'
 
 /** git global options that consume the NEXT token as their value. */
 const GIT_GLOBAL_WITH_VALUE = new Set([
-  '-C', '-c', '--git-dir', '--work-tree', '--namespace', '--exec-path', '--super-prefix', '--config-env'
+  '-C',
+  '-c',
+  '--git-dir',
+  '--work-tree',
+  '--namespace',
+  '--exec-path',
+  '--super-prefix',
+  '--config-env',
 ]);
 
 /**
@@ -61,9 +68,32 @@ const GIT_GLOBAL_WITH_VALUE = new Set([
  * defensive "bare push token" check must not fire (`git commit -m push`).
  */
 const WORDY_SUBCOMMANDS = new Set([
-  'commit', 'log', 'grep', 'tag', 'branch', 'config', 'notes', 'stash', 'merge', 'revert',
-  'cherry-pick', 'describe', 'show', 'rev-parse', 'checkout', 'switch', 'restore', 'rebase',
-  'diff', 'blame', 'bisect', 'worktree', 'help', 'shortlog', 'reflog', 'reset'
+  'commit',
+  'log',
+  'grep',
+  'tag',
+  'branch',
+  'config',
+  'notes',
+  'stash',
+  'merge',
+  'revert',
+  'cherry-pick',
+  'describe',
+  'show',
+  'rev-parse',
+  'checkout',
+  'switch',
+  'restore',
+  'rebase',
+  'diff',
+  'blame',
+  'bisect',
+  'worktree',
+  'help',
+  'shortlog',
+  'reflog',
+  'reset',
 ]);
 
 function main() {
@@ -98,9 +128,9 @@ function deny(reason) {
       hookSpecificOutput: {
         hookEventName: 'PreToolUse',
         permissionDecision: 'deny',
-        permissionDecisionReason: text
-      }
-    })
+        permissionDecisionReason: text,
+      },
+    }),
   );
   process.exit(0);
 }
@@ -141,8 +171,15 @@ function scanSegment(segment, depth, localAliases) {
   let sawForwarder = false;
   while (tokens.length > 0) {
     const head = tokens[0];
-    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(head)) { tokens = tokens.slice(1); continue; }
-    if (FORWARDERS.has(normalizeName(head))) { tokens = tokens.slice(1); sawForwarder = true; continue; }
+    if (/^[A-Za-z_][A-Za-z0-9_]*=/.test(head)) {
+      tokens = tokens.slice(1);
+      continue;
+    }
+    if (FORWARDERS.has(normalizeName(head))) {
+      tokens = tokens.slice(1);
+      sawForwarder = true;
+      continue;
+    }
     break;
   }
   if (tokens.length === 0) return null;
@@ -151,7 +188,7 @@ function scanSegment(segment, depth, localAliases) {
   // own flags sit between it and the real command, and their arity is unknown here.
   // Skip ahead to the next token that names a command we can reason about.
   if (sawForwarder && tokens[0].startsWith('-')) {
-    const at = tokens.findIndex((t) => isCommandName(normalizeName(t)));
+    const at = tokens.findIndex(t => isCommandName(normalizeName(t)));
     if (at === -1) return null;
     tokens = tokens.slice(at);
   }
@@ -161,7 +198,7 @@ function scanSegment(segment, depth, localAliases) {
 
   // bash -c "…" / pwsh -Command "…" / cmd /c "…"
   if (INTERPRETERS.has(name)) {
-    const i = args.findIndex((a) => /^(-c|-Command|-EncodedCommand|\/c|\/k)$/i.test(a));
+    const i = args.findIndex(a => /^(-c|-Command|-EncodedCommand|\/c|\/k)$/i.test(a));
     if (i !== -1 && args[i + 1] !== undefined) {
       if (/EncodedCommand/i.test(args[i])) {
         return 'an encoded interpreter command, whose contents cannot be inspected';
@@ -200,7 +237,7 @@ function scanSegment(segment, depth, localAliases) {
   // that is what keeps `git commit -m push` passing.
   for (let i = 1; i < tokens.length - 1; i++) {
     const n = normalizeName(tokens[i]);
-    if ((n === 'git' || n === 'git-push') && tokens.slice(i + 1).some((t) => t === 'push')) {
+    if ((n === 'git' || n === 'git-push') && tokens.slice(i + 1).some(t => t === 'push')) {
       return 'a git binary appears mid-command followed by a bare `push` argument';
     }
   }
@@ -214,15 +251,18 @@ function inspectGit(args, depth, localAliases) {
   while (i < args.length) {
     const a = args[i];
     if (!a.startsWith('-')) break;
-    if (GIT_GLOBAL_WITH_VALUE.has(a)) { i += 2; continue; }   // -C <path>
-    i += 1;                                                    // --bare, --git-dir=x, …
+    if (GIT_GLOBAL_WITH_VALUE.has(a)) {
+      i += 2;
+      continue;
+    } // -C <path>
+    i += 1; // --bare, --git-dir=x, …
   }
 
   const subcommand = args[i];
   const rest = args.slice(i + 1);
 
   if (subcommand === undefined) {
-    return args.some((a) => a === 'push') ? 'a git invocation whose arguments include `push`' : null;
+    return args.some(a => a === 'push') ? 'a git invocation whose arguments include `push`' : null;
   }
 
   if (/[$`]/.test(subcommand)) {
@@ -236,7 +276,7 @@ function inspectGit(args, depth, localAliases) {
 
   // Defensive net for a global flag this guard does not know about.
   const effective = gitAliasTarget(subcommand) ?? subcommand;
-  if (!WORDY_SUBCOMMANDS.has(effective) && rest.some((a) => a === 'push')) {
+  if (!WORDY_SUBCOMMANDS.has(effective) && rest.some(a => a === 'push')) {
     return `a git invocation with a bare \`push\` argument that could not be ruled out (subcommand \`${subcommand}\`)`;
   }
 
@@ -282,7 +322,11 @@ function split(s) {
       // Command substitution still expands inside double quotes.
       if (quote === '"' && c === '$' && s[i + 1] === '(') {
         const end = matchParen(s, i + 1);
-        if (end !== -1) { substitutions.push(s.slice(i + 2, end)); i = end; continue; }
+        if (end !== -1) {
+          substitutions.push(s.slice(i + 2, end));
+          i = end;
+          continue;
+        }
       }
       // Quote marks are preserved verbatim; only operators are split on here, and
       // tokenize() does the quote handling. Dropping them would break both
@@ -292,16 +336,32 @@ function split(s) {
       continue;
     }
 
-    if (c === '\\' && isEscapable(s[i + 1])) { cur += c + s[i + 1]; i += 1; continue; }
-    if (c === '"' || c === "'") { quote = c; cur += c; continue; }
+    if (c === '\\' && isEscapable(s[i + 1])) {
+      cur += c + s[i + 1];
+      i += 1;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      quote = c;
+      cur += c;
+      continue;
+    }
 
     if (c === '$' && s[i + 1] === '(') {
       const end = matchParen(s, i + 1);
-      if (end !== -1) { substitutions.push(s.slice(i + 2, end)); i = end; continue; }
+      if (end !== -1) {
+        substitutions.push(s.slice(i + 2, end));
+        i = end;
+        continue;
+      }
     }
     if (c === '`') {
       const end = s.indexOf('`', i + 1);
-      if (end !== -1) { substitutions.push(s.slice(i + 1, end)); i = end; continue; }
+      if (end !== -1) {
+        substitutions.push(s.slice(i + 1, end));
+        i = end;
+        continue;
+      }
     }
 
     if (c === '&' || c === '|' || c === ';' || c === '\n' || c === '(' || c === ')' || c === '{' || c === '}') {
@@ -314,14 +374,17 @@ function split(s) {
   }
 
   segments.push(cur);
-  return { segments: segments.filter((x) => x.trim()), substitutions };
+  return { segments: segments.filter(x => x.trim()), substitutions };
 }
 
 function matchParen(s, openIdx) {
   let depth = 0;
   for (let i = openIdx; i < s.length; i++) {
     if (s[i] === '(') depth += 1;
-    else if (s[i] === ')') { depth -= 1; if (depth === 0) return i; }
+    else if (s[i] === ')') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
   }
   return -1;
 }
@@ -343,9 +406,25 @@ function tokenize(s) {
     }
     // Only treat a backslash as an escape before a character it could plausibly
     // escape. Otherwise it is a Windows path separator: C:\Program Files\git.exe
-    if (c === '\\' && isEscapable(s[i + 1])) { cur += s[i + 1]; i += 1; started = true; continue; }
-    if (c === '"' || c === "'") { quote = c; started = true; continue; }
-    if (/\s/.test(c)) { if (cur || started) { out.push(cur); cur = ''; started = false; } continue; }
+    if (c === '\\' && isEscapable(s[i + 1])) {
+      cur += s[i + 1];
+      i += 1;
+      started = true;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      quote = c;
+      started = true;
+      continue;
+    }
+    if (/\s/.test(c)) {
+      if (cur || started) {
+        out.push(cur);
+        cur = '';
+        started = false;
+      }
+      continue;
+    }
     cur += c;
   }
   if (cur || started) out.push(cur);
@@ -354,8 +433,7 @@ function tokenize(s) {
 
 /** Names this guard knows how to reason about as the head of a command. */
 function isCommandName(name) {
-  return name === 'git' || name === 'git-push' || INTERPRETERS.has(name) ||
-    ['npm', 'pnpm', 'yarn', 'bun'].includes(name);
+  return name === 'git' || name === 'git-push' || INTERPRETERS.has(name) || ['npm', 'pnpm', 'yarn', 'bun'].includes(name);
 }
 
 /** Characters a backslash meaningfully escapes in a shell word. */
@@ -380,7 +458,7 @@ function gitAliases() {
     const out = execFileSync('git', ['config', '--get-regexp', '^alias\\.'], {
       encoding: 'utf8',
       timeout: 4000,
-      stdio: ['ignore', 'pipe', 'ignore']
+      stdio: ['ignore', 'pipe', 'ignore'],
     });
     for (const line of out.split('\n')) {
       const m = /^alias\.(\S+)\s+([\s\S]*)$/.exec(line.trim());

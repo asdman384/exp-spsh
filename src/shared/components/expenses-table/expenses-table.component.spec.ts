@@ -13,7 +13,7 @@ import { ExpensesTableComponent } from './expenses-table.component';
 // `EventEmitter`'s async (`isAsync: true`) delivery, which itself is implemented with a real
 // `setTimeout(fn)` (see `@angular/core`'s `EventEmitter_.wrapInTimeout`).
 function flushMacrotasks(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve));
+  return new Promise(resolve => setTimeout(resolve));
 }
 
 function fullRow(overrides: Partial<Expense> = {}): Expense {
@@ -23,7 +23,7 @@ function fullRow(overrides: Partial<Expense> = {}): Expense {
     category: 'Food',
     comment: 'lunch',
     isInDebt: false,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -31,7 +31,7 @@ function aggregateRow(overrides: Partial<Expense> = {}): Expense {
   return {
     category: 'Food',
     amount: 42,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -40,9 +40,9 @@ function aggregateRow(overrides: Partial<Expense> = {}): Expense {
 function renderedHeaderColumns(fixture: ComponentFixture<ExpensesTableComponent>): string[] {
   return fixture.debugElement
     .queryAll(By.css('th'))
-    .map((de) => Array.from(de.nativeElement.classList as DOMTokenList).find((c: string) => c.startsWith('mat-column-')))
+    .map(de => Array.from(de.nativeElement.classList as DOMTokenList).find((c: string) => c.startsWith('mat-column-')))
     .filter((c): c is string => !!c)
-    .map((c) => c.replace('mat-column-', ''));
+    .map(c => c.replace('mat-column-', ''));
 }
 
 function isDragDisabledOnFirstRow(fixture: ComponentFixture<ExpensesTableComponent>): boolean {
@@ -51,7 +51,7 @@ function isDragDisabledOnFirstRow(fixture: ComponentFixture<ExpensesTableCompone
 }
 
 function bodyRowCheckboxes(fixture: ComponentFixture<ExpensesTableComponent>): MatCheckbox[] {
-  return fixture.debugElement.queryAll(By.css('td.mat-column-select mat-checkbox')).map((de) => de.componentInstance as MatCheckbox);
+  return fixture.debugElement.queryAll(By.css('td.mat-column-select mat-checkbox')).map(de => de.componentInstance as MatCheckbox);
 }
 
 describe('ExpensesTableComponent', () => {
@@ -60,7 +60,7 @@ describe('ExpensesTableComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [ExpensesTableComponent]
+      imports: [ExpensesTableComponent],
     }).compileComponents();
 
     fixture = TestBed.createComponent(ExpensesTableComponent);
@@ -79,7 +79,7 @@ describe('ExpensesTableComponent', () => {
     fixture.componentRef.setInput('dataSource', [queued, { ...fullRow(), enqueuedAt: 123 }, fullRow(), aggregateRow()]);
     fixture.detectChanges();
     const rows = fixture.debugElement.queryAll(By.css('tr[mat-row]'));
-    expect(rows.map((row) => row.nativeElement.classList.contains('queued-row'))).toEqual([true, true, false, false]);
+    expect(rows.map(row => row.nativeElement.classList.contains('queued-row'))).toEqual([true, true, false, false]);
     const icons = fixture.nativeElement.querySelectorAll('.queued-icon');
     expect(icons).toHaveLength(2);
     for (const icon of icons) {
@@ -91,7 +91,8 @@ describe('ExpensesTableComponent', () => {
     const deleted = vi.fn();
     component.deleteRow.subscribe(deleted);
     rows[0].triggerEventHandler('cdkDragEnded', {
-      distance: { x: 150, y: 0 }, source: { data: queued, setFreeDragPosition: vi.fn(), reset: vi.fn() }
+      distance: { x: 150, y: 0 },
+      source: { data: queued, setFreeDragPosition: vi.fn(), reset: vi.fn() },
     });
     expect(deleted).toHaveBeenCalledExactlyOnceWith(queued);
   });
@@ -141,7 +142,7 @@ describe('ExpensesTableComponent', () => {
       expect(rowEls.length).toBe(2);
 
       const categoryCells = fixture.debugElement.queryAll(By.css('td.mat-column-category'));
-      expect(categoryCells.map((de) => (de.nativeElement as HTMLElement).textContent?.trim())).toEqual(['Rent', 'Groceries']);
+      expect(categoryCells.map(de => (de.nativeElement as HTMLElement).textContent?.trim())).toEqual(['Rent', 'Groceries']);
     });
 
     it('should_render_no_body_rows_when_dataSource_is_empty', () => {
@@ -210,7 +211,7 @@ describe('ExpensesTableComponent', () => {
       fixture.detectChanges();
 
       const checkboxes = bodyRowCheckboxes(fixture);
-      expect(checkboxes.every((cb) => !cb.checked)).toBe(true);
+      expect(checkboxes.every(cb => !cb.checked)).toBe(true);
     });
   });
 
@@ -222,12 +223,12 @@ describe('ExpensesTableComponent', () => {
       fixture.detectChanges();
 
       let deleted: Expense | undefined;
-      component.deleteRow.subscribe((r) => (deleted = r));
+      component.deleteRow.subscribe(r => (deleted = r));
 
       const rowDe = fixture.debugElement.query(By.css('tr[mat-row]'));
       const fakeDragEnd = {
         distance: { x: 150, y: 0 },
-        source: { data: row, setFreeDragPosition: vi.fn(), reset: vi.fn() }
+        source: { data: row, setFreeDragPosition: vi.fn(), reset: vi.fn() },
       } as unknown as CdkDragEnd<Expense>;
       rowDe.triggerEventHandler('cdkDragEnded', fakeDragEnd);
 
@@ -245,7 +246,7 @@ describe('ExpensesTableComponent', () => {
       const rowDe = fixture.debugElement.query(By.css('tr[mat-row]'));
       const fakeDragEnd = {
         distance: { x: 10, y: 0 },
-        source: { data: row, setFreeDragPosition: vi.fn(), reset: vi.fn() }
+        source: { data: row, setFreeDragPosition: vi.fn(), reset: vi.fn() },
       } as unknown as CdkDragEnd<Expense>;
       rowDe.triggerEventHandler('cdkDragEnded', fakeDragEnd);
 
@@ -261,7 +262,7 @@ describe('ExpensesTableComponent', () => {
       fixture.detectChanges();
 
       let payload: { field: keyof Expense; cellData: unknown; rowData: Expense } | undefined;
-      component.cellClick.subscribe((p) => (payload = p));
+      component.cellClick.subscribe(p => (payload = p));
 
       const categoryCell = fixture.debugElement.query(By.css('td.mat-column-category'));
       categoryCell.triggerEventHandler('click', null);
@@ -279,7 +280,7 @@ describe('ExpensesTableComponent', () => {
       fixture.detectChanges();
 
       const emitted: Array<ReadonlyArray<Expense>> = [];
-      component.selectionChange.subscribe((value) => emitted.push(value));
+      component.selectionChange.subscribe(value => emitted.push(value));
 
       const rowCheckbox = fixture.debugElement.query(By.css('td.mat-column-select mat-checkbox'));
       rowCheckbox.triggerEventHandler('change', null);

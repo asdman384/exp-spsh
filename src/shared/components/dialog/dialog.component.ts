@@ -1,13 +1,7 @@
 import { Component, Inject } from '@angular/core';
 
 import { MatButtonModule } from '@angular/material/button';
-import {
-  MAT_DIALOG_DATA,
-  MatDialogActions,
-  MatDialogContent,
-  MatDialogRef,
-  MatDialogTitle
-} from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialogActions, MatDialogContent, MatDialogRef, MatDialogTitle } from '@angular/material/dialog';
 
 interface ExpDialogData {
   title?: string;
@@ -15,10 +9,10 @@ interface ExpDialogData {
 }
 
 @Component({
-    selector: 'exp-dialog',
-    imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
-    templateUrl: './dialog.component.html',
-    styleUrl: './dialog.component.scss'
+  selector: 'exp-dialog',
+  imports: [MatButtonModule, MatDialogTitle, MatDialogContent, MatDialogActions],
+  templateUrl: './dialog.component.html',
+  styleUrl: './dialog.component.scss',
 })
 export class ExpDialogComponent {
   title = this.data?.title;
@@ -26,7 +20,7 @@ export class ExpDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<ExpDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) private readonly data: ExpDialogData
+    @Inject(MAT_DIALOG_DATA) private readonly data: ExpDialogData,
   ) {}
 
   onOK() {

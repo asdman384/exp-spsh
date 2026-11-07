@@ -44,7 +44,7 @@ export class ExpenseRecognitionService {
       const ai = await this.getClient();
       const contents: Content = {
         role: 'user',
-        parts: [{ inlineData: { data: await toBase64(recording.blob), mimeType: baseMimeType(recording.mimeType) } }]
+        parts: [{ inlineData: { data: await toBase64(recording.blob), mimeType: baseMimeType(recording.mimeType) } }],
       };
       const response = await ai.models.generateContent({
         model: GEMINI_MODEL,
@@ -53,8 +53,8 @@ export class ExpenseRecognitionService {
           systemInstruction: systemPrompt(categories, now),
           temperature: 0,
           responseMimeType: 'application/json',
-          responseJsonSchema: responseSchema(categories)
-        }
+          responseJsonSchema: responseSchema(categories),
+        },
       });
 
       const text = response.text;
@@ -65,7 +65,7 @@ export class ExpenseRecognitionService {
       if (!Array.isArray(parsed.expenses)) {
         throw new Error('Gemini reply has no "expenses" array');
       }
-      const result = (parsed.expenses as Array<RecognizedExpense>).flatMap((item) => toExpense(item, categories, now));
+      const result = (parsed.expenses as Array<RecognizedExpense>).flatMap(item => toExpense(item, categories, now));
 
       if (!result.length) {
         throw new Error(`Gemini returned no valid expenses: ${text})`);
@@ -85,7 +85,7 @@ function systemPrompt(categories: ReadonlyArray<string>, now: Date): string {
   return [
     'You extract expenses from a short voice note, usually in Russian, Ukrainian, Polish or English.',
     `Today is ${isoDate(now)}.`,
-    `Allowed categories: ${categories.map((c) => JSON.stringify(c)).join(', ')}.`,
+    `Allowed categories: ${categories.map(c => JSON.stringify(c)).join(', ')}.`,
     'Rules:',
     '- Return one item per expense. Map each spoken category to the closest allowed category.',
     '- "amount" is a positive number; ignore the currency word (zloty, zł, PLN, грн, etc.).',
@@ -99,7 +99,7 @@ function systemPrompt(categories: ReadonlyArray<string>, now: Date): string {
     '- "date" is YYYY-MM-DD only when the speaker names a day ("вчера", "в понедельник"), otherwise null.',
     '- "isInDebt" is true only when the speaker says it was bought on credit or is owed ("в долг").',
     '- "comment" holds any extra detail that is not the amount, category or date, otherwise null.',
-    '- If the note describes no expense, return an empty "expenses" array.'
+    '- If the note describes no expense, return an empty "expenses" array.',
   ].join('\n');
 }
 
@@ -117,15 +117,15 @@ function responseSchema(categories: ReadonlyArray<string>): object {
             category: categories.length ? { type: 'string', enum: [...categories] } : { type: 'string' },
             comment: { type: ['string', 'null'] },
             date: { type: ['string', 'null'], format: 'date' },
-            isInDebt: { type: 'boolean' }
+            isInDebt: { type: 'boolean' },
           },
           required: ['amount', 'category', 'comment', 'date', 'isInDebt'],
-          additionalProperties: false
-        }
-      }
+          additionalProperties: false,
+        },
+      },
     },
     required: ['expenses'],
-    additionalProperties: false
+    additionalProperties: false,
   };
 }
 

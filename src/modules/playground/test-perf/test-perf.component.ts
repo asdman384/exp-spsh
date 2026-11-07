@@ -12,10 +12,7 @@ export class TestPerfComponent {
   testInput = input.required<string>();
 
   constructor() {
-    this.items = Array.from({ length: 1_000_000 }, () =>
-      Math.floor(Math.random() * 100_000)
-    )
+    this.items = Array.from({ length: 1_000_000 }, () => Math.floor(Math.random() * 100_000));
     this.items.sort((a, b) => a - b);
   }
-
 }

@@ -15,11 +15,14 @@ describe('StatisticsDataService', () => {
     const response = new Subject<Expense[]>();
     const nextResponse = new Subject<Expense[]>();
     const loadExpenses = vi.fn().mockReturnValueOnce(response).mockReturnValue(nextResponse);
-    TestBed.configureTestingModule({ providers: [
-      StatisticsDataService, provideMockStore(),
-      { provide: SpreadsheetService, useValue: { loadExpenses } },
-      { provide: NetworkStatusService, useValue: { online$ } }
-    ] });
+    TestBed.configureTestingModule({
+      providers: [
+        StatisticsDataService,
+        provideMockStore(),
+        { provide: SpreadsheetService, useValue: { loadExpenses } },
+        { provide: NetworkStatusService, useValue: { online$ } },
+      ],
+    });
     const dispatch = vi.spyOn(TestBed.inject(Store), 'dispatch');
     const service = TestBed.inject(StatisticsDataService);
     service.load(1, 2026, 0);
@@ -43,15 +46,20 @@ describe('StatisticsDataService', () => {
       requests.push(result);
       return result;
     });
-    TestBed.configureTestingModule({ providers: [
-      StatisticsDataService, provideMockStore(),
-      { provide: SpreadsheetService, useValue: { loadExpenses } },
-      { provide: NetworkStatusService, useValue: { online$: new BehaviorSubject(true) } }
-    ] });
+    TestBed.configureTestingModule({
+      providers: [
+        StatisticsDataService,
+        provideMockStore(),
+        { provide: SpreadsheetService, useValue: { loadExpenses } },
+        { provide: NetworkStatusService, useValue: { online$: new BehaviorSubject(true) } },
+      ],
+    });
     const service = TestBed.inject(StatisticsDataService);
     service.load(1, 2026, 0);
     expect(loadExpenses).toHaveBeenLastCalledWith({
-      sheetId: 1, from: new Date(2025, 11, 1), to: new Date(2026, 1, 1)
+      sheetId: 1,
+      from: new Date(2025, 11, 1),
+      to: new Date(2026, 1, 1),
     });
     service.load(2, 2026, 1);
     requests[0].next([{ category: 'Old', date: new Date(2026, 0, 1), amount: 50 }]);

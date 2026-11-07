@@ -26,12 +26,18 @@ function makeRecord(overrides: Partial<OutboxRecord> = {}): OutboxRecord {
     spreadsheetId: 'spsh-1',
     payload: {
       sheetId: 3,
-      expense: { date: new Date(2024, 5, 1, 10, 0, 0), amount: 12.5, category: 'Food', comment: 'lunch', isInDebt: false }
+      expense: {
+        date: new Date(2024, 5, 1, 10, 0, 0),
+        amount: 12.5,
+        category: 'Food',
+        comment: 'lunch',
+        isInDebt: false,
+      },
     },
     enqueuedAt: 1000,
     status: 'pending',
     attempts: 0,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -69,7 +75,7 @@ describe('[AC10] IndexedDbOutboxStorage against real IndexedDB', () => {
     const date = new Date(2024, 5, 1, 10, 0, 0);
     const record = makeRecord({
       localId: 'date-record',
-      payload: { sheetId: 1, expense: { date, amount: 1, category: 'Food', comment: '', isInDebt: false } }
+      payload: { sheetId: 1, expense: { date, amount: 1, category: 'Food', comment: '', isInDebt: false } },
     });
 
     await firstValueFrom(storage.add(record));
@@ -128,7 +134,7 @@ describe('[AC10] IndexedDbOutboxStorage against real IndexedDB', () => {
     const second = new IndexedDbOutboxStorage();
     const all = await firstValueFrom(second.getAll());
 
-    expect(all.map((r) => r.localId)).toContain('cross-instance');
+    expect(all.map(r => r.localId)).toContain('cross-instance');
   });
 });
 
@@ -163,37 +169,42 @@ describe('[AC7] IndexedDbOutboxStorage transaction-abort durability (R-2)', () =
   // erasing to `any`.
   function abortTransactionAfterAddSucceeds(): () => void {
     const original = IDBObjectStore.prototype.add;
-    const spy = vi
-      .spyOn(IDBObjectStore.prototype, 'add')
-      .mockImplementation(function (this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
-        const request = original.call(this, value, key);
-        request.addEventListener('success', () => request.transaction?.abort());
-        return request;
-      });
+    const spy = vi.spyOn(IDBObjectStore.prototype, 'add').mockImplementation(function (
+      this: IDBObjectStore,
+      value: unknown,
+      key?: IDBValidKey,
+    ) {
+      const request = original.call(this, value, key);
+      request.addEventListener('success', () => request.transaction?.abort());
+      return request;
+    });
     return () => spy.mockRestore();
   }
 
   function abortTransactionAfterPutSucceeds(): () => void {
     const original = IDBObjectStore.prototype.put;
-    const spy = vi
-      .spyOn(IDBObjectStore.prototype, 'put')
-      .mockImplementation(function (this: IDBObjectStore, value: unknown, key?: IDBValidKey) {
-        const request = original.call(this, value, key);
-        request.addEventListener('success', () => request.transaction?.abort());
-        return request;
-      });
+    const spy = vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
+      this: IDBObjectStore,
+      value: unknown,
+      key?: IDBValidKey,
+    ) {
+      const request = original.call(this, value, key);
+      request.addEventListener('success', () => request.transaction?.abort());
+      return request;
+    });
     return () => spy.mockRestore();
   }
 
   function abortTransactionAfterDeleteSucceeds(): () => void {
     const original = IDBObjectStore.prototype.delete;
-    const spy = vi
-      .spyOn(IDBObjectStore.prototype, 'delete')
-      .mockImplementation(function (this: IDBObjectStore, query: IDBValidKey | IDBKeyRange) {
-        const request = original.call(this, query);
-        request.addEventListener('success', () => request.transaction?.abort());
-        return request;
-      });
+    const spy = vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(function (
+      this: IDBObjectStore,
+      query: IDBValidKey | IDBKeyRange,
+    ) {
+      const request = original.call(this, query);
+      request.addEventListener('success', () => request.transaction?.abort());
+      return request;
+    });
     return () => spy.mockRestore();
   }
 
@@ -209,7 +220,7 @@ describe('[AC7] IndexedDbOutboxStorage transaction-abort durability (R-2)', () =
 
     const fresh = new IndexedDbOutboxStorage();
     const all = await firstValueFrom(fresh.getAll());
-    expect(all.map((r) => r.localId)).not.toContain('abort-add');
+    expect(all.map(r => r.localId)).not.toContain('abort-add');
   });
 
   it('should_error_and_leave_the_prior_status_when_the_updateStatus_transaction_aborts_after_its_put_succeeds', async () => {
@@ -218,16 +229,14 @@ describe('[AC7] IndexedDbOutboxStorage transaction-abort durability (R-2)', () =
 
     const restore = abortTransactionAfterPutSucceeds();
     try {
-      await expect(
-        firstValueFrom(storage.updateStatus('abort-update', { status: 'failed', failure: 'rejected' }))
-      ).rejects.toBeDefined();
+      await expect(firstValueFrom(storage.updateStatus('abort-update', { status: 'failed', failure: 'rejected' }))).rejects.toBeDefined();
     } finally {
       restore();
     }
 
     const fresh = new IndexedDbOutboxStorage();
     const all = await firstValueFrom(fresh.getAll());
-    const persisted = all.find((r) => r.localId === 'abort-update');
+    const persisted = all.find(r => r.localId === 'abort-update');
     expect(persisted?.status).toBe('pending');
     expect(persisted?.failure).toBeUndefined();
   });
@@ -245,7 +254,7 @@ describe('[AC7] IndexedDbOutboxStorage transaction-abort durability (R-2)', () =
 
     const fresh = new IndexedDbOutboxStorage();
     const all = await firstValueFrom(fresh.getAll());
-    expect(all.map((r) => r.localId)).toContain('abort-remove');
+    expect(all.map(r => r.localId)).toContain('abort-remove');
   });
 });
 
@@ -279,9 +288,9 @@ describe('[AC7] IndexedDbOutboxStorage rejects rather than hangs on a transactio
         () => {
           throw new Error('expected the Observable to reject, but it resolved');
         },
-        (e: unknown) => e
+        (e: unknown) => e,
       ),
-      new Promise<typeof HANG>((resolve) => setTimeout(() => resolve(HANG), budgetMs))
+      new Promise<typeof HANG>(resolve => setTimeout(() => resolve(HANG), budgetMs)),
     ]);
     // A hang means `outcome === HANG`: the race's non-sentinel branch never won because nothing --
     // not `next`, not `error`, not `complete` -- ever reached the subscriber. Against the pre-fix
@@ -420,9 +429,9 @@ describe('[AC7] IndexedDbOutboxStorage reopens after the browser force-closes th
       const outcome = await Promise.race([
         firstValueFrom(storage.add(makeRecord({ localId: 'after-close' }))).then(
           () => 'resolved' as const,
-          (e: unknown) => e
+          (e: unknown) => e,
         ),
-        new Promise<typeof HANG>((resolve) => setTimeout(() => resolve(HANG), 1500))
+        new Promise<typeof HANG>(resolve => setTimeout(() => resolve(HANG), 1500)),
       ]);
       // Against the pre-fix code (no `onclose` handler, no try/catch) this hangs: `dbPromise`
       // still holds the closed connection, `db.transaction(...)` throws `InvalidStateError`
@@ -434,12 +443,12 @@ describe('[AC7] IndexedDbOutboxStorage reopens after the browser force-closes th
     }
 
     const all = await firstValueFrom(storage.getAll());
-    expect(all.map((r) => r.localId).sort()).toEqual(['after-close', 'before-close']);
+    expect(all.map(r => r.localId).sort()).toEqual(['after-close', 'before-close']);
 
     // Durable beyond this instance's own cache, from a fresh connection.
     const fresh = new IndexedDbOutboxStorage();
     const allFresh = await firstValueFrom(fresh.getAll());
-    expect(allFresh.map((r) => r.localId)).toContain('after-close');
+    expect(allFresh.map(r => r.localId)).toContain('after-close');
   });
 
   it('should_not_discard_a_newer_cached_connection_when_a_stale_connections_close_event_fires_late', async () => {
@@ -463,6 +472,6 @@ describe('[AC7] IndexedDbOutboxStorage reopens after the browser force-closes th
     expect(internal.dbPromise).toBe(newerDbPromise); // unaffected by the stale connection's event
 
     const all = await firstValueFrom(storage.getAll());
-    expect(all.map((r) => r.localId)).toContain('gen-b');
+    expect(all.map(r => r.localId)).toContain('gen-b');
   });
 });

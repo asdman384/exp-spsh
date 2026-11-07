@@ -9,7 +9,7 @@ import { Category, Sheet } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { AppState } from './app.model';
 
-export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ selectId: (e) => e.title });
+export const sheetsAdapter: EntityAdapter<Sheet> = createEntityAdapter<Sheet>({ selectId: e => e.title });
 
 export const initialState: AppState = {
   loading: false,
@@ -19,7 +19,7 @@ export const initialState: AppState = {
   dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }),
   categoriesSheetId: LocalStorageService.get<number>(CATEGORIES_SHEET_ID) ?? undefined,
   categories: LocalStorageService.get<Array<Category>>(CATEGORIES) ?? [],
-  lastError: null
+  lastError: null,
 };
 
 // INIT DATA SHEETS
@@ -36,19 +36,19 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
     on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
     on(AppActions.upsertDataSheet, (state, { dataSheet }) => ({
       ...state,
-      dataSheets: sheetsAdapter.upsertOne(dataSheet, state.dataSheets)
+      dataSheets: sheetsAdapter.upsertOne(dataSheet, state.dataSheets),
     })),
     on(AppActions.setCurrentSheet, (state, { sheet }) => ({
       ...state,
-      dataSheets: { ...state.dataSheets, selectedSheetId: typeof sheet === 'string' ? sheet : sheet.title }
+      dataSheets: { ...state.dataSheets, selectedSheetId: typeof sheet === 'string' ? sheet : sheet.title },
     })),
     on(AppActions.categoriesSheetId, (state, { categoriesSheetId }) => ({ ...state, categoriesSheetId })),
     on(AppActions.storeCategories, (state, { categories }) => ({ ...state, categories })),
     on(AppActions.operationFailed, (state, { source, message }) => ({
       ...state,
-      lastError: { id: (state.lastError?.id ?? 0) + 1, source, message }
-    }))
-  )
+      lastError: { id: (state.lastError?.id ?? 0) + 1, source, message },
+    })),
+  ),
 };
 
 export const metaReducers: MetaReducer<{ app: AppState }>[] = isDevMode() ? [] : [];

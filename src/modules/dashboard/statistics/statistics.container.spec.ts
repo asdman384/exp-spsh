@@ -15,7 +15,7 @@ import { StatisticsDataService } from './statistics-data.service';
 // write via a zero-delay `setTimeout`; this waits out that macrotask, mirroring the pattern in
 // `expenses-table.component.spec.ts`.
 function flushMacrotasks(): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve));
+  return new Promise(resolve => setTimeout(resolve));
 }
 
 const TEST_SHEET: Sheet = { id: 1, title: 'sheet_2024' };
@@ -25,18 +25,30 @@ describe('StatisticsContainer', () => {
   let fixture: ComponentFixture<StatisticsContainer>;
   let viewTransitionSpy: ReturnType<typeof vi.spyOn>;
   const monthState = signal<{ status: 'ready'; current: Expense[]; previous: Expense[] }>({
-    status: 'ready', current: [], previous: []
+    status: 'ready',
+    current: [],
+    previous: [],
   });
 
   beforeEach(async () => {
     monthState.set({ status: 'ready', current: [], previous: [] });
     await TestBed.configureTestingModule({
       imports: [FormsModule, StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })],
-    }).overrideComponent(StatisticsContainer, {
-      set: { providers: [{ provide: StatisticsDataService, useValue: {
-        state: monthState, load: vi.fn()
-      } }] }
-    }).compileComponents();
+    })
+      .overrideComponent(StatisticsContainer, {
+        set: {
+          providers: [
+            {
+              provide: StatisticsDataService,
+              useValue: {
+                state: monthState,
+                load: vi.fn(),
+              },
+            },
+          ],
+        },
+      })
+      .compileComponents();
 
     // The container's constructor synchronously reads `sheetsSelector`/`currentSheetSelector` and
     // indexes into `sheets` (`formChanged`, `statistics.container.ts:64,83`); an empty/unselected
@@ -52,7 +64,7 @@ describe('StatisticsContainer', () => {
     // document; the tests below that construct a second `StatisticsContainer` in the same test
     // would otherwise make the browser abort the first transition, surfacing as an unhandled
     // `AbortError` unrelated to anything under test here. Replace it with a synchronous stand-in.
-    viewTransitionSpy = vi.spyOn(document, 'startViewTransition').mockImplementation((callbackOptions) => {
+    viewTransitionSpy = vi.spyOn(document, 'startViewTransition').mockImplementation(callbackOptions => {
       if (typeof callbackOptions === 'function') {
         callbackOptions();
       }
@@ -62,7 +74,7 @@ describe('StatisticsContainer', () => {
         finished: done,
         updateCallbackDone: done,
         skipTransition: () => undefined,
-        types: new Set()
+        types: new Set(),
       };
     });
 
@@ -80,16 +92,20 @@ describe('StatisticsContainer', () => {
   });
 
   it('shows shares and deltas, and includes debt rows in category statistics', async () => {
-    monthState.set({ status: 'ready', current: [
-      { category: 'Food', amount: 70, comment: 'Spending', date: new Date(2026, 0, 2) },
-      { category: 'Travel', amount: 30 },
-      { category: 'Food', amount: 200, isInDebt: true, comment: 'Loan', date: new Date(2026, 0, 3) }
-    ], previous: [{ category: 'Food', amount: 50 }] });
+    monthState.set({
+      status: 'ready',
+      current: [
+        { category: 'Food', amount: 70, comment: 'Spending', date: new Date(2026, 0, 2) },
+        { category: 'Travel', amount: 30 },
+        { category: 'Food', amount: 200, isInDebt: true, comment: 'Loan', date: new Date(2026, 0, 3) },
+      ],
+      previous: [{ category: 'Food', amount: 50 }],
+    });
     fixture.detectChanges();
     await fixture.whenStable();
     const root: HTMLElement = fixture.nativeElement;
     const tables = root.querySelectorAll('expenses-table');
-    expect(tables[0].textContent).toContain('90% of spending');
+    expect(Array.from(tables[0].querySelectorAll('.share'), share => share.textContent?.trim())).toEqual(['90%', '10%']);
     expect(tables[0].textContent).toContain('+220');
     expect(root.querySelector('.statistics-summary')?.textContent).toContain('Spending ·');
     expect(root.textContent).toContain('Debt · 200');
@@ -175,7 +191,7 @@ describe('StatisticsContainer', () => {
         bottom: 0,
         x: 0,
         y: 0,
-        toJSON: () => ({})
+        toJSON: () => ({}),
       } as DOMRect);
 
       try {

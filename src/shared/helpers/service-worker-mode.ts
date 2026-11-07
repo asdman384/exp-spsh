@@ -29,13 +29,13 @@ export async function removeServiceWorker(baseUri: string = document.baseURI): P
   }
   const scope = new URL(baseUri).href;
   const registrations = await navigator.serviceWorker.getRegistrations();
-  const ours = registrations.filter((registration) => registration.scope === scope);
-  await Promise.all(ours.map((registration) => registration.unregister()));
+  const ours = registrations.filter(registration => registration.scope === scope);
+  await Promise.all(ours.map(registration => registration.unregister()));
 
   if ('caches' in globalThis) {
     const prefix = `ngsw:${new URL(baseUri).pathname}`;
     const keys = await caches.keys();
-    await Promise.all(keys.filter((key) => key.startsWith(prefix)).map((key) => caches.delete(key)));
+    await Promise.all(keys.filter(key => key.startsWith(prefix)).map(key => caches.delete(key)));
   }
 
   return ours.length > 0 && !!navigator.serviceWorker.controller;

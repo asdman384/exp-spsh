@@ -9,12 +9,12 @@ export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    component: DashboardPageContainer
+    component: DashboardPageContainer,
   },
   {
     path: ROUTE.categories,
     canActivate: [isLoggedIn, isOnline],
-    component: CategoriesPageContainer
+    component: CategoriesPageContainer,
   },
   {
     path: ROUTE.stats,
@@ -23,8 +23,8 @@ export const routes: Routes = [
       (component: StatisticsContainer) => {
         component.tableAnimation('none');
         return true;
-      }
+      },
     ],
-    component: StatisticsContainer
-  }
+    component: StatisticsContainer,
+  },
 ];

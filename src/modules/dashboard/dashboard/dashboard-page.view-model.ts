@@ -15,7 +15,7 @@ import {
   tap,
   throwError,
   timer,
-  withLatestFrom
+  withLatestFrom,
 } from 'rxjs';
 
 import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector, spreadsheetIdSelector } from 'src/@state';
@@ -61,21 +61,19 @@ export class DashboardPageViewModel {
     const spreadsheetId = this.spreadsheetId();
     const sheet = this.expenseModel().sheet;
     if (!spreadsheetId || !sheet) return [];
-    return this.outbox.records().filter((record) =>
-      record.spreadsheetId === spreadsheetId && record.payload.sheetId === sheet.id
-    );
+    return this.outbox.records().filter(record => record.spreadsheetId === spreadsheetId && record.payload.sheetId === sheet.id);
   });
   private readonly combinedRows = computed<ExpenseTableRow[]>(() => [
-    ...this.queuedRecords().map((record) => ({ ...record.payload.expense, enqueuedAt: record.enqueuedAt })).reverse(),
-    ...this.expensesService.expenses()
+    ...this.queuedRecords()
+      .map(record => ({ ...record.payload.expense, enqueuedAt: record.enqueuedAt }))
+      .reverse(),
+    ...this.expensesService.expenses(),
   ]);
   readonly expenses = computed(() => {
     const date = this.expenseModel().date;
     const from = new Date(date.getFullYear(), date.getMonth(), date.getDate());
     const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    return this.combinedRows().filter((expense) =>
-      expense.date && expense.date >= from && expense.date < to
-    );
+    return this.combinedRows().filter(expense => expense.date && expense.date >= from && expense.date < to);
   });
   private readonly recorder = inject(VoiceRecorderService);
   private readonly recognition = inject(ExpenseRecognitionService);
@@ -87,7 +85,7 @@ export class DashboardPageViewModel {
     if (!sheet) return { placeholder: 'Select a person to view totals', totals: null };
     const from = new Date(date.getFullYear(), date.getMonth(), 1);
     const to = new Date(date.getFullYear(), date.getMonth(), date.getDate() + 1);
-    const monthly = this.combinedRows().filter((row) => row.date && row.date >= from && row.date < to);
+    const monthly = this.combinedRows().filter(row => row.date && row.date >= from && row.date < to);
     return {
       placeholder: '',
       totals: {
@@ -95,8 +93,11 @@ export class DashboardPageViewModel {
         monthLabel: date.toLocaleString('en-US', { month: 'long' }),
         daily: formatTotal(this.expenses(), 2),
         monthly: formatTotal(monthly, 2),
-        debt: formatTotal(monthly.filter((row) => row.isInDebt), 0)
-      }
+        debt: formatTotal(
+          monthly.filter(row => row.isInDebt),
+          0,
+        ),
+      },
     };
   });
 
@@ -105,24 +106,26 @@ export class DashboardPageViewModel {
       .select(currentSheetSelector)
       .pipe(
         first(),
-        tap((sheet) => {
-          this.expenseModel.update((model) => ({ ...model, sheet: sheet ?? null }));
+        tap(sheet => {
+          this.expenseModel.update(model => ({ ...model, sheet: sheet ?? null }));
           if (sheet) {
             this.expensesService.load({ sheetId: sheet.id, to: this.expenseModel().date });
           }
-        })
+        }),
       )
       .subscribe();
 
-    fromEvent(this.document, 'visibilitychange').pipe(
-      filter(() => this.document.visibilityState === 'visible'),
-      takeUntilDestroyed()
-    ).subscribe(() => {
-      if (this.expenseModel().date.toDateString() !== new Date().toDateString()) {
-        const now = new Date();
-        this.updateDate(now);
-      }
-    });
+    fromEvent(this.document, 'visibilitychange')
+      .pipe(
+        filter(() => this.document.visibilityState === 'visible'),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => {
+        if (this.expenseModel().date.toDateString() !== new Date().toDateString()) {
+          const now = new Date();
+          this.updateDate(now);
+        }
+      });
     this.recognizeExpenses();
   }
 
@@ -139,7 +142,7 @@ export class DashboardPageViewModel {
 
   changeSheet(sheet: Sheet): void {
     log('DashboardPageContainer::onSheetChange', sheet);
-    this.expenseModel.update((model) => ({ ...model, sheet }));
+    this.expenseModel.update(model => ({ ...model, sheet }));
     this.expensesService.load({ sheetId: sheet.id, to: this.expenseModel().date });
   }
 
@@ -150,9 +153,8 @@ export class DashboardPageViewModel {
     this.updateDate(currentTime);
   }
 
-
   private updateDate(date: Date): void {
-    this.expenseModel.update((model) => ({ ...model, date }));
+    this.expenseModel.update(model => ({ ...model, date }));
     const sheet = this.expenseModel().sheet;
     if (sheet) this.expensesService.load({ sheetId: sheet.id, to: date });
   }
@@ -162,7 +164,7 @@ export class DashboardPageViewModel {
   }
 
   clearComment(): void {
-    this.expenseModel.update((model) => ({ ...model, comment: '' }));
+    this.expenseModel.update(model => ({ ...model, comment: '' }));
   }
 
   deleteExpense(expense: ExpenseTableRow): void {
@@ -172,8 +174,8 @@ export class DashboardPageViewModel {
     }
 
     if (expense.enqueuedAt !== undefined) {
-      const record = this.queuedRecords().find((record) =>
-        record.enqueuedAt === expense.enqueuedAt && isQueuedExpenseEqual(record.payload.expense, expense)
+      const record = this.queuedRecords().find(
+        record => record.enqueuedAt === expense.enqueuedAt && isQueuedExpenseEqual(record.payload.expense, expense),
       );
       if (record) this.outbox.discard(record.localId);
       return;
@@ -191,35 +193,40 @@ export class DashboardPageViewModel {
         withLatestFrom(this.categories$),
         switchMap(([recording, categories]) => {
           this.store.dispatch(AppActions.loading({ loading: true }));
-          return this.recognition.recognize(recording, categories.map((c) => c.name), new Date()).pipe(
-            retry({
-              count: RECOGNITION_MAX_RETRIES,
-              delay: (error, retryCount) => {
-                if (!isRetryableRecognitionError(error)) {
-                  return throwError(() => error);
-                }
-                log(`DashboardPageContainer::recognize retry ${retryCount}/${RECOGNITION_MAX_RETRIES}`, error);
+          return this.recognition
+            .recognize(
+              recording,
+              categories.map(c => c.name),
+              new Date(),
+            )
+            .pipe(
+              retry({
+                count: RECOGNITION_MAX_RETRIES,
+                delay: (error, retryCount) => {
+                  if (!isRetryableRecognitionError(error)) {
+                    return throwError(() => error);
+                  }
+                  log(`DashboardPageContainer::recognize retry ${retryCount}/${RECOGNITION_MAX_RETRIES}`, error);
 
-                return timer(RECOGNITION_RETRY_DELAY_MS * retryCount);
-              }
-            }),
-            catchError((error) => {
-              log('DashboardPageContainer::recognize failed', error);
-              this.store.dispatch(AppActions.operationFailed({ source: 'Gemini', message: error }));
+                  return timer(RECOGNITION_RETRY_DELAY_MS * retryCount);
+                },
+              }),
+              catchError(error => {
+                log('DashboardPageContainer::recognize failed', error);
+                this.store.dispatch(AppActions.operationFailed({ source: 'Gemini', message: error }));
 
-              return EMPTY;
-            }),
-            finalize(() => this.store.dispatch(AppActions.loading({ loading: false })))
-          )
-        }
-        ),
-        takeUntilDestroyed()
+                return EMPTY;
+              }),
+              finalize(() => this.store.dispatch(AppActions.loading({ loading: false }))),
+            );
+        }),
+        takeUntilDestroyed(),
       )
-      .subscribe((expenses) => {
+      .subscribe(expenses => {
         log('DashboardPageContainer::recognized expenses', JSON.stringify(expenses, null, 2));
         console.log('Recognized expenses:', expenses);
         const sheet = this.expenseModel().sheet;
-        expenses.forEach((expense) => this.expensesService.add(sheet!.id, expense));
+        expenses.forEach(expense => this.expensesService.add(sheet!.id, expense));
       });
   }
 
@@ -230,7 +237,7 @@ export class DashboardPageViewModel {
       amount: null,
       category: null,
       comment: '',
-      isInDebt: false
+      isInDebt: false,
     };
   }
 }
@@ -238,13 +245,21 @@ export class DashboardPageViewModel {
 function formatTotal(rows: Expense[], minimumFractionDigits: number): string {
   const total = rows.reduce((sum, row) => sum + (typeof row.amount === 'number' && Number.isFinite(row.amount) ? row.amount : 0), 0);
   if (!Number.isFinite(total)) return 'Unavailable';
-  const formatted = total.toLocaleString('en-US', { useGrouping: false, minimumFractionDigits, maximumFractionDigits: 2 });
+  const formatted = total.toLocaleString('en-US', {
+    useGrouping: false,
+    minimumFractionDigits,
+    maximumFractionDigits: 2,
+  });
   return Number(formatted) === 0 ? formatted.replace('-', '') : formatted;
 }
 
 /** Queue identity uses the full timestamp; saved-row identity uses calendar dates. */
 function isQueuedExpenseEqual(a: Expense, b: Expense): boolean {
-  return a.date?.getTime() === b.date?.getTime()
-    && a.amount === b.amount && a.category === b.category
-    && a.comment === b.comment && a.isInDebt === b.isInDebt;
+  return (
+    a.date?.getTime() === b.date?.getTime() &&
+    a.amount === b.amount &&
+    a.category === b.category &&
+    a.comment === b.comment &&
+    a.isInDebt === b.isInDebt
+  );
 }

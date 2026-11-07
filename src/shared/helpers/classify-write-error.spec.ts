@@ -44,12 +44,12 @@ describe('[AC12] classifyWriteError', () => {
     expect(classifyWriteError(e)).toBe('auth');
   });
 
-  it.each([408, 429, 500, 503])('should_classify_status_%i_on_a_sheets_url_as_retryable', (status) => {
+  it.each([408, 429, 500, 503])('should_classify_status_%i_on_a_sheets_url_as_retryable', status => {
     const e = new HttpErrorResponse({ status, url: SHEETS_URL });
     expect(classifyWriteError(e)).toBe('retryable');
   });
 
-  it.each([400, 403, 404])('should_classify_status_%i_on_a_sheets_url_as_terminal', (status) => {
+  it.each([400, 403, 404])('should_classify_status_%i_on_a_sheets_url_as_terminal', status => {
     const e = new HttpErrorResponse({ status, url: SHEETS_URL });
     expect(classifyWriteError(e)).toBe('terminal');
   });

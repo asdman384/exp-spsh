@@ -28,17 +28,17 @@ export class IndexedDbOutboxStorage implements OutboxStorage {
   }
 
   getAll(): Observable<Array<OutboxRecord>> {
-    return this.withStore('readonly', (store) => requestToPromise<Array<OutboxRecord>>(store.getAll()));
+    return this.withStore('readonly', store => requestToPromise<Array<OutboxRecord>>(store.getAll()));
   }
 
   add(record: OutboxRecord): Observable<void> {
-    return this.withStore('readwrite', async (store) => {
+    return this.withStore('readwrite', async store => {
       await requestToPromise(store.add(record));
     });
   }
 
   updateStatus(localId: string, patch: OutboxRecordPatch): Observable<void> {
-    return this.withStore('readwrite', async (store) => {
+    return this.withStore('readwrite', async store => {
       const existing = await requestToPromise<OutboxRecord | undefined>(store.get(localId));
       if (!existing) {
         return;
@@ -48,7 +48,7 @@ export class IndexedDbOutboxStorage implements OutboxStorage {
   }
 
   remove(localId: string): Observable<void> {
-    return this.withStore('readwrite', async (store) => {
+    return this.withStore('readwrite', async store => {
       await requestToPromise(store.delete(localId));
     });
   }
@@ -94,7 +94,7 @@ export class IndexedDbOutboxStorage implements OutboxStorage {
   // a commit-time abort or error (quota, I/O, forced close) reaches the subscriber's error
   // channel instead of being reported as success (docs/specs/write-outbox.md D11, D4).
   private withStore<T>(mode: IDBTransactionMode, work: (store: IDBObjectStore) => Promise<T>): Observable<T> {
-    return new Observable<T>((subscriber) => {
+    return new Observable<T>(subscriber => {
       let settled = false;
       const fail = (e: unknown) => {
         if (settled) {
@@ -105,7 +105,7 @@ export class IndexedDbOutboxStorage implements OutboxStorage {
       };
 
       const opened = this.open();
-      opened.then((db) => {
+      opened.then(db => {
         // Everything here can throw synchronously -- most notably `db.transaction(...)` raising
         // `InvalidStateError` when the browser has closed `db` -- and a throw inside a `.then`
         // fulfilment callback only rejects the (unobserved) promise `.then` returns. Route every
@@ -126,7 +126,7 @@ export class IndexedDbOutboxStorage implements OutboxStorage {
           transaction.onabort = () => fail(transaction.error ?? new Error('IndexedDB transaction aborted'));
           transaction.onerror = () => fail(transaction.error ?? new Error('IndexedDB transaction error'));
 
-          work(store).then((r) => {
+          work(store).then(r => {
             result = r;
           }, fail);
         } catch (e) {

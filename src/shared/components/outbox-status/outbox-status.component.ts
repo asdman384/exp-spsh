@@ -27,7 +27,7 @@ import { MatIconModule } from '@angular/material/icon';
         <mat-icon aria-hidden="true">cloud_upload</mat-icon>
       </button>
     }
-  `
+  `,
 })
 export class OutboxStatusComponent {
   readonly pending = input(0);

@@ -39,17 +39,22 @@ export class ExpensesService {
     this.load$
       .pipe(
         // Waits for the network, and reloads the last filter when the connection comes back.
-        switchMap((request) => this.status.online$.pipe(filter(Boolean), map(() => request))),
-        exhaustMap((request) => {
+        switchMap(request =>
+          this.status.online$.pipe(
+            filter(Boolean),
+            map(() => request),
+          ),
+        ),
+        exhaustMap(request => {
           this.store.dispatch(AppActions.loading({ loading: true }));
           return this.spreadsheet.loadExpenses(request).pipe(
-            tap((expenses) => {
+            tap(expenses => {
               this.state.set(expenses);
               this.store.dispatch(AppActions.loading({ loading: false }));
             }),
-            catchError(reportFailure('loadExpenses$', this.store))
+            catchError(reportFailure('loadExpenses$', this.store)),
           );
-        })
+        }),
       )
       .subscribe();
 
@@ -77,37 +82,35 @@ export class ExpensesService {
   }
 
   private deleteRemote(sheet: Sheet, expense: Expense) {
-    const index = this.state().findIndex((e) => isExpenseEqual(e, expense));
+    const index = this.state().findIndex(e => isExpenseEqual(e, expense));
     const backup = ~index ? { expense: this.state()[index], index } : null;
     if (backup) {
-      this.state.update((expenses) => expenses.filter((_, i) => i !== index));
+      this.state.update(expenses => expenses.filter((_, i) => i !== index));
     }
 
     this.store.dispatch(AppActions.loading({ loading: true }));
     return this.spreadsheet.loadLastExpenses(sheet.title, 100).pipe(
-      switchMap((expenses) => {
-        const i = expenses.findIndex((e) => isExpenseEqual(e, expense));
+      switchMap(expenses => {
+        const i = expenses.findIndex(e => isExpenseEqual(e, expense));
         if (!~i) {
           throw `cannot find expense in the last 100 rows`;
         }
         return this.spreadsheet.deleteSheetRow(sheet.id, i);
       }),
       tap(() => this.store.dispatch(AppActions.loading({ loading: false }))),
-      catchError((e) => {
+      catchError(e => {
         log(e);
-        if (backup && !this.state().some((x) => isExpenseEqual(x, backup.expense))) {
-          this.state.update((expenses) => {
+        if (backup && !this.state().some(x => isExpenseEqual(x, backup.expense))) {
+          this.state.update(expenses => {
             const restored = [...expenses];
             restored.splice(Math.min(backup.index, restored.length), 0, backup.expense);
             return restored;
           });
         }
         this.store.dispatch(AppActions.loading({ loading: false }));
-        this.store.dispatch(
-          AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
-        );
+        this.store.dispatch(AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ }));
         return EMPTY;
-      })
+      }),
     );
   }
 

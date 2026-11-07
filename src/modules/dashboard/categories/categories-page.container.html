@@ -22,10 +22,10 @@
   [cdkDropListDisabled]="loading$ | async"
 >
   @for (category of categories$ | async; track category.name) {
-  <div class="drag-item" cdkDrag [cdkDragData]="category" (cdkDragMoved)="cdkDragMoved($event)">
-    <div class="drag-item-placeholder" *cdkDragPlaceholder>{{ dragPlaceholderText }}</div>
-    <mat-icon cdkDragHandle>drag_indicator</mat-icon>
-    {{ category.name }}
-  </div>
+    <div class="drag-item" cdkDrag [cdkDragData]="category" (cdkDragMoved)="cdkDragMoved($event)">
+      <div class="drag-item-placeholder" *cdkDragPlaceholder>{{ dragPlaceholderText }}</div>
+      <mat-icon cdkDragHandle>drag_indicator</mat-icon>
+      {{ category.name }}
+    </div>
   }
 </div>

@@ -22,6 +22,6 @@ export const AppActions = createActionGroup({
     updateCategoryPosition: props<{ categories: Array<Category> }>(),
 
     // errors
-    operationFailed: props<{ source: string; message: string }>()
-  }
+    operationFailed: props<{ source: string; message: string }>(),
+  },
 });

@@ -19,7 +19,7 @@ const DELETE_THRESHOLD = 100;
   selector: 'expenses-table',
   templateUrl: './expenses-table.component.html',
   styleUrl: './expenses-table.component.scss',
-  imports: [DatePipe, DecimalPipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule]
+  imports: [DatePipe, DecimalPipe, DragDropModule, MatCheckboxModule, MatIconModule, MatTableModule, MatTooltipModule],
 })
 export class ExpensesTableComponent {
   protected readonly dateFormat = DATE_FORMAT;
@@ -42,8 +42,8 @@ export class ExpensesTableComponent {
   readonly selectionChange = outputFromObservable<ReadonlyArray<Expense>>(
     this.selection.changed.pipe(
       map(() => this.selection.selected),
-      delay(0)
-    )
+      delay(0),
+    ),
   );
 
   protected readonly columns = computed<Array<keyof Expense | 'select'>>(() => {
@@ -52,7 +52,7 @@ export class ExpensesTableComponent {
     if (this.selectable()) {
       cols.push('select');
     }
-    cols.push(...DEFAULT_COLS.filter((field) => this.hasData(exps, field) && !this.isColHidden(field)));
+    cols.push(...DEFAULT_COLS.filter(field => this.hasData(exps, field) && !this.isColHidden(field)));
     return cols;
   });
 
@@ -124,9 +124,9 @@ export class ExpensesTableComponent {
     }
 
     if (field === 'isInDebt') {
-      return exps.some((e) => e[field] === true);
+      return exps.some(e => e[field] === true);
     }
 
-    return exps.some((e) => e[field] !== undefined);
+    return exps.some(e => e[field] !== undefined);
   }
 }

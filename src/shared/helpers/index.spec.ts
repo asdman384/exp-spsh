@@ -28,8 +28,18 @@ describe('isExpenseEqual', () => {
   });
 
   it('should return false when time differs by minutes', () => {
-    const expense1: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2023-01-01T10:00:00') };
-    const expense2: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: new Date('2023-01-01T10:01:00') };
+    const expense1: Expense = {
+      comment: 'Test expense',
+      category: 'Food',
+      amount: 50,
+      date: new Date('2023-01-01T10:00:00'),
+    };
+    const expense2: Expense = {
+      comment: 'Test expense',
+      category: 'Food',
+      amount: 50,
+      date: new Date('2023-01-01T10:01:00'),
+    };
 
     expect(isExpenseEqual(expense1, expense2)).toBeFalsy();
   });
@@ -92,7 +102,13 @@ describe('isExpenseEqual', () => {
     const date = new Date('2023-01-01');
     // Simulates loadLastExpenses()/loadExpenses() output for a row whose column E was blank:
     // both load paths coerce this to isInDebt: false (never undefined).
-    const loadedExpense: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: date, isInDebt: false };
+    const loadedExpense: Expense = {
+      comment: 'Test expense',
+      category: 'Food',
+      amount: 50,
+      date: date,
+      isInDebt: false,
+    };
     // Simulates an app-constructed Expense (e.g. dashboard form before the checkbox is touched)
     // that simply omits the field.
     const formExpense: Expense = { comment: 'Test expense', category: 'Food', amount: 50, date: date };
@@ -116,7 +132,7 @@ describe('toMessage', () => {
     const error = new HttpErrorResponse({
       status: 400,
       statusText: 'Bad Request',
-      error: { error: { message: 'Unable to parse range: Sheet1!A1:E' } }
+      error: { error: { message: 'Unable to parse range: Sheet1!A1:E' } },
     });
 
     expect(toMessage(error)).toBe('Unable to parse range: Sheet1!A1:E');
@@ -133,7 +149,7 @@ describe('toMessage', () => {
       status: 403,
       statusText: 'Forbidden',
       url: 'https://sheets.googleapis.com/v4/spreadsheets/abc123?key=SECRET_API_KEY',
-      error: null
+      error: null,
     });
 
     const message = toMessage(error);

@@ -5,15 +5,7 @@ import { VoiceRecording } from 'src/shared/models';
 export type VoiceRecorderStatus = 'idle' | 'starting' | 'recording';
 
 export type VoiceRecorderOutcome =
-  | 'released-early'
-  | 'started'
-  | 'saved'
-  | 'too-short'
-  | 'limit-reached'
-  | 'unsupported'
-  | 'denied'
-  | 'no-device'
-  | 'failed';
+  'released-early' | 'started' | 'saved' | 'too-short' | 'limit-reached' | 'unsupported' | 'denied' | 'no-device' | 'failed';
 
 export interface VoiceRecorderOutcomeEvent {
   outcome: VoiceRecorderOutcome;
@@ -136,7 +128,7 @@ export class VoiceRecorderService {
           blob: new Blob(chunks, { type: recorder.mimeType }),
           mimeType: recorder.mimeType,
           durationMs,
-          recordedAt: new Date()
+          recordedAt: new Date(),
         });
         // The timer is set after `startedAt`, so an auto-stop always measures at least the cap.
         this.finish(durationMs >= MAX_DURATION_MS ? 'limit-reached' : 'saved');
@@ -161,7 +153,7 @@ export class VoiceRecorderService {
       clearTimeout(this.limitTimer);
       this.limitTimer = null;
     }
-    this.stream?.getTracks().forEach((track) => track.stop());
+    this.stream?.getTracks().forEach(track => track.stop());
     this.stream = null;
     this.recorder = null;
     this._status.set('idle');

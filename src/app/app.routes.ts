@@ -6,25 +6,25 @@ export const routes: Routes = [
   {
     path: '',
     redirectTo: ROUTE.dashboard,
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: ROUTE.dashboard,
     canActivate: [isLoggedIn, isSetupReady],
-    loadComponent: () => import('src/modules/dashboard/dashboard.component').then((m) => m.DashboardComponent),
-    loadChildren: () => import('src/modules/dashboard/dashboard.routes').then((m) => m.routes)
+    loadComponent: () => import('src/modules/dashboard/dashboard.component').then(m => m.DashboardComponent),
+    loadChildren: () => import('src/modules/dashboard/dashboard.routes').then(m => m.routes),
   },
   {
     path: ROUTE.setup,
-    loadComponent: () => import('src/modules/setup/setup.component').then((m) => m.SetupComponent),
-    loadChildren: () => import('src/modules/setup/setup.routes').then((m) => m.routes)
+    loadComponent: () => import('src/modules/setup/setup.component').then(m => m.SetupComponent),
+    loadChildren: () => import('src/modules/setup/setup.routes').then(m => m.routes),
   },
   {
     path: 'playground',
-    loadComponent: () => import('src/modules/playground/playground.component').then((m) => m.PlaygroundComponent),
+    loadComponent: () => import('src/modules/playground/playground.component').then(m => m.PlaygroundComponent),
   },
   {
     path: 'playground2',
-    loadComponent: () => import('src/modules/playground2/playground2.component').then((m) => m.Playground2Component),
-  }
+    loadComponent: () => import('src/modules/playground2/playground2.component').then(m => m.Playground2Component),
+  },
 ];

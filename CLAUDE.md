@@ -17,6 +17,8 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 ```bash
 npm run harness        # lint + typecheck + production build + tests (native on Windows too)
+npm run format         # format JS (including MJS/CJS), TS, HTML, CSS, and SCSS
+npm run format:check   # check formatting without writing files
 npm run build          # production build -> dist/exp-spsh
 npm run watch          # incremental development build (leave running)
 npm run serve          # static server on :4200 over dist/  -- NOT `ng serve`
@@ -85,6 +87,7 @@ Angular's `HttpClient`.
   Their number pipes explicitly select `pl`: a decimal comma and a non-breaking space
   between thousands (`1 026,2`).
   Date pipes use English month names.
+  Amount data cells use `inline-flex` through Material's generated `mat-column-amount` class.
 
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
   *before* bootstrap). It is used without import across effects, services, and guards, and

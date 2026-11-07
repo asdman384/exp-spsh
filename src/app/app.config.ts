@@ -11,13 +11,7 @@ import { AppEffects } from 'src/@state/app.effects';
 import { ExpAuthInterceptor } from 'src/http-interceptors';
 import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 import { isServiceWorkerEnabled } from 'src/shared/helpers/service-worker-mode';
-import {
-  AbstractSecurityService,
-  LocalStorageService,
-  OutboxService,
-  RedirectSecurityService,
-  StorageService
-} from 'src/services';
+import { AbstractSecurityService, LocalStorageService, OutboxService, RedirectSecurityService, StorageService } from 'src/services';
 import { routes } from './app.routes';
 
 const loggerType = initialUrlParams.get('logger');
@@ -39,8 +33,8 @@ async function getDebugProviders(): Promise<ImportProvidersSource[]> {
       autoPause: false, // Pauses recording actions and state changes when the extension window is not open
       trace: false, //  If set to true, will include stack trace for every dispatched action, so you can see it in trace tab jumping directly to that part of code
       traceLimit: 75, // maximum stack trace frames to be stored (in case trace option was provided as true)
-      connectInZone: false // If set to true, the connection is established within the Angular zone
-    })
+      connectInZone: false, // If set to true, the connection is established within the Angular zone
+    }),
   ];
 }
 
@@ -55,7 +49,7 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
           // https://blog.angular.io/check-out-angulars-support-for-the-view-transitions-api-3937376cfc19
           // https://developer.chrome.com/docs/web-platform/view-transitions/
           // console.log('onViewTransitionCreated', event);
-        }
+        },
       }).ɵproviders,
       provideRouter(routes, withComponentInputBinding()),
       { provide: AbstractSecurityService, useClass: RedirectSecurityService },
@@ -70,12 +64,12 @@ export async function getAppConfig(): Promise<ApplicationConfig> {
           enabled: isServiceWorkerEnabled(),
           // Register the ServiceWorker as soon as the application is stable
           // or after 30 seconds (whichever comes first).
-          registrationStrategy: 'registerWhenStable:30000'
+          registrationStrategy: 'registerWhenStable:30000',
         }),
         StoreModule.forRoot(reducers, { metaReducers }),
         EffectsModule.forRoot([AppEffects]),
-        ...debug
-      ])
-    ]
+        ...debug,
+      ]),
+    ],
   };
 }

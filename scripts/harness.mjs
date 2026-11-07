@@ -11,10 +11,13 @@ const ng = join(root, 'node_modules/@angular/cli/bin/ng.js');
 const tsc = join(root, 'node_modules/typescript/bin/tsc');
 const layers = [
   { name: 'lint', title: 'ESLint + angular-eslint', cli: ng, args: ['lint'] },
-  { name: 'typecheck', title: 'tsc -b, app + spec', cli: tsc,
-    args: ['-b', 'tsconfig.app.json', 'tsconfig.spec.json'] },
-  { name: 'build', title: 'type-check + production bundle', cli: ng,
-    args: ['build', '--configuration=production', '--output-path=tmp/harness-dist'] },
+  { name: 'typecheck', title: 'tsc -b, app + spec', cli: tsc, args: ['-b', 'tsconfig.app.json', 'tsconfig.spec.json'] },
+  {
+    name: 'build',
+    title: 'type-check + production bundle',
+    cli: ng,
+    args: ['build', '--configuration=production', '--output-path=tmp/harness-dist'],
+  },
   { name: 'test', title: 'headless Chromium', cli: ng, args: ['test', '--watch=false'] },
 ];
 const selected = new Set();
@@ -80,7 +83,8 @@ for (const layer of layers) {
     layerArgs.push('--include', include);
   }
   const result = spawnSync(process.execPath, [layer.cli, ...layerArgs], {
-    cwd: root, stdio: 'inherit',
+    cwd: root,
+    stdio: 'inherit',
   });
   layer.status = result.status === 0 ? 'passed' : 'FAILED';
   if (result.error) console.error(`harness: ${result.error.message}`);

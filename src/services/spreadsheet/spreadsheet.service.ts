@@ -17,7 +17,7 @@ import {
   expenseValuesRange,
   fromExpenseGvizRow,
   fromExpenseValueRow,
-  toExpenseCells
+  toExpenseCells,
 } from './expense-row';
 import keys from '../../../keys.json';
 
@@ -28,7 +28,7 @@ export class SpreadsheetService {
     return `https://content-sheets.googleapis.com/v4/spreadsheets/${this.spreadsheetId}`;
   }
 
-  constructor(private readonly http: HttpClient) { }
+  constructor(private readonly http: HttpClient) {}
 
   setSpreadsheetId(spreadsheetId: string): void {
     this.spreadsheetId = spreadsheetId;
@@ -48,8 +48,8 @@ export class SpreadsheetService {
     const range = encodeURIComponent(`${CATEGORIES_SHEET_TITLE}!A1:B${categories.length}`);
     return this.http.put<gapi.client.sheets.UpdateValuesResponse>(
       `${this.apiUrl}/values/${range}`,
-      { values: categories.map((c) => [c.name, c.id]) } as gapi.client.sheets.ValueRange,
-      { params: new HttpParams({ fromObject: { valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY } }) }
+      { values: categories.map(c => [c.name, c.id]) } as gapi.client.sheets.ValueRange,
+      { params: new HttpParams({ fromObject: { valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY } }) },
     );
   }
 
@@ -66,9 +66,9 @@ export class SpreadsheetService {
       { values: [[name, id]] } as gapi.client.sheets.ValueRange,
       {
         params: new HttpParams({
-          fromObject: { insertDataOption: 'INSERT_ROWS', valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY }
-        })
-      }
+          fromObject: { insertDataOption: 'INSERT_ROWS', valueInputOption: 'RAW', alt: 'json', key: keys.API_KEY },
+        }),
+      },
     );
   }
 
@@ -81,13 +81,13 @@ export class SpreadsheetService {
    */
   deleteSheetRow(sheetId: number, index: number): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const deleteDimension: gapi.client.sheets.DeleteDimensionRequest = {
-      range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }
+      range: { sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 },
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `${this.apiUrl}:batchUpdate`,
       { requests: [{ deleteDimension }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
     );
   }
 
@@ -101,9 +101,9 @@ export class SpreadsheetService {
 
     return this.http
       .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
-        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } })
+        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } }),
       })
-      .pipe(map((result) => result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []));
+      .pipe(map(result => result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []));
   }
 
   /**
@@ -113,12 +113,9 @@ export class SpreadsheetService {
    * @returns gapi.client.sheets.Spreadsheet
    */
   getSpreadsheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
-    return this.http.get<gapi.client.sheets.Spreadsheet>(
-      `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`,
-      {
-        params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } })
-      }
-    );
+    return this.http.get<gapi.client.sheets.Spreadsheet>(`https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
+      params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } }),
+    });
   }
 
   /**
@@ -131,16 +128,16 @@ export class SpreadsheetService {
    */
   addSheet(title: string, columnCount: number): Observable<gapi.client.sheets.SheetProperties> {
     const addSheet: gapi.client.sheets.AddSheetRequest = {
-      properties: { title, gridProperties: { rowCount: 1, columnCount } }
+      properties: { title, gridProperties: { rowCount: 1, columnCount } },
     };
 
     return this.http
       .post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
         `${this.apiUrl}:batchUpdate`,
         { requests: [{ addSheet }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-        { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+        { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
       )
-      .pipe(map((result) => result.replies![0].addSheet!.properties!));
+      .pipe(map(result => result.replies![0].addSheet!.properties!));
   }
 
   /**
@@ -157,14 +154,14 @@ export class SpreadsheetService {
         startRowIndex: 0,
         endRowIndex: 1048576,
         startColumnIndex: EXPENSE_COLUMN_INDEX.date,
-        endColumnIndex: EXPENSE_COLUMN_INDEX.date + 1
+        endColumnIndex: EXPENSE_COLUMN_INDEX.date + 1,
       },
       cell: {
         dataValidation: { condition: { type: 'DATE_IS_VALID' }, strict: true },
         effectiveFormat: { numberFormat: { type: 'DATE_TIME', pattern: `d/mm/yyyy HH:mm` } },
-        userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: `d/mm/yyyy HH:mm` } }
+        userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: `d/mm/yyyy HH:mm` } },
       },
-      fields: 'dataValidation.condition,effectiveFormat.numberFormat,userEnteredFormat.numberFormat'
+      fields: 'dataValidation.condition,effectiveFormat.numberFormat,userEnteredFormat.numberFormat',
     };
 
     const categoriesCellValidation: gapi.client.sheets.RepeatCellRequest = {
@@ -173,15 +170,15 @@ export class SpreadsheetService {
         startRowIndex: 0,
         endRowIndex: 1048576,
         startColumnIndex: EXPENSE_COLUMN_INDEX.category,
-        endColumnIndex: EXPENSE_COLUMN_INDEX.category + 1
+        endColumnIndex: EXPENSE_COLUMN_INDEX.category + 1,
       },
       cell: {
         dataValidation: {
           condition: { type: 'ONE_OF_RANGE', values: [{ userEnteredValue: `=${CATEGORIES_SHEET_TITLE}!$A:$A` }] },
-          strict: true
-        }
+          strict: true,
+        },
       },
-      fields: 'dataValidation.condition'
+      fields: 'dataValidation.condition',
     };
 
     const currencyCellValidation: gapi.client.sheets.RepeatCellRequest = {
@@ -190,15 +187,15 @@ export class SpreadsheetService {
         startRowIndex: 0,
         endRowIndex: 1048576,
         startColumnIndex: EXPENSE_COLUMN_INDEX.amount,
-        endColumnIndex: EXPENSE_COLUMN_INDEX.amount + 1
+        endColumnIndex: EXPENSE_COLUMN_INDEX.amount + 1,
       },
       cell: {
         dataValidation: {
           condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
-          strict: true
-        }
+          strict: true,
+        },
       },
-      fields: 'dataValidation.condition'
+      fields: 'dataValidation.condition',
     };
 
     const inDebtCellValidation: gapi.client.sheets.RepeatCellRequest = {
@@ -207,21 +204,26 @@ export class SpreadsheetService {
         startRowIndex: 0,
         endRowIndex: 1048576,
         startColumnIndex: EXPENSE_COLUMN_INDEX.isInDebt,
-        endColumnIndex: EXPENSE_COLUMN_COUNT
+        endColumnIndex: EXPENSE_COLUMN_COUNT,
       },
       cell: {
         dataValidation: {
           condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
-          strict: true
-        }
+          strict: true,
+        },
       },
-      fields: 'dataValidation.condition'
+      fields: 'dataValidation.condition',
     };
 
     const updateDimensionProperties = {
       properties: { pixelSize: 120 },
-      range: { dimension: 'COLUMNS', sheetId, startIndex: EXPENSE_COLUMN_INDEX.date, endIndex: EXPENSE_COLUMN_INDEX.date + 1 },
-      fields: 'pixelSize'
+      range: {
+        dimension: 'COLUMNS',
+        sheetId,
+        startIndex: EXPENSE_COLUMN_INDEX.date,
+        endIndex: EXPENSE_COLUMN_INDEX.date + 1,
+      },
+      fields: 'pixelSize',
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
@@ -232,10 +234,10 @@ export class SpreadsheetService {
           { repeatCell: categoriesCellValidation },
           { repeatCell: currencyCellValidation },
           { repeatCell: inDebtCellValidation },
-          { updateDimensionProperties }
-        ]
+          { updateDimensionProperties },
+        ],
       } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
     );
   }
 
@@ -252,16 +254,16 @@ export class SpreadsheetService {
       cell: {
         dataValidation: {
           condition: { type: 'NUMBER_GREATER_THAN_EQ', values: [{ userEnteredValue: '0' }] },
-          strict: true
-        }
+          strict: true,
+        },
       },
-      fields: 'dataValidation.condition'
+      fields: 'dataValidation.condition',
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `${this.apiUrl}:batchUpdate`,
       { requests: [{ repeatCell }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
     );
   }
 
@@ -274,19 +276,19 @@ export class SpreadsheetService {
   addExpense(sheetId: number, expense: Expense): Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse> {
     const insertDimension: gapi.client.sheets.InsertDimensionRequest = {
       range: { sheetId, dimension: 'ROWS', startIndex: 0, endIndex: 1 },
-      inheritFromBefore: false
+      inheritFromBefore: false,
     };
 
     const updateCells: gapi.client.sheets.UpdateCellsRequest = {
       fields: 'userEnteredValue',
       start: { sheetId, rowIndex: 0, columnIndex: 0 },
-      rows: [{ values: toExpenseCells(expense) }]
+      rows: [{ values: toExpenseCells(expense) }],
     };
 
     return this.http.post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
       `${this.apiUrl}:batchUpdate`,
       { requests: [{ insertDimension }, { updateCells }] } as gapi.client.sheets.BatchUpdateSpreadsheetRequest,
-      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) }
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
     );
   }
 
@@ -300,9 +302,9 @@ export class SpreadsheetService {
 
     return this.http
       .get<gapi.client.sheets.ValueRange>(`${this.apiUrl}/values/${range}`, {
-        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } })
+        params: new HttpParams({ fromObject: { valueRenderOption: 'UNFORMATTED_VALUE', key: keys.API_KEY } }),
       })
-      .pipe(map((result) => result.values?.map<Expense>(fromExpenseValueRow) ?? []));
+      .pipe(map(result => result.values?.map<Expense>(fromExpenseValueRow) ?? []));
   }
 
   /**
@@ -326,22 +328,21 @@ export class SpreadsheetService {
       .get(`https://docs.google.com/a/google.com/spreadsheets/d/${this.spreadsheetId}/gviz/tq`, {
         responseType: 'text',
         params: new HttpParams({
-          fromObject: { tq, gid: filter.sheetId }
-        })
+          fromObject: { tq, gid: filter.sheetId },
+        }),
       })
       .pipe(
-        map((response) => {
+        map(response => {
           // Extract JSON from JSONP response: /*O_o*/google.visualization.Query.setResponse({...});
           const jsonMatch = response.match(/setResponse\(({.*})\)/);
           if (!jsonMatch) {
             throw new Error('Invalid response format from Google Sheets API');
           }
           const data = JSON.parse(jsonMatch[1]) as ExpensesDTO;
-          return data.table.rows.map<Expense>((row) => fromExpenseGvizRow(row.c));
-        })
+          return data.table.rows.map<Expense>(row => fromExpenseGvizRow(row.c));
+        }),
       );
   }
-
 }
 
 interface ExpensesDTO {

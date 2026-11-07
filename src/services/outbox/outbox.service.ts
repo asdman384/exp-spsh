@@ -35,8 +35,8 @@ export class OutboxService {
 
   private readonly state = signal<Array<OutboxRecord>>([]);
   readonly records = this.state.asReadonly();
-  readonly pendingCount = computed(() => this.state().filter((record) => record.status === 'pending').length);
-  readonly failedCount = computed(() => this.state().filter((record) => record.status === 'failed').length);
+  readonly pendingCount = computed(() => this.state().filter(record => record.status === 'pending').length);
+  readonly failedCount = computed(() => this.state().filter(record => record.status === 'failed').length);
 
   private readonly sent = new Subject<OutboxRecord>();
   /** The last record a drain pass sent, once per pass that sent anything. */
@@ -65,16 +65,16 @@ export class OutboxService {
     // Persist-first, in arrival order.
     this.enqueue$
       .pipe(
-        concatMap((record) =>
+        concatMap(record =>
           this.storage.add(record).pipe(
             tap(() => {
-              this.state.update((records) => sortRecords([...records, record]));
+              this.state.update(records => sortRecords([...records, record]));
               this.scheduleRun();
               void this.liveAnnouncer.announce(OUTBOX_MESSAGES.queued, 'polite');
             }),
-            catchError(reportFailure('addExpense$', this.store))
-          )
-        )
+            catchError(reportFailure('addExpense$', this.store)),
+          ),
+        ),
       )
       .subscribe();
   }
@@ -91,23 +91,21 @@ export class OutboxService {
     this.status.online$
       .pipe(
         pairwise(),
-        filter(([wasOnline, isOnline]) => !wasOnline && isOnline)
+        filter(([wasOnline, isOnline]) => !wasOnline && isOnline),
       )
       .subscribe(() => this.scheduleRun());
-    this.router.events
-      .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
-      .subscribe(() => this.scheduleRun());
+    this.router.events.pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd)).subscribe(() => this.scheduleRun());
 
     if (!this.storage.isAvailable()) {
       return;
     }
     this.storage.getAll().subscribe({
-      next: (records) => {
+      next: records => {
         this.state.set(sortRecords(records));
         this.hydrationDone = true;
         this.scheduleRun(); // T1
       },
-      error: (e: unknown) => log(e)
+      error: (e: unknown) => log(e),
     });
   }
 
@@ -122,7 +120,7 @@ export class OutboxService {
       payload: { sheetId, expense: { date, amount, category, comment, isInDebt } },
       enqueuedAt: Date.now(),
       status: 'pending',
-      attempts: 0
+      attempts: 0,
     });
   }
 
@@ -139,14 +137,14 @@ export class OutboxService {
       .updateStatus(localId, { status: 'pending', failure: undefined })
       .pipe(
         concatMap(() => this.storage.getAll()),
-        tap((records) => {
+        tap(records => {
           this.state.set(sortRecords(records));
           this.scheduleRun();
         }),
         catchError((e: unknown) => {
           log(e);
           return EMPTY;
-        })
+        }),
       )
       .subscribe();
   }
@@ -157,11 +155,11 @@ export class OutboxService {
       .remove(localId)
       .pipe(
         concatMap(() => this.storage.getAll()),
-        tap((records) => this.state.set(sortRecords(records))),
+        tap(records => this.state.set(sortRecords(records))),
         catchError((e: unknown) => {
           log(e);
           return EMPTY;
-        })
+        }),
       )
       .subscribe();
   }
@@ -185,7 +183,7 @@ export class OutboxService {
             this.rerunRequested = false;
             this.scheduleRun();
           }
-        })
+        }),
       )
       .subscribe();
   }
@@ -238,7 +236,7 @@ export class OutboxService {
       }
       finalRecords = fresh;
 
-      const next = sortRecords(fresh).find((record) => record.status === 'pending');
+      const next = sortRecords(fresh).find(record => record.status === 'pending');
       if (!next) {
         break;
       }
@@ -288,7 +286,7 @@ export class OutboxService {
         } catch (e) {
           log(e);
         }
-        this.state.update((records) => records.filter((record) => record.localId !== next.localId));
+        this.state.update(records => records.filter(record => record.localId !== next.localId));
         this.authStopActive = false;
         sent++;
         lastSent = next;
@@ -308,15 +306,18 @@ export class OutboxService {
         this.patch(next.localId, patch);
         if (outcome === 'auth' && !this.authStopActive) {
           this.authStopActive = true;
-          this.store.dispatch(
-            AppActions.operationFailed({ source: 'outboxDrain$', message: OUTBOX_MESSAGES.authBlocked })
-          );
+          this.store.dispatch(AppActions.operationFailed({ source: 'outboxDrain$', message: OUTBOX_MESSAGES.authBlocked }));
         }
         break;
       }
 
       // terminal
-      const patch: OutboxRecordPatch = { status: 'failed', attempts: next.attempts + 1, lastError, failure: 'rejected' };
+      const patch: OutboxRecordPatch = {
+        status: 'failed',
+        attempts: next.attempts + 1,
+        lastError,
+        failure: 'rejected',
+      };
       try {
         await firstValueFrom(this.storage.updateStatus(next.localId, patch));
       } catch (e) {
@@ -334,7 +335,7 @@ export class OutboxService {
     }
     this.state.set(sortRecords(finalRecords));
 
-    const remainingPending = finalRecords.filter((record) => record.status === 'pending').length;
+    const remainingPending = finalRecords.filter(record => record.status === 'pending').length;
     log('OutboxService: drain pass completed', { sent, newlyFailed, remainingPending });
     if (newlyFailed > 0) {
       this.openOldestFailureNotice();
@@ -348,20 +349,18 @@ export class OutboxService {
   }
 
   private patch(localId: string, changes: OutboxRecordPatch): void {
-    this.state.update((records) =>
-      records.map((record) => (record.localId === localId ? { ...record, ...changes } : record))
-    );
+    this.state.update(records => records.map(record => (record.localId === localId ? { ...record, ...changes } : record)));
   }
 
   private openOldestFailureNotice(): void {
-    const record = this.state().find((r) => r.status === 'failed');
+    const record = this.state().find(r => r.status === 'failed');
     if (!record) {
       return;
     }
     const ref = this.snackBar.openFromComponent(OutboxFailureNoticeComponent, {
       data: { record },
       politeness: 'assertive',
-      verticalPosition: 'top'
+      verticalPosition: 'top',
     });
 
     ref.afterDismissed().subscribe(() => {

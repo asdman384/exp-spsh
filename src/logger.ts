@@ -1,4 +1,4 @@
-export { };
+export {};
 
 class ExpLogger {
   private readonly wrapper: HTMLDivElement;
@@ -77,7 +77,7 @@ class ExpLogger {
       },
       function (err) {
         console.error('Async: Could not copy text: ', err);
-      }
+      },
     );
   }
 

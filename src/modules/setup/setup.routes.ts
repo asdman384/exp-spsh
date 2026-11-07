@@ -8,15 +8,15 @@ export const routes: Routes = [
   {
     path: '',
     redirectTo: 'login',
-    pathMatch: 'full'
+    pathMatch: 'full',
   },
   {
     path: ROUTE.login,
-    component: LoginPageContainer
+    component: LoginPageContainer,
   },
   {
     path: ROUTE.settings,
     canActivate: [isLoggedIn],
-    component: SettingsPageContainer
-  }
+    component: SettingsPageContainer,
+  },
 ];

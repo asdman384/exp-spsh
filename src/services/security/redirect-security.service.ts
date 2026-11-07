@@ -48,18 +48,18 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
         client_secret: keys.CLIENT_SECRET,
         redirect_uri: location.origin + location.pathname,
         grant_type: 'authorization_code',
-        code: code
+        code: code,
       });
 
       log('RedirectSecurityService: no token, got code, do exchange');
       return this.requestToken(body).pipe(
-        tap((resp) => {
+        tap(resp => {
           // one-time use: without this, a later logout + re-login in the same page session
           // would try to replay this (by then already-consumed) code and fail
           initialUrlParams.delete('code');
           this.storageService.put(REDIRECT_TOKEN, new Token(resp));
           this.storageService.put(REFRESH_TOKEN, { refresh_token: resp.refresh_token });
-        })
+        }),
       );
     }
 
@@ -79,11 +79,11 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
       client_id: keys.CLIENT_ID,
       client_secret: keys.CLIENT_SECRET,
       grant_type: 'refresh_token',
-      refresh_token: refreshToken.refresh_token
+      refresh_token: refreshToken.refresh_token,
     });
 
     log('RedirectSecurityService: token is expired, refresh it');
-    return this.requestToken(body).pipe(tap((resp) => this.storageService.put(REDIRECT_TOKEN, new Token(resp))));
+    return this.requestToken(body).pipe(tap(resp => this.storageService.put(REDIRECT_TOKEN, new Token(resp))));
   }
 
   /**
@@ -107,22 +107,22 @@ export class RedirectSecurityService extends AbstractSecurityService<google.acco
       scope: this.SCOPES,
       redirect_uri: location.origin + location.pathname,
       ux_mode: 'redirect',
-      state: 'autologin'
+      state: 'autologin',
     });
   }
 
   private requestToken(body: URLSearchParams): Observable<GoogleToken> {
     return this.http.post<GoogleToken>('https://oauth2.googleapis.com/token', body.toString(), {
-      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' })
+      headers: new HttpHeaders({ 'Content-Type': 'application/x-www-form-urlencoded' }),
     });
   }
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- requestCode() redirects the browser and never emits; `any` lets it stand in for the Observable<GoogleToken> callers expect
   private requestCode(): Observable<any> {
     return this.status.online$.pipe(
-      first((online) => online),
+      first(online => online),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any -- see requestCode() above
-      map<boolean, any>(() => this.client.requestCode())
+      map<boolean, any>(() => this.client.requestCode()),
     );
   }
 

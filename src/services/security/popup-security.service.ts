@@ -36,7 +36,7 @@ export class PopupSecurityService extends AbstractSecurityService<
     }
 
     log('PopupSecurityService: token is expired request new one without consent');
-    this.status.online$.pipe(first((online) => online)).subscribe(() => {
+    this.status.online$.pipe(first(online => online)).subscribe(() => {
       // Skip display of account chooser and consent dialog for an existing expired session.
       this.client.requestAccessToken({ prompt: 'none', login_hint: user.id });
     });
@@ -79,8 +79,7 @@ export class PopupSecurityService extends AbstractSecurityService<
       scope: this.SCOPES,
       prompt: '',
       callback,
-      error_callback: (error: google.accounts.oauth2.ClientConfigError) =>
-        log('PopupSecurityService: token request error: ', error)
+      error_callback: (error: google.accounts.oauth2.ClientConfigError) => log('PopupSecurityService: token request error: ', error),
     });
   }
 }

@@ -55,6 +55,8 @@ There is no debt table or debt drill-down. The flag does not affect spending del
 # Drill-down and totals
 
 Clicking a category shows all its current-month rows, newest first.
+The container host has `summary-view` when no category is selected.
+Only `summary-view` sets `--exp-table-amount-column-min-width` to `191px` on the host.
 The debt flag does not filter the detail list or change its total. Back restores the category summary. Detail rows contain amount, comment,
 and date; they do not show category shares or deltas.
 

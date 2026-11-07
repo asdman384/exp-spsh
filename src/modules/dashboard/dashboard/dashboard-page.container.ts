@@ -34,7 +34,7 @@ import { DashboardPageViewModel } from './dashboard-page.view-model';
     MatNativeDateModule,
     MatSelectModule,
     ExpensesTableComponent,
-    VoiceRecordButtonComponent
+    VoiceRecordButtonComponent,
   ],
   providers: [
     DashboardPageViewModel,
@@ -48,12 +48,12 @@ import { DashboardPageViewModel } from './dashboard-page.view-model';
           dateInput: {
             year: 'numeric',
             month: 'short',
-            day: 'numeric'
-          } as Intl.DateTimeFormatOptions
-        }
-      }
-    }
-  ]
+            day: 'numeric',
+          } as Intl.DateTimeFormatOptions,
+        },
+      },
+    },
+  ],
 })
 export class DashboardPageContainer {
   private datePointer: { id: number; x: number; y: number } | null = null;
@@ -68,7 +68,7 @@ export class DashboardPageContainer {
   protected readonly timeFormat = TIME_FORMAT;
   protected readonly minDate = new Date(new Date().getFullYear(), 0, 1);
 
-  protected readonly expenseForm = form(this.expenseModel, (p) => {
+  protected readonly expenseForm = form(this.expenseModel, p => {
     required(p.date);
     required(p.sheet);
     required(p.amount);
@@ -130,13 +130,16 @@ export class DashboardPageContainer {
     const date = new Date(this.expenseModel().date);
     date.setDate(date.getDate() + (direction === 'left' ? -1 : 1));
     this.onDateChange(date);
-    overlay.getAnimations().forEach((animation) => animation.cancel());
+    overlay.getAnimations().forEach(animation => animation.cancel());
     const positions = direction === 'right' ? ['100% 0', '0% 0'] : ['0% 0', '100% 0'];
-    overlay.animate([
-      { backgroundPosition: positions[0], opacity: 0 },
-      { opacity: 1, offset: 0.2 },
-      { backgroundPosition: positions[1], opacity: 0 }
-    ], { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450, easing: 'ease-out' });
+    overlay.animate(
+      [
+        { backgroundPosition: positions[0], opacity: 0 },
+        { opacity: 1, offset: 0.2 },
+        { backgroundPosition: positions[1], opacity: 0 },
+      ],
+      { duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 450, easing: 'ease-out' },
+    );
   }
 
   protected loadCategories(): void {

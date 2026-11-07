@@ -40,7 +40,7 @@ describe('ExpensesService', () => {
       getSpreadsheetId: vi.fn().mockReturnValue('spsh-1'),
       loadExpenses: vi.fn().mockReturnValue(of([])),
       loadLastExpenses: vi.fn(),
-      deleteSheetRow: vi.fn().mockReturnValue(of({}))
+      deleteSheetRow: vi.fn().mockReturnValue(of({})),
     };
 
     TestBed.configureTestingModule({
@@ -49,8 +49,8 @@ describe('ExpensesService', () => {
         { provide: Store, useValue: { dispatch } },
         { provide: NetworkStatusService, useValue: { online$ } },
         { provide: SpreadsheetService, useValue: spreadsheet },
-        { provide: Router, useValue: router }
-      ]
+        { provide: Router, useValue: router },
+      ],
     });
 
     service = TestBed.inject(ExpensesService);
@@ -80,7 +80,7 @@ describe('ExpensesService', () => {
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
         sheetId: 1,
         from: new Date(today.getFullYear(), today.getMonth(), 1),
-        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
       });
     });
 
@@ -92,7 +92,7 @@ describe('ExpensesService', () => {
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
         sheetId: 1,
         from: new Date(today.getFullYear(), today.getMonth(), 1),
-        to: new Date(today.getFullYear(), today.getMonth(), 2)
+        to: new Date(today.getFullYear(), today.getMonth(), 2),
       });
       expect(selected.getHours()).toBe(12);
     });
@@ -101,7 +101,9 @@ describe('ExpensesService', () => {
       service.load({ sheetId: 1, to: new Date(2024, 1, 29, 15, 30) });
 
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
-        sheetId: 1, from: new Date(2024, 1, 1), to: new Date(2024, 2, 1)
+        sheetId: 1,
+        from: new Date(2024, 1, 1),
+        to: new Date(2024, 2, 1),
       });
     });
 
@@ -122,7 +124,7 @@ describe('ExpensesService', () => {
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
         sheetId: 1,
         from: new Date(today.getFullYear(), today.getMonth(), 1),
-        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1)
+        to: new Date(today.getFullYear(), today.getMonth(), today.getDate() + 1),
       });
       expect(service.expenses()).toEqual(loaded);
       expect(dispatch).toHaveBeenCalledWith(AppActions.loading({ loading: true }));
@@ -148,7 +150,7 @@ describe('ExpensesService', () => {
 
       expect(service.expenses()).toEqual([makeExpense('a')]);
       expect(dispatch).toHaveBeenCalledWith(
-        AppActions.operationFailed({ source: 'loadExpenses$', message: FAILURE_MESSAGES.loadExpenses$ })
+        AppActions.operationFailed({ source: 'loadExpenses$', message: FAILURE_MESSAGES.loadExpenses$ }),
       );
     });
   });
@@ -187,7 +189,7 @@ describe('ExpensesService', () => {
       expect(spreadsheet.deleteSheetRow).not.toHaveBeenCalled();
       expect(service.expenses()).toEqual(old);
       expect(dispatch).toHaveBeenCalledWith(
-        AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ })
+        AppActions.operationFailed({ source: 'deleteExpense$', message: FAILURE_MESSAGES.deleteExpense$ }),
       );
     });
 
@@ -213,7 +215,7 @@ describe('ExpensesService', () => {
       payload: { sheetId: 3, expense: makeExpense('lunch') },
       enqueuedAt: 1000,
       status: 'pending',
-      attempts: 0
+      attempts: 0,
     };
 
     it('should_load_the_month_through_the_last_sent_record_day_when_on_dashboard', () => {
@@ -225,7 +227,7 @@ describe('ExpensesService', () => {
       expect(spreadsheet.loadExpenses).toHaveBeenCalledWith({
         sheetId: 3,
         from: new Date(date.getFullYear(), date.getMonth(), 1),
-        to
+        to,
       });
     });
 

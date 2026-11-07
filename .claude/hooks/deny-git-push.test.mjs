@@ -17,7 +17,7 @@ const HOOK = join(dirname(fileURLToPath(import.meta.url)), 'deny-git-push.mjs');
 function decide(command) {
   const res = spawnSync(process.execPath, [HOOK], {
     input: JSON.stringify({ tool_name: 'Bash', tool_input: { command } }),
-    encoding: 'utf8'
+    encoding: 'utf8',
   });
   const out = (res.stdout || '').trim();
   if (!out) return { decision: 'pass' };
@@ -68,9 +68,9 @@ const MUST_DENY = [
   'git-push',
   'git $SUB',
   'git ${SUBCMD}',
-  'alias gp=\'git push\'; gp',
+  "alias gp='git push'; gp",
   'alias deploy="git push origin main" ; deploy',
-  'bash -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA=='
+  'bash -EncodedCommand ZwBpAHQAIABwAHUAcwBoAA==',
 ];
 
 const MUST_PASS = [
@@ -91,7 +91,7 @@ const MUST_PASS = [
   'git branch -a',
   'cat docs/specs/push-notifications.md',
   'grep -r "push" src/',
-  'node -e "console.log(1)"'
+  'node -e "console.log(1)"',
 ];
 
 let failures = 0;
@@ -113,7 +113,6 @@ for (const cmd of MUST_PASS) {
 }
 
 console.log(
-  `\n${failures === 0 ? 'all green' : `${failures} failing`} ` +
-    `(${MUST_DENY.length} deny cases, ${MUST_PASS.length} pass cases)`
+  `\n${failures === 0 ? 'all green' : `${failures} failing`} ` + `(${MUST_DENY.length} deny cases, ${MUST_PASS.length} pass cases)`,
 );
 process.exit(failures === 0 ? 0 : 1);

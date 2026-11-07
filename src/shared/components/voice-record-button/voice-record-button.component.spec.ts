@@ -34,8 +34,8 @@ describe('VoiceRecordButtonComponent', () => {
       providers: [
         { provide: Store, useValue: { select: () => loading$ } },
         { provide: VoiceRecorderService, useValue: recorder },
-        { provide: LiveAnnouncer, useValue: { announce: announceSpy } }
-      ]
+        { provide: LiveAnnouncer, useValue: { announce: announceSpy } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(VoiceRecordButtonComponent);
@@ -52,7 +52,13 @@ describe('VoiceRecordButtonComponent', () => {
   }
 
   function pointerDown(overrides: Partial<PointerEventInit> = {}): PointerEvent {
-    const event = new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId: 1, button: 0, ...overrides });
+    const event = new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      pointerId: 1,
+      button: 0,
+      ...overrides,
+    });
     button().dispatchEvent(event);
     return event;
   }
@@ -217,7 +223,7 @@ describe('VoiceRecordButtonComponent', () => {
       ['denied', 'Microphone permission denied'],
       ['unsupported', 'Microphone unavailable'],
       ['no-device', 'Microphone unavailable'],
-      ['failed', 'Microphone unavailable']
+      ['failed', 'Microphone unavailable'],
     ];
 
     for (const [outcome, message] of cases) {

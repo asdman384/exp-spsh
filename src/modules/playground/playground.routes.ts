@@ -4,6 +4,6 @@ import { PlaygroundComponent } from './playground.component';
 export const routes: Routes = [
   {
     path: '',
-    component: PlaygroundComponent
-  }
+    component: PlaygroundComponent,
+  },
 ];

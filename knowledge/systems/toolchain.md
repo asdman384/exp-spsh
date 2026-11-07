@@ -81,6 +81,9 @@ relaxes a few rules the older code predates (component selector prefix, `prefer-
 `no-explicit-any` stays an error; legitimate uses carry an inline disable with a reason.[^eslint]
 
 Prettier: `printWidth: 120`, single quotes, no trailing commas, semicolons, 2-space indent.
+Prettier is an exact development dependency. `npm run format` formats JS (including MJS/CJS),
+TS, HTML, CSS, and SCSS files across the project. `npm run format:check` checks the same files
+without writing them. Both commands use `.prettierrc` and respect `.gitignore`.
 `.editorconfig`: UTF-8, final newline, trimmed whitespace, single quotes in TypeScript.
 
 # Local platform

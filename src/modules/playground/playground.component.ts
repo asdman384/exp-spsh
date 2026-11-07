@@ -1,7 +1,25 @@
 import { CommonModule } from '@angular/common';
 import { Component, DestroyRef, effect, inject, OnInit, signal } from '@angular/core';
 import { Store } from '@ngrx/store';
-import { catchError, combineLatest, debounceTime, defer, delay, distinctUntilChanged, map, Observable, of, OperatorFunction, pipe, retry, startWith, Subject, Subscription, switchMap, timer } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  debounceTime,
+  defer,
+  delay,
+  distinctUntilChanged,
+  map,
+  Observable,
+  of,
+  OperatorFunction,
+  pipe,
+  retry,
+  startWith,
+  Subject,
+  Subscription,
+  switchMap,
+  timer,
+} from 'rxjs';
 import { AppActions } from 'src/@state';
 import { TestPerfComponent } from './test-perf/test-perf.component';
 
@@ -11,25 +29,22 @@ interface State<T> {
   error: string | null;
 }
 
-export function searchQuery<T>(
-  fetch: (q: string, filter2: string) => Observable<T[]>
-): OperatorFunction<[string, string], State<T>> {
+export function searchQuery<T>(fetch: (q: string, filter2: string) => Observable<T[]>): OperatorFunction<[string, string], State<T>> {
   return pipe(
     debounceTime(300),
     distinctUntilChanged(([oldQ, oldFilter2], [q, filter2]) => q === oldQ && filter2 === oldFilter2),
-    switchMap(([q, filter2]) => defer(() => fetch(q, filter2)).pipe(
-      map(items => ({ items, loading: false, error: null })),
-      startWith({ items: [], loading: true, error: null }),
-      catchError(() => of<State<T>>({ items: [], loading: false, error: 'error for ' + q })),
-    )),
+    switchMap(([q, filter2]) =>
+      defer(() => fetch(q, filter2)).pipe(
+        map(items => ({ items, loading: false, error: null })),
+        startWith({ items: [], loading: true, error: null }),
+        catchError(() => of<State<T>>({ items: [], loading: false, error: 'error for ' + q })),
+      ),
+    ),
   );
 }
 
-
 export function retryWithBackoff<T>(max = 3) {
-  return (source: Observable<T>) => source.pipe(
-    retry({ count: max, delay: (_e, i) => timer(2 ** i * 300) })
-  );
+  return (source: Observable<T>) => source.pipe(retry({ count: max, delay: (_e, i) => timer(2 ** i * 300) }));
 }
 
 @Component({
@@ -37,7 +52,7 @@ export function retryWithBackoff<T>(max = 3) {
   standalone: true,
   imports: [CommonModule, TestPerfComponent],
   templateUrl: './playground.component.html',
-  styleUrls: ['./playground.component.scss']
+  styleUrls: ['./playground.component.scss'],
 })
 export class PlaygroundComponent implements OnInit {
   private readonly store = inject(Store);
@@ -47,13 +62,12 @@ export class PlaygroundComponent implements OnInit {
   private readonly filter1$ = new Subject<string>();
   private readonly filter2$ = new Subject<string>();
 
-  protected readonly output$ =
-    combineLatest([this.filter1$, this.filter2$]).pipe(
-      searchQuery(fetchData),
-      // (source: Observable<State<string>>) => source.pipe(
-      //   retry({ count: 1, delay: (_e, i) => timer(2 ** i * 300) })
-      // )
-    );
+  protected readonly output$ = combineLatest([this.filter1$, this.filter2$]).pipe(
+    searchQuery(fetchData),
+    // (source: Observable<State<string>>) => source.pipe(
+    //   retry({ count: 1, delay: (_e, i) => timer(2 ** i * 300) })
+    // )
+  );
 
   // Signal-based counterpart of output$ (Angular 18 APIs only: signal + effect).
   // The effect restarts the 300ms timer on every filter change (debounceTime); runSearch skips
@@ -68,7 +82,7 @@ export class PlaygroundComponent implements OnInit {
   private lastFilters: [string, string] | null = null;
   private searchSubscription: Subscription | null = null;
 
-  private readonly debounceFilters = effect((onCleanup) => {
+  private readonly debounceFilters = effect(onCleanup => {
     const q = this.filter1();
     const filter2 = this.filter2();
     const timeoutId = setTimeout(() => this.runSearch(q, filter2), 300);
@@ -82,12 +96,11 @@ export class PlaygroundComponent implements OnInit {
   ngOnInit() {
     this.store.dispatch(AppActions.setTitle({ title: 'Angular Features Playground', icon: 'settings' }));
 
-
     this.output$.subscribe({
-      next: (state) => {
+      next: state => {
         console.log('State:', state);
-      }
-    })
+      },
+    });
   }
 
   onStartClick() {

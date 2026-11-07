@@ -4,9 +4,24 @@
   width: 100%;
 }
 
+.mdc-data-table__cell,
+.mdc-data-table__header-cell {
+  &:first-child {
+    padding-left: var(--exp-table-first-col-padding-left) !important;
+  }
+
+  &:last-child {
+    padding-right: var(--exp-table-last-col-padding-right) !important;
+  }
+}
+
 .exp-table {
   width: 100%;
   overflow: hidden;
+}
+
+.mat-column-amount {
+  min-width: var(--exp-table-amount-column-min-width);
 }
 
 .mat-column-select {
@@ -15,6 +30,20 @@
 
 .mat-column-category {
   line-height: 18px;
+}
+
+.column-amount-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  .amount-value {
+    width: 58px;
+  }
+
+  .share {
+    width: 30px;
+  }
 }
 
 .mat-column-date:not(.mat-mdc-header-cell),

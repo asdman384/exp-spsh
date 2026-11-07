@@ -1,5 +1,5 @@
 <button (click)="onStartClick()">start</button>
-<br>
+<br />
 <button (click)="onButtonClick()">Error</button>
 <input type="text" (keyup)="filter1Change($event)" />
 <input type="text" (keyup)="filter2Change($event)" />
@@ -13,5 +13,5 @@
 <pre>{{ output() | json }}</pre>
 
 @for (item of items(); track $index) {
-<app-test-perf [testInput]="'item'"></app-test-perf>
+  <app-test-perf [testInput]="'item'"></app-test-perf>
 }

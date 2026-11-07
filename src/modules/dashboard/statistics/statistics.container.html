@@ -1,45 +1,64 @@
 <div class="form">
   <!-- USER -->
-  <mat-tab-group class="carousel-selector carousel-selector-user" [(selectedIndex)]="currentSheetIndex"
-    (selectedIndexChange)="formChanged($event, currentYearIndex, currentMonthIndex, sheets)">
+  <mat-tab-group
+    class="carousel-selector carousel-selector-user"
+    [(selectedIndex)]="currentSheetIndex"
+    (selectedIndexChange)="formChanged($event, currentYearIndex, currentMonthIndex, sheets)"
+  >
     @for (sheet of sheets; track sheet.id) {
-    <mat-tab [label]="sheet.title.split('_')[1]"></mat-tab>
+      <mat-tab [label]="sheet.title.split('_')[1]"></mat-tab>
     }
   </mat-tab-group>
 
   <!-- YEAR -->
-  <mat-tab-group class="carousel-selector" [(selectedIndex)]="currentYearIndex"
-    (selectedIndexChange)="formChanged(currentSheetIndex, $event, currentMonthIndex, sheets)">
-    @for (tab of yearsTabs; track tab) { <mat-tab [label]="tab.toString()"></mat-tab> }
+  <mat-tab-group
+    class="carousel-selector"
+    [(selectedIndex)]="currentYearIndex"
+    (selectedIndexChange)="formChanged(currentSheetIndex, $event, currentMonthIndex, sheets)"
+  >
+    @for (tab of yearsTabs; track tab) {
+      <mat-tab [label]="tab.toString()"></mat-tab>
+    }
   </mat-tab-group>
 
   <!-- MONTH -->
-  <mat-tab-group #monthSelector class="carousel-selector carousel-selector-month" [(selectedIndex)]="currentMonthIndex"
-    (selectedIndexChange)="formChanged(currentSheetIndex, currentYearIndex, $event, sheets)">
-    @for (tab of monthTabs; track tab; let i = $index) { <mat-tab [label]="tab"></mat-tab> }
+  <mat-tab-group
+    #monthSelector
+    class="carousel-selector carousel-selector-month"
+    [(selectedIndex)]="currentMonthIndex"
+    (selectedIndexChange)="formChanged(currentSheetIndex, currentYearIndex, $event, sheets)"
+  >
+    @for (tab of monthTabs; track tab; let i = $index) {
+      <mat-tab [label]="tab"></mat-tab>
+    }
   </mat-tab-group>
 </div>
 
 @if (data.state().status === 'ready') {
-<div class="statistics-summary">
-  <div class="button-container">
-    @if (selectedCategory) {
-    <button mat-icon-button aria-label="Back to categories" (click)="unCategory()"><mat-icon>undo</mat-icon></button>
+  <div class="statistics-summary">
+    <div class="button-container">
+      @if (selectedCategory) {
+        <button mat-icon-button aria-label="Back to categories" (click)="unCategory()"><mat-icon>undo</mat-icon></button>
+      }
+    </div>
+    <div style="font-weight: 500">{{ selectedCategory ?? 'Spending ·' }}</div>
+    <div style="font-weight: 500">{{ total | number: '1.0-2' : 'pl' }}</div>
+    @if (!selectedCategory) {
+      <div style="flex: 1"></div>
+      <div style="font-weight: 500; margin: 0 46px 0 0">Debt · {{ debtTotal() | number: '1.0-2' : 'pl' }}</div>
     }
   </div>
-  <div style="font-weight: 500">{{ selectedCategory ?? 'Spending ·' }}</div>
-  <div style="font-weight: 500">{{ total | number : '1.0-2' : 'pl' }}</div>
-  @if (!selectedCategory) {
-  <div style="flex: 1"></div>
-  <div style="font-weight: 500; margin: 0 46px;">Debt · {{ debtTotal() | number : '1.0-2' : 'pl' }}</div>
-  }
-</div>
 }
-
 @if ((expenses$ | async) || []; as expenses) {
-<expenses-table #summaryTable [selected]="expenses" [selectable]="selectable" [dataSource]="expenses"
-  (cellClick)="expensesTableCellClickHandler($event)" (selectionChange)="onSelection($event)"></expenses-table>
-@if (data.state().status === 'ready' && expenses.length === 0) {
-<p class="statistics-note">No entries for this view.</p>
-}
+  <expenses-table
+    #summaryTable
+    [selected]="expenses"
+    [selectable]="selectable"
+    [dataSource]="expenses"
+    (cellClick)="expensesTableCellClickHandler($event)"
+    (selectionChange)="onSelection($event)"
+  ></expenses-table>
+  @if (data.state().status === 'ready' && expenses.length === 0) {
+    <p class="statistics-note">No entries for this view.</p>
+  }
 }

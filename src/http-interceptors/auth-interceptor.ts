@@ -19,7 +19,7 @@ export class ExpAuthInterceptor implements HttpInterceptor {
     return this.security.refreshToken().pipe(
       take(1),
       tap(() => log(`${req.method} ${req.url}`)),
-      exhaustMap((token) => next.handle(setToken(req, token)))
+      exhaustMap(token => next.handle(setToken(req, token))),
     );
   }
 }

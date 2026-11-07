@@ -2,15 +2,18 @@
   <!-- Checkbox col. -->
   <ng-container matColumnDef="select">
     <th mat-header-cell *matHeaderCellDef>
-      <mat-checkbox color="primary" (change)="toggleAllRows()" [checked]="selection.hasValue() && isAllSelected()"
-        [indeterminate]="selection.hasValue() && !isAllSelected()">
+      <mat-checkbox
+        color="primary"
+        (change)="toggleAllRows()"
+        [checked]="selection.hasValue() && isAllSelected()"
+        [indeterminate]="selection.hasValue() && !isAllSelected()"
+      >
       </mat-checkbox>
     </th>
     <td mat-cell *matCellDef="let row">
-      @if (row.category!=='TOTAL') {
-      <mat-checkbox color="primary" (click)="$event.stopPropagation()" (change)="toggleRow(row)"
-        [checked]="selection.isSelected(row)">
-      </mat-checkbox>
+      @if (row.category !== 'TOTAL') {
+        <mat-checkbox color="primary" (click)="$event.stopPropagation()" (change)="toggleRow(row)" [checked]="selection.isSelected(row)">
+        </mat-checkbox>
       }
     </td>
   </ng-container>
@@ -18,9 +21,14 @@
   <!-- Date col. -->
   <ng-container matColumnDef="date">
     <th mat-header-cell *matHeaderCellDef>Date</th>
-    <td mat-cell *matCellDef="let row" matTooltip="{{ row.date | date : dateTimeFormat }}" matTooltipPosition="above"
-      matTooltipTouchGestures="auto">
-      {{ row.date | date : dateFormat }}
+    <td
+      mat-cell
+      *matCellDef="let row"
+      matTooltip="{{ row.date | date: dateTimeFormat }}"
+      matTooltipPosition="above"
+      matTooltipTouchGestures="auto"
+    >
+      {{ row.date | date: dateFormat }}
     </td>
   </ng-container>
 
@@ -28,17 +36,20 @@
   <ng-container matColumnDef="amount">
     <th mat-header-cell *matHeaderCellDef>Amount</th>
     <td mat-cell *matCellDef="let row">
-      {{ row.amount | number : '1.0-2' : 'pl' }}
-      @if (row.share !== undefined) {
-      <span class="statistic-detail">{{ row.share | number : '1.0-1' : 'pl' }}% of spending</span>
-      }
-      @if (row.delta !== undefined) {
-      <span class="statistic-detail">
-        {{ row.delta > 0 ? '+' : '' }}{{ row.delta | number : '1.0-2' : 'pl' }}
-        <span aria-hidden="true">{{ row.delta > 0 ? '↑' : row.delta < 0 ? '↓' : '→' }}</span>
-            vs previous month
+      <div class="column-amount-container">
+        <span class="amount-value">
+          {{ row.amount | number: '1.0-2' : 'pl' }}
         </span>
+        @if (row.share !== undefined) {
+          <span class="statistic-detail share">{{ row.share | number: '1.0-1' : 'pl' }}%</span>
         }
+        @if (row.delta !== undefined) {
+          <span class="statistic-detail">
+            {{ row.delta > 0 ? '+' : '' }}{{ row.delta | number: '1.0-2' : 'pl' }}
+            <span aria-hidden="true"> {{ row.delta > 0 ? '↑' : row.delta < 0 ? '↓' : null }} </span>
+          </span>
+        }
+      </div>
     </td>
   </ng-container>
 
@@ -47,7 +58,7 @@
     <th mat-header-cell *matHeaderCellDef>Category</th>
     <td mat-cell *matCellDef="let row" (click)="cellClickHandler('category', row.category, row)">
       @if (row.enqueuedAt !== undefined) {
-      <mat-icon class="queued-icon" role="img" aria-hidden="false" aria-label="Not sent yet">cloud_upload</mat-icon>
+        <mat-icon class="queued-icon" role="img" aria-hidden="false" aria-label="Not sent yet">cloud_upload</mat-icon>
       }
       {{ row.category }}
     </td>
@@ -66,19 +77,30 @@
     <th mat-header-cell *matHeaderCellDef>Debt</th>
     <td mat-cell *matCellDef="let row">
       @if (row.isInDebt) {
-      <mat-icon aria-label="In debt">check</mat-icon>
+        <mat-icon aria-label="In debt">check</mat-icon>
       }
     </td>
   </ng-container>
 
   <tr class="non-selectable" mat-header-row *matHeaderRowDef="columns()"></tr>
-  <tr mat-row *matRowDef="let row; columns: columns()" cdkDrag cdkDragLockAxis="x" [cdkDragDisabled]="!draggable()"
-    [cdkDragData]="row" [class.queued-row]="row.enqueuedAt !== undefined" (cdkDragMoved)="cdkDragMoved($event)"
-    (cdkDragEnded)="cdkDragEnded($event)" (cdkDragStarted)="cdkDragStarted($event)"></tr>
+  <tr
+    mat-row
+    *matRowDef="let row; columns: columns()"
+    cdkDrag
+    cdkDragLockAxis="x"
+    [cdkDragDisabled]="!draggable()"
+    [cdkDragData]="row"
+    [class.queued-row]="row.enqueuedAt !== undefined"
+    (cdkDragMoved)="cdkDragMoved($event)"
+    (cdkDragEnded)="cdkDragEnded($event)"
+    (cdkDragStarted)="cdkDragStarted($event)"
+  ></tr>
 </table>
 
 @if (dragging()) {
-<div [style.top.px]="dragPlaceholderY()" class="cdk-drag__drag-placeholder">
-  @if (isDelete()) { <mat-icon>delete</mat-icon> Delete }
-</div>
+  <div [style.top.px]="dragPlaceholderY()" class="cdk-drag__drag-placeholder">
+    @if (isDelete()) {
+      <mat-icon>delete</mat-icon> Delete
+    }
+  </div>
 }

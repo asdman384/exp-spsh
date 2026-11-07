@@ -22,43 +22,44 @@ export class PickerService {
    */
   pickSpreadsheet(): Observable<string | undefined> {
     return this.security.refreshToken().pipe(
-      map((token) => token.access_token),
-      switchMap((accessToken) => this.openPicker(accessToken))
+      map(token => token.access_token),
+      switchMap(accessToken => this.openPicker(accessToken)),
     );
   }
 
   private openPicker(accessToken: string): Observable<string | undefined> {
-    return new Observable<string | undefined>((subscriber) => {
-      this.loadPickerApi().then(() => {
-        const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(
-          google.picker.DocsViewMode.LIST
-        );
+    return new Observable<string | undefined>(subscriber => {
+      this.loadPickerApi().then(
+        () => {
+          const view = new google.picker.DocsView(google.picker.ViewId.SPREADSHEETS).setMode(google.picker.DocsViewMode.LIST);
 
-        new google.picker.PickerBuilder()
-          .setOAuthToken(accessToken)
-          .setDeveloperKey(keys.API_KEY)
-          .setAppId(keys.APP_ID)
-          .addView(view)
-          .setCallback((response: google.picker.ResponseObject) => {
-            const action = response[google.picker.Response.ACTION];
-            if (action === google.picker.Action.PICKED) {
-              const doc = response[google.picker.Response.DOCUMENTS]?.[0];
-              subscriber.next(doc?.[google.picker.Document.ID]);
-              subscriber.complete();
-            } else if (action === google.picker.Action.CANCEL) {
-              subscriber.next(undefined);
-              subscriber.complete();
-            }
-          })
-          .build()
-          .setVisible(true);
-      }, (error) => subscriber.error(error));
+          new google.picker.PickerBuilder()
+            .setOAuthToken(accessToken)
+            .setDeveloperKey(keys.API_KEY)
+            .setAppId(keys.APP_ID)
+            .addView(view)
+            .setCallback((response: google.picker.ResponseObject) => {
+              const action = response[google.picker.Response.ACTION];
+              if (action === google.picker.Action.PICKED) {
+                const doc = response[google.picker.Response.DOCUMENTS]?.[0];
+                subscriber.next(doc?.[google.picker.Document.ID]);
+                subscriber.complete();
+              } else if (action === google.picker.Action.CANCEL) {
+                subscriber.next(undefined);
+                subscriber.complete();
+              }
+            })
+            .build()
+            .setVisible(true);
+        },
+        error => subscriber.error(error),
+      );
     });
   }
 
   private loadPickerApi(): Promise<void> {
     if (!this.pickerApi) {
-      this.pickerApi = this.loadGapi().then(() => new Promise<void>((resolve) => gapi.load('picker', () => resolve())));
+      this.pickerApi = this.loadGapi().then(() => new Promise<void>(resolve => gapi.load('picker', () => resolve())));
     }
     return this.pickerApi;
   }

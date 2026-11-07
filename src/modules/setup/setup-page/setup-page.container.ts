@@ -12,14 +12,7 @@ import { Store } from '@ngrx/store';
 import { EMPTY, Observable, catchError, forkJoin, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
-import {
-  CATEGORIES_SHEET_ID,
-  CATEGORIES_SHEET_TITLE,
-  DATA_SHEETS,
-  DATA_SHEET_TITLE_PREFIX,
-  ROUTE,
-  SPREADSHEET_ID
-} from 'src/constants';
+import { CATEGORIES_SHEET_ID, CATEGORIES_SHEET_TITLE, DATA_SHEETS, DATA_SHEET_TITLE_PREFIX, ROUTE, SPREADSHEET_ID } from 'src/constants';
 import { AbstractSecurityService, PickerService, SpreadsheetService } from 'src/services';
 import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
 import { Sheet, Userinfo } from 'src/shared/models';
@@ -30,7 +23,7 @@ type State = 'check document' | 'finish';
   selector: 'setup-page',
   templateUrl: './setup-page.container.html',
   styleUrl: './setup-page.container.scss',
-  imports: [FormsModule, AsyncPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule]
+  imports: [FormsModule, AsyncPipe, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule, MatProgressSpinnerModule],
 })
 export class SettingsPageContainer {
   readonly spreadsheetIdField = SPREADSHEET_ID;
@@ -49,7 +42,7 @@ export class SettingsPageContainer {
     private readonly security: AbstractSecurityService,
     private readonly spreadsheetService: SpreadsheetService,
     private readonly picker: PickerService,
-    private readonly store: Store
+    private readonly store: Store,
   ) {
     this.store.dispatch(AppActions.setTitle({ title: 'Settings', icon: 'settings' }));
   }
@@ -66,7 +59,7 @@ export class SettingsPageContainer {
     this.picker
       .pickSpreadsheet()
       .pipe(
-        switchMap((spreadsheetId) => {
+        switchMap(spreadsheetId => {
           if (!spreadsheetId) {
             log('Picker: no spreadsheet picked');
             this.loading.set(false);
@@ -75,20 +68,18 @@ export class SettingsPageContainer {
           log('load SpreadSheet...');
           return this.loadSpreadSheet(spreadsheetId);
         }),
-        tap((spreadsheet) => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
-        tap((spreadsheet) => this.storeDataSheets(spreadsheet)),
+        tap(spreadsheet => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
+        tap(spreadsheet => this.storeDataSheets(spreadsheet)),
         withLatestFrom(this.security.user$),
         tap(([, user]) => {
           if (!user) throw new Error('error getting user');
         }),
-        switchMap(([spreadsheet, user]) =>
-          forkJoin([this.createDataSheet(spreadsheet, user!), this.createCategoriesSheet(spreadsheet)])
-        ),
-        catchError((e) => {
+        switchMap(([spreadsheet, user]) => forkJoin([this.createDataSheet(spreadsheet, user!), this.createCategoriesSheet(spreadsheet)])),
+        catchError(e => {
           log(e);
           this.loading.set(false);
           return EMPTY;
-        })
+        }),
       )
       .subscribe(() => {
         this.loading.set(false);
@@ -100,16 +91,16 @@ export class SettingsPageContainer {
   private storeDataSheets(spreadsheet: gapi.client.sheets.Spreadsheet): void {
     this.spreadsheetService.setSpreadsheetId(spreadsheet.spreadsheetId!);
     const dataSheets = spreadsheet.sheets
-      ?.filter((sheet) => !sheet.properties?.hidden)
-      .filter((sheet) => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
-      .map((sheet) => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }));
+      ?.filter(sheet => !sheet.properties?.hidden)
+      .filter(sheet => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
+      .map(sheet => ({ id: sheet.properties!.sheetId!, title: sheet.properties!.title! }));
     log('filtered dataSheets', dataSheets);
-    dataSheets?.forEach((dataSheet) => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
+    dataSheets?.forEach(dataSheet => this.store.dispatch(AppActions.upsertDataSheet({ dataSheet })));
   }
 
   private createDataSheet(spreadsheet: gapi.client.sheets.Spreadsheet, user: Userinfo) {
     return this.createSheet(DATA_SHEET_TITLE_PREFIX + user.name, EXPENSE_COLUMN_COUNT, spreadsheet).pipe(
-      switchMap((dataSheet) => {
+      switchMap(dataSheet => {
         this.store.dispatch(AppActions.upsertDataSheet({ dataSheet }));
         this.store.dispatch(AppActions.setCurrentSheet({ sheet: dataSheet.title }));
         log('data sheet format adjust...');
@@ -118,13 +109,13 @@ export class SettingsPageContainer {
       tap(() => {
         log('data sheet format adjust finish');
         this.sheetDone.set(true);
-      })
+      }),
     );
   }
 
   private createCategoriesSheet(spreadsheet: gapi.client.sheets.Spreadsheet) {
     return this.createSheet(CATEGORIES_SHEET_TITLE, 2, spreadsheet).pipe(
-      switchMap((categoriesSheet) => {
+      switchMap(categoriesSheet => {
         this.store.dispatch(AppActions.categoriesSheetId({ categoriesSheetId: categoriesSheet.id }));
         log('categories sheet format adjust...');
         return this.spreadsheetService.setCategoriesSheetFormats(categoriesSheet.id);
@@ -132,7 +123,7 @@ export class SettingsPageContainer {
       tap(() => {
         log('categories sheet format adjust finish');
         this.categoriesSheetDone.set(true);
-      })
+      }),
     );
   }
 
@@ -144,7 +135,7 @@ export class SettingsPageContainer {
         }
         log('loaded spreadsheet ' + spreadsheetId);
         this.store.dispatch(AppActions.spreadsheetId({ spreadsheetId }));
-      })
+      }),
     );
   }
 
@@ -152,16 +143,12 @@ export class SettingsPageContainer {
     this.router.navigate([ROUTE.dashboard], {
       replaceUrl: true,
       queryParams: { state: null, code: null, scope: null },
-      queryParamsHandling: 'merge'
+      queryParamsHandling: 'merge',
     });
   }
 
-  private createSheet(
-    title: string,
-    columnCount: number,
-    spreadsheet: gapi.client.sheets.Spreadsheet
-  ): Observable<Sheet> {
-    const sheet = spreadsheet.sheets?.find((s) => s.properties?.title === title)?.properties;
+  private createSheet(title: string, columnCount: number, spreadsheet: gapi.client.sheets.Spreadsheet): Observable<Sheet> {
+    const sheet = spreadsheet.sheets?.find(s => s.properties?.title === title)?.properties;
 
     if (sheet) {
       log(`sheet exists [${sheet.title}]`);
@@ -170,8 +157,8 @@ export class SettingsPageContainer {
 
     log(`sheet creation [${title}]...`);
     return this.spreadsheetService.addSheet(title, columnCount).pipe(
-      tap((sheet) => log(`sheet created [${sheet.title}]`)),
-      map((sheet) => ({ id: sheet.sheetId!, title: sheet.title! }))
+      tap(sheet => log(`sheet created [${sheet.title}]`)),
+      map(sheet => ({ id: sheet.sheetId!, title: sheet.title! })),
     );
   }
 }

@@ -13,25 +13,28 @@ function makeRecord(overrides: Partial<OutboxRecord> = {}): OutboxRecord {
     spreadsheetId: 'spsh-1',
     payload: {
       sheetId: 0,
-      expense: { date: new Date(2024, 0, 1), amount: 10, category: 'Food', comment: '', isInDebt: false }
+      expense: { date: new Date(2024, 0, 1), amount: 10, category: 'Food', comment: '', isInDebt: false },
     },
     enqueuedAt: new Date(2024, 0, 5, 14, 7).getTime(),
     status: 'failed',
     attempts: 1,
     failure: 'rejected',
-    ...overrides
+    ...overrides,
   };
 }
 
-function setup(record: OutboxRecord): { fixture: ComponentFixture<OutboxFailureNoticeComponent>; dismiss: ReturnType<typeof vi.fn> } {
+function setup(record: OutboxRecord): {
+  fixture: ComponentFixture<OutboxFailureNoticeComponent>;
+  dismiss: ReturnType<typeof vi.fn>;
+} {
   const dismiss = vi.fn();
 
   TestBed.configureTestingModule({
     imports: [OutboxFailureNoticeComponent],
     providers: [
       { provide: MAT_SNACK_BAR_DATA, useValue: { record } as OutboxFailureNoticeData },
-      { provide: MatSnackBarRef, useValue: { dismiss } }
-    ]
+      { provide: MatSnackBarRef, useValue: { dismiss } },
+    ],
   });
 
   const fixture = TestBed.createComponent(OutboxFailureNoticeComponent);
@@ -46,7 +49,7 @@ describe('[AC31] OutboxFailureNoticeComponent', () => {
     const record = makeRecord({
       failure: 'rejected',
       payload: { sheetId: 0, expense: { category: 'Food', amount: 12.5, comment: '', isInDebt: false } },
-      enqueuedAt: new Date(2024, 0, 5, 14, 7).getTime()
+      enqueuedAt: new Date(2024, 0, 5, 14, 7).getTime(),
     });
 
     const { fixture } = setup(record);
@@ -62,7 +65,7 @@ describe('[AC31] OutboxFailureNoticeComponent', () => {
     const record = makeRecord({
       failure: 'otherSpreadsheet',
       payload: { sheetId: 0, expense: { category: 'Transport', amount: 8, comment: '', isInDebt: false } },
-      enqueuedAt: new Date(2024, 5, 20, 9, 3).getTime()
+      enqueuedAt: new Date(2024, 5, 20, 9, 3).getTime(),
     });
 
     const { fixture } = setup(record);
@@ -77,9 +80,7 @@ describe('[AC31] OutboxFailureNoticeComponent', () => {
   it('should_render_exactly_three_buttons_named_Retry_Discard_and_Close', () => {
     const { fixture } = setup(makeRecord());
 
-    const buttonTexts = fixture.debugElement
-      .queryAll(By.css('button'))
-      .map((de) => (de.nativeElement as HTMLElement).textContent?.trim());
+    const buttonTexts = fixture.debugElement.queryAll(By.css('button')).map(de => (de.nativeElement as HTMLElement).textContent?.trim());
 
     expect(buttonTexts).toEqual(['Retry', 'Discard', 'Close']);
   });

@@ -33,14 +33,13 @@ describe('AbstractSecurityService.logout', () => {
     storage = new MemoryStorage();
     revoke = vi.fn();
     vi.stubGlobal('google', {
-      accounts: { oauth2: { revoke, initCodeClient: vi.fn(() => ({})), initTokenClient: vi.fn(() => ({})) } }
+      accounts: { oauth2: { revoke, initCodeClient: vi.fn(() => ({})), initTokenClient: vi.fn(() => ({})) } },
     });
   });
 
   afterEach(() => vi.unstubAllGlobals());
 
-  const redirect = () =>
-    new RedirectSecurityService({} as NetworkStatusService, storage, {} as HttpClient);
+  const redirect = () => new RedirectSecurityService({} as NetworkStatusService, storage, {} as HttpClient);
   const popup = () => new PopupSecurityService({} as NetworkStatusService, storage, {} as HttpClient);
 
   it('redirect strategy revokes the refresh token when one is stored', () => {

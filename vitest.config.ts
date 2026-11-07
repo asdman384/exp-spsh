@@ -9,7 +9,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: [],
     browser: {
-      screenshotFailures: false
-    }
-  }
+      screenshotFailures: false,
+    },
+  },
 });

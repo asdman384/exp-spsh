@@ -33,7 +33,7 @@ function makeRecord(overrides: Partial<OutboxRecord> = {}): OutboxRecord {
     enqueuedAt: 1000,
     status: 'pending',
     attempts: 0,
-    ...overrides
+    ...overrides,
   };
 }
 
@@ -48,7 +48,7 @@ class ControllableOutboxStorage implements OutboxStorage {
 }
 
 function wait(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 /** Polls instead of relying on a fixed number of microtask flushes, since a drain pass chains an
@@ -65,13 +65,13 @@ async function waitFor(predicate: () => boolean, timeoutMs = 2000): Promise<void
 
 function seed(storage: OutboxStorage, ...records: Array<OutboxRecord>): Promise<void> {
   return records.reduce(
-    (chain, record) => chain.then(() => new Promise<void>((resolve) => storage.add(record).subscribe(() => resolve()))),
-    Promise.resolve()
+    (chain, record) => chain.then(() => new Promise<void>(resolve => storage.add(record).subscribe(() => resolve()))),
+    Promise.resolve(),
   );
 }
 
 function readAll(storage: OutboxStorage): Promise<Array<OutboxRecord>> {
-  return new Promise((resolve) => storage.getAll().subscribe((records) => resolve(records)));
+  return new Promise(resolve => storage.getAll().subscribe(records => resolve(records)));
 }
 
 /** Wraps the private `runPass` so a test can count drain passes that got past the preconditions
@@ -114,7 +114,7 @@ function setup(options: { storage?: OutboxStorage; spreadsheetId?: string } = {}
   let choiceValue: 'retry' | 'discard' | 'close' | null = null;
   const openFromComponent = vi.fn().mockImplementation(() => ({
     instance: { choice: () => choiceValue },
-    afterDismissed: () => of(undefined)
+    afterDismissed: () => of(undefined),
   }));
   const announce = vi.fn().mockResolvedValue(undefined);
 
@@ -129,14 +129,14 @@ function setup(options: { storage?: OutboxStorage; spreadsheetId?: string } = {}
       { provide: OutboxStorage, useValue: storage },
       { provide: Router, useValue: router },
       { provide: MatSnackBar, useValue: { open: vi.fn(), openFromComponent } },
-      { provide: LiveAnnouncer, useValue: { announce } }
-    ]
+      { provide: LiveAnnouncer, useValue: { announce } },
+    ],
   });
 
   const service = TestBed.inject(OutboxService);
   const completedPasses = countCompletedPasses(service);
   const sent: Array<OutboxRecord> = [];
-  service.sent$.subscribe((record) => sent.push(record));
+  service.sent$.subscribe(record => sent.push(record));
 
   return {
     service,
@@ -151,7 +151,7 @@ function setup(options: { storage?: OutboxStorage; spreadsheetId?: string } = {}
     router,
     openFromComponent,
     announce,
-    setChoice: (c) => (choiceValue = c)
+    setChoice: c => (choiceValue = c),
   };
 }
 
@@ -183,7 +183,7 @@ describe('OutboxService', () => {
       await waitFor(() => h.service.records().length === 1);
 
       expect(getAllSpy).toHaveBeenCalledTimes(1);
-      expect(h.service.records().map((r) => r.localId)).toEqual(['seed']);
+      expect(h.service.records().map(r => r.localId)).toEqual(['seed']);
       expect(h.service.failedCount()).toBe(1);
     });
 
@@ -251,7 +251,7 @@ describe('OutboxService', () => {
         payload: { sheetId: 7, expense: makeExpense('lunch') },
         enqueuedAt: expect.any(Number),
         status: 'pending',
-        attempts: 0
+        attempts: 0,
       });
       expect(Object.keys(record.payload.expense).sort()).toEqual(['amount', 'category', 'comment', 'date', 'isInDebt']);
     });
@@ -277,9 +277,7 @@ describe('OutboxService', () => {
       await waitFor(() => h.dispatch.mock.calls.length > 0);
 
       expect(h.dispatch).toHaveBeenCalledWith(AppActions.loading({ loading: false }));
-      expect(h.dispatch).toHaveBeenCalledWith(
-        AppActions.operationFailed({ source: 'addExpense$', message: FAILURE_MESSAGES.addExpense$ })
-      );
+      expect(h.dispatch).toHaveBeenCalledWith(AppActions.operationFailed({ source: 'addExpense$', message: FAILURE_MESSAGES.addExpense$ }));
       expect(h.service.records()).toEqual([]);
       expect(h.announce).not.toHaveBeenCalled();
     });
@@ -451,7 +449,10 @@ describe('OutboxService', () => {
       // `ControllableOutboxStorage` is a static stub: after the record is sent it must stop being
       // returned, or the sessionSent guard would loop re-attempting its removal. Two reads see
       // the record (the pass's initial snapshot, then the loop's first fresh read that sends it).
-      storage.getAll.mockReturnValueOnce(of([record])).mockReturnValueOnce(of([record])).mockReturnValue(of([]));
+      storage.getAll
+        .mockReturnValueOnce(of([record]))
+        .mockReturnValueOnce(of([record]))
+        .mockReturnValue(of([]));
       h.addExpense.mockReturnValue(of({}));
 
       h.user$.next({ name: 'Oleg' });
@@ -498,7 +499,7 @@ describe('OutboxService', () => {
       gates[1].next({});
       await waitFor(() => h.completedPasses() === 1);
       expect(h.service.records()).toEqual([]);
-      expect(h.sent.map((r) => r.localId)).toEqual(['b']); // the last sent record, once per pass
+      expect(h.sent.map(r => r.localId)).toEqual(['b']); // the last sent record, once per pass
     });
 
     it('should_read_fresh_before_every_item_so_a_record_removed_between_iterations_is_skipped', async () => {
@@ -533,9 +534,9 @@ describe('OutboxService', () => {
       expect(h.addExpense).toHaveBeenCalledTimes(1);
       expect(h.addExpense).toHaveBeenCalledWith(matching.payload.sheetId, matching.payload.expense);
       expect(h.service.records()).toEqual([
-        expect.objectContaining({ localId: 'mismatch', status: 'failed', failure: 'otherSpreadsheet' })
+        expect.objectContaining({ localId: 'mismatch', status: 'failed', failure: 'otherSpreadsheet' }),
       ]);
-      expect(h.sent.map((r) => r.localId)).toEqual(['match']);
+      expect(h.sent.map(r => r.localId)).toEqual(['match']);
       expect(h.openFromComponent).toHaveBeenCalledTimes(1); // newly failed -> notice
     });
 
@@ -583,7 +584,7 @@ describe('OutboxService', () => {
         h.dispatch.mock.calls.filter(
           ([a]) =>
             (a as { type: string }).type === AppActions.operationFailed.type &&
-            (a as ReturnType<typeof AppActions.operationFailed>).source === 'outboxDrain$'
+            (a as ReturnType<typeof AppActions.operationFailed>).source === 'outboxDrain$',
         ).length;
 
       // Pass 1: auth failure -> toast (episode start). The record stays pending.
@@ -613,12 +614,10 @@ describe('OutboxService', () => {
     });
 
     it('should_expose_the_verbatim_D12_D13_copy_strings', () => {
-      expect(OUTBOX_MESSAGES.queued).toBe(
-        'Expense saved on this device. It will be sent to your spreadsheet automatically.'
-      );
+      expect(OUTBOX_MESSAGES.queued).toBe('Expense saved on this device. It will be sent to your spreadsheet automatically.');
       expect(OUTBOX_MESSAGES.allSent).toBe('All saved expenses were sent to your spreadsheet.');
       expect(OUTBOX_MESSAGES.authBlocked).toBe(
-        "Your saved expenses couldn't be sent because your Google sign-in needs renewing. They're kept on this device."
+        "Your saved expenses couldn't be sent because your Google sign-in needs renewing. They're kept on this device.",
       );
     });
   });
@@ -646,7 +645,7 @@ describe('OutboxService', () => {
       await init(h);
 
       expect(h.announce).not.toHaveBeenCalledWith(OUTBOX_MESSAGES.allSent, expect.anything());
-      expect(h.sent.map((r) => r.localId)).toEqual(['a']);
+      expect(h.sent.map(r => r.localId)).toEqual(['a']);
     });
 
     it('should_neither_announce_nor_emit_when_nothing_was_sent', async () => {
@@ -683,7 +682,7 @@ describe('OutboxService', () => {
         localId: 'F1',
         status: 'failed',
         failure: 'rejected',
-        attempts: 1
+        attempts: 1,
       });
       expect(config['politeness']).toBe('assertive');
       expect(config['verticalPosition']).toBe('top');
@@ -721,7 +720,7 @@ describe('OutboxService', () => {
       await waitFor(() => h.addExpense.mock.calls.length === 1);
 
       const updated = await readAll(storage);
-      expect(updated.find((r) => r.localId === 'F3')).toMatchObject({ status: 'pending', failure: undefined });
+      expect(updated.find(r => r.localId === 'F3')).toMatchObject({ status: 'pending', failure: undefined });
       expect(h.service.pendingCount()).toBe(1);
     });
 
@@ -799,58 +798,53 @@ describe('OutboxService drain pass with the real IndexedDbOutboxStorage (RR-9 it
     await deleteRealDb();
   });
 
-  it(
-    'should_run_a_later_pass_when_db_transaction_throws_synchronously_mid_drain',
-    async () => {
-      TestBed.configureTestingModule({
-        providers: [
-          { provide: Store, useValue: { dispatch: vi.fn() } },
-          { provide: NetworkStatusService, useValue: { online$: new BehaviorSubject(true) } },
-          { provide: AbstractSecurityService, useValue: { user$: new BehaviorSubject({ name: 'Oleg' }) } },
-          {
-            provide: SpreadsheetService,
-            useValue: { getSpreadsheetId: () => 'spsh-1', addExpense: vi.fn().mockReturnValue(of({})) }
-          },
-          // The real storage is the point of this describe.
-          { provide: OutboxStorage, useClass: IndexedDbOutboxStorage },
-          { provide: Router, useValue: { events: new Subject(), url: '/dashboard' } },
-          { provide: MatSnackBar, useValue: { open: vi.fn(), openFromComponent: vi.fn() } },
-          { provide: LiveAnnouncer, useValue: { announce: vi.fn().mockResolvedValue(undefined) } }
-        ]
-      });
-      const service = TestBed.inject(OutboxService);
-      const completedPasses = countCompletedPasses(service);
+  it('should_run_a_later_pass_when_db_transaction_throws_synchronously_mid_drain', async () => {
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Store, useValue: { dispatch: vi.fn() } },
+        { provide: NetworkStatusService, useValue: { online$: new BehaviorSubject(true) } },
+        { provide: AbstractSecurityService, useValue: { user$: new BehaviorSubject({ name: 'Oleg' }) } },
+        {
+          provide: SpreadsheetService,
+          useValue: { getSpreadsheetId: () => 'spsh-1', addExpense: vi.fn().mockReturnValue(of({})) },
+        },
+        // The real storage is the point of this describe.
+        { provide: OutboxStorage, useClass: IndexedDbOutboxStorage },
+        { provide: Router, useValue: { events: new Subject(), url: '/dashboard' } },
+        { provide: MatSnackBar, useValue: { open: vi.fn(), openFromComponent: vi.fn() } },
+        { provide: LiveAnnouncer, useValue: { announce: vi.fn().mockResolvedValue(undefined) } },
+      ],
+    });
+    const service = TestBed.inject(OutboxService);
+    const completedPasses = countCompletedPasses(service);
 
-      // Boot hydration succeeds against the real, empty database and runs an uneventful T1 pass.
-      service.init();
-      await waitUntil(() => completedPasses() >= 1);
+    // Boot hydration succeeds against the real, empty database and runs an uneventful T1 pass.
+    service.init();
+    await waitUntil(() => completedPasses() >= 1);
 
-      // The *next* `db.transaction` call throws synchronously, exactly as a browser-force-closed
-      // connection would. The next pass's unguarded initial `getAll` is that call.
-      const transactionSpy = vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementationOnce(() => {
-        throw new DOMException('closed', 'InvalidStateError');
-      });
+    // The *next* `db.transaction` call throws synchronously, exactly as a browser-force-closed
+    // connection would. The next pass's unguarded initial `getAll` is that call.
+    const transactionSpy = vi.spyOn(IDBDatabase.prototype, 'transaction').mockImplementationOnce(() => {
+      throw new DOMException('closed', 'InvalidStateError');
+    });
 
-      try {
-        service.sync();
-        await waitUntil(() => transactionSpy.mock.calls.length >= 1);
-      } finally {
-        transactionSpy.mockRestore();
-      }
-
-      // A later trigger must run an entirely new pass to completion. Were the failed pass wedged,
-      // this trigger would only coalesce behind it and the bounded wait would time out.
-      const passesBefore = completedPasses();
+    try {
       service.sync();
-      await waitUntil(() => completedPasses() > passesBefore);
-    },
-    15000
-  );
+      await waitUntil(() => transactionSpy.mock.calls.length >= 1);
+    } finally {
+      transactionSpy.mockRestore();
+    }
+
+    // A later trigger must run an entirely new pass to completion. Were the failed pass wedged,
+    // this trigger would only coalesce behind it and the bounded wait would time out.
+    const passesBefore = completedPasses();
+    service.sync();
+    await waitUntil(() => completedPasses() > passesBefore);
+  }, 15000);
 });
 
-
 describe('OutboxService public offline discard', () => {
-  it.each(['pending', 'failed'] as const)('persists removal of a %s row across reinitialization and reconnect', async (status) => {
+  it.each(['pending', 'failed'] as const)('persists removal of a %s row across reinitialization and reconnect', async status => {
     const storage = new IndexedDbOutboxStorage();
     const discarded = makeRecord({ localId: crypto.randomUUID(), status });
     const retained = makeRecord({ localId: crypto.randomUUID(), status: 'failed' });
@@ -858,21 +852,21 @@ describe('OutboxService public offline discard', () => {
     const h = setup({ storage });
     h.online$.next(false);
     h.service.init();
-    await waitFor(() => h.service.records().some((r) => r.localId === discarded.localId));
+    await waitFor(() => h.service.records().some(r => r.localId === discarded.localId));
     h.service.discard(discarded.localId);
-    await waitFor(() => !h.service.records().some((r) => r.localId === discarded.localId));
-    expect((await readAll(storage)).some((r) => r.localId === discarded.localId)).toBe(false);
+    await waitFor(() => !h.service.records().some(r => r.localId === discarded.localId));
+    expect((await readAll(storage)).some(r => r.localId === discarded.localId)).toBe(false);
     TestBed.resetTestingModule();
     const restored = setup({ storage });
     restored.online$.next(false);
     restored.service.init();
-    await waitFor(() => restored.service.records().some((r) => r.localId === retained.localId));
-    expect(restored.service.records().some((r) => r.localId === discarded.localId)).toBe(false);
+    await waitFor(() => restored.service.records().some(r => r.localId === retained.localId));
+    expect(restored.service.records().some(r => r.localId === discarded.localId)).toBe(false);
     restored.online$.next(true);
     await waitFor(() => restored.completedPasses() > 0);
     expect(restored.addExpense).not.toHaveBeenCalled();
     expect(h.addExpense).not.toHaveBeenCalled();
-    await new Promise<void>((resolve) => storage.remove(retained.localId).subscribe(() => resolve()));
+    await new Promise<void>(resolve => storage.remove(retained.localId).subscribe(() => resolve()));
   });
 
   it('logs a failed removal and retains the record without a new toast', async () => {

@@ -24,9 +24,7 @@ import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
       </div>
     }
     <div class="info">
-      <button mat-flat-button color="primary" [disabled]="(isOnline$ | async) === false" (click)="login()">
-        Google Sign In
-      </button>
+      <button mat-flat-button color="primary" [disabled]="(isOnline$ | async) === false" (click)="login()">Google Sign In</button>
     </div>
   `,
   styles: [
@@ -43,9 +41,9 @@ import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
         width: 36px;
         font-size: 36px;
       }
-    `
+    `,
   ],
-  imports: [AsyncPipe, MatButtonModule, MatIconModule]
+  imports: [AsyncPipe, MatButtonModule, MatIconModule],
 })
 export class LoginPageContainer implements OnInit {
   readonly isOnline$ = this.status.online$;
@@ -54,17 +52,15 @@ export class LoginPageContainer implements OnInit {
     private readonly router: Router,
     private readonly store: Store,
     private readonly securityService: AbstractSecurityService,
-    private readonly status: NetworkStatusService
+    private readonly status: NetworkStatusService,
   ) {
     this.store.dispatch(AppActions.setTitle({ title: 'Login', icon: 'login' }));
     this.securityService.user$
       .pipe(
-        filter((user) => !!user),
-        takeUntilDestroyed()
+        filter(user => !!user),
+        takeUntilDestroyed(),
       )
-      .subscribe(() =>
-        this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true, queryParamsHandling: 'preserve' })
-      );
+      .subscribe(() => this.router.navigate([ROUTE.setup, ROUTE.settings], { replaceUrl: true, queryParamsHandling: 'preserve' }));
   }
 
   ngOnInit(): void {

@@ -7,8 +7,8 @@ import { StoreModule } from '@ngrx/store';
 describe.skip('AppComponent', () => {
   beforeEach(() =>
     TestBed.configureTestingModule({
-      imports: [AppComponent, CommonModule, StoreModule.forRoot(reducers, { metaReducers })]
-    })
+      imports: [AppComponent, CommonModule, StoreModule.forRoot(reducers, { metaReducers })],
+    }),
   );
 
   it('should create the app', () => {

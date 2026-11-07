@@ -53,18 +53,18 @@ describe('[AC14] SpreadsheetService.addExpense replay is byte-identical to the l
       category: 'Food',
       comment: 'lunch',
       isInDebt: true,
-      sheet: { id: sheetId, title: 'Sheet1' }
+      sheet: { id: sheetId, title: 'Sheet1' },
     } as Expense & { sheet: { id: number; title: string } };
 
     service.addExpense(sheetId, formValue).subscribe();
-    const liveReq = httpMock.expectOne((r) => r.method === 'POST' && r.url.endsWith(':batchUpdate'));
+    const liveReq = httpMock.expectOne(r => r.method === 'POST' && r.url.endsWith(':batchUpdate'));
     liveReq.flush({});
 
     const { date, amount, category, comment, isInDebt } = formValue;
     const replayed: Expense = structuredClone({ date, amount, category, comment, isInDebt });
 
     service.addExpense(sheetId, replayed).subscribe();
-    const replayReq = httpMock.expectOne((r) => r.method === 'POST' && r.url.endsWith(':batchUpdate'));
+    const replayReq = httpMock.expectOne(r => r.method === 'POST' && r.url.endsWith(':batchUpdate'));
     replayReq.flush({});
 
     expect(replayReq.request.method).toBe(liveReq.request.method);

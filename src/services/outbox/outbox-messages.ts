@@ -5,6 +5,5 @@
 export const OUTBOX_MESSAGES = {
   queued: 'Expense saved on this device. It will be sent to your spreadsheet automatically.',
   allSent: 'All saved expenses were sent to your spreadsheet.',
-  authBlocked:
-    "Your saved expenses couldn't be sent because your Google sign-in needs renewing. They're kept on this device."
+  authBlocked: "Your saved expenses couldn't be sent because your Google sign-in needs renewing. They're kept on this device.",
 } as const;

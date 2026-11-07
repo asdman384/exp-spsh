@@ -222,7 +222,7 @@ describe('VoiceRecorderService', () => {
       FakeMediaRecorder.instances[0].emitData(32);
       await vi.advanceTimersByTimeAsync(2000);
       service.stop();
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
 
     it('should_stop_all_tracks_when_the_recording_is_too_short', async () => {
@@ -231,20 +231,20 @@ describe('VoiceRecorderService', () => {
       void service2;
       await vi.advanceTimersByTimeAsync(500);
       FakeMediaRecorder.instances[0].stop();
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
 
     it('should_stop_all_tracks_when_the_60s_limit_is_reached', async () => {
       const { stream } = await startAndRecord();
       FakeMediaRecorder.instances[0].emitData(32);
       await vi.advanceTimersByTimeAsync(60_000);
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
 
     it('should_stop_all_tracks_when_the_recorder_raises_error', async () => {
       const { stream } = await startAndRecord();
       FakeMediaRecorder.instances[0].emitError();
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
 
     it('should_stop_all_tracks_on_visibilitychange_to_hidden', async () => {
@@ -253,14 +253,14 @@ describe('VoiceRecorderService', () => {
 
       document.dispatchEvent(new Event('visibilitychange'));
 
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
   });
 
   // [AC11]
   describe('[AC11] stop() while starting (getUserMedia not yet resolved)', () => {
     it('should_stop_all_tracks_start_no_recorder_leave_latest_unchanged_and_report_released_early_once_it_resolves', async () => {
-        const pending = deferred<FakeMediaStream>();
+      const pending = deferred<FakeMediaStream>();
       getUserMediaMock.mockReturnValue(pending.promise);
       const service = new VoiceRecorderService();
 
@@ -277,7 +277,7 @@ describe('VoiceRecorderService', () => {
       expect(service.latest()).toBeNull();
       expect(service.status()).toBe('idle');
       expect(service.lastOutcome()?.outcome).toBe('released-early');
-      stream.getTracks().forEach((track) => expect(track.stop).toHaveBeenCalledTimes(1));
+      stream.getTracks().forEach(track => expect(track.stop).toHaveBeenCalledTimes(1));
     });
 
     it('should_record_on_the_next_press_after_a_release_during_the_browser_prompt', async () => {
@@ -304,7 +304,7 @@ describe('VoiceRecorderService', () => {
   // [AC12]
   describe('[AC12] getUserMedia rejection classification', () => {
     it('should_report_denied_for_notallowederror', async () => {
-        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotAllowedError'));
+      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotAllowedError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -317,7 +317,7 @@ describe('VoiceRecorderService', () => {
     });
 
     it('should_report_no_device_for_notfounderror', async () => {
-        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotFoundError'));
+      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotFoundError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -330,7 +330,7 @@ describe('VoiceRecorderService', () => {
     });
 
     it('should_report_failed_for_any_other_error', async () => {
-        getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotReadableError'));
+      getUserMediaMock.mockRejectedValue(new DOMException('nope', 'NotReadableError'));
       const service = new VoiceRecorderService();
 
       service.start();
@@ -413,7 +413,7 @@ describe('VoiceRecorderService', () => {
   describe('[AC15] no persistence and no HTTP', () => {
     it('should_inject_without_a_store_or_httpclient_provider_and_make_no_http_request_during_a_full_record_cycle', async () => {
       TestBed.configureTestingModule({
-        providers: [provideHttpClient(), provideHttpClientTesting()]
+        providers: [provideHttpClient(), provideHttpClientTesting()],
       });
 
       // If the service ever injected Store (not provided here), this would throw
@@ -424,7 +424,7 @@ describe('VoiceRecorderService', () => {
       const localStorageSpy = vi.spyOn(Storage.prototype, 'setItem');
       const sessionStorageSpy = vi.spyOn(window.sessionStorage, 'setItem');
 
-        const stream = new FakeMediaStream(1);
+      const stream = new FakeMediaStream(1);
       getUserMediaMock.mockResolvedValue(stream);
 
       service.start();

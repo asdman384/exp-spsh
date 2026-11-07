@@ -46,7 +46,7 @@ describe('DashboardPageContainer', () => {
     recorder = new FakeVoiceRecorderService();
     expensesService = new FakeExpensesService();
     records = signal([]);
-    discard = vi.fn((id: string) => records.update((all) => all.filter((r) => r.localId !== id)));
+    discard = vi.fn((id: string) => records.update(all => all.filter(r => r.localId !== id)));
 
     const selectMock = vi.fn((selector: unknown) => {
       if (selector === sheetsSelector) return of([]);
@@ -62,8 +62,8 @@ describe('DashboardPageContainer', () => {
         { provide: Store, useValue: { select: selectMock, selectSignal: () => signal('book'), dispatch: dispatchSpy } },
         { provide: VoiceRecorderService, useValue: recorder },
         { provide: ExpensesService, useValue: expensesService },
-        { provide: OutboxService, useValue: { records, discard } }
-      ]
+        { provide: OutboxService, useValue: { records, discard } },
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(DashboardPageContainer);
@@ -79,10 +79,10 @@ describe('DashboardPageContainer', () => {
       { x: -80, from: new Date(2026, 0, 1), to: new Date(2025, 11, 31) },
       { x: 80, from: new Date(2026, 11, 31), to: new Date(2027, 0, 1) },
       { x: -80, from: new Date(2028, 2, 1), to: new Date(2028, 1, 29) },
-      { x: 80, from: new Date(2026, 2, 29), to: new Date(2026, 2, 30) }
+      { x: 80, from: new Date(2026, 2, 29), to: new Date(2026, 2, 30) },
     ])('changes the selected calendar day on swipe ($x, $from)', ({ x, from, to }) => {
       const model = fixture.debugElement.injector.get(DashboardPageViewModel);
-      model.expenseModel.update((value) => ({ ...value, date: from, sheet: { id: 7, title: 'A' } }));
+      model.expenseModel.update(value => ({ ...value, date: from, sheet: { id: 7, title: 'A' } }));
       fixture.detectChanges();
       expensesService.load.mockClear();
       gesture(x);
@@ -95,14 +95,26 @@ describe('DashboardPageContainer', () => {
       const overlay = fixture.nativeElement.querySelector('.date-swipe-overlay') as HTMLButtonElement;
       expect(overlay).not.toBeNull();
       vi.spyOn(overlay, 'setPointerCapture').mockImplementation(() => undefined);
-      overlay.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, pointerId: 1, button: 0, isPrimary: true, clientX: 100, clientY: 100 }));
+      overlay.dispatchEvent(
+        new PointerEvent('pointerdown', {
+          bubbles: true,
+          pointerId: 1,
+          button: 0,
+          isPrimary: true,
+          clientX: 100,
+          clientY: 100,
+        }),
+      );
       overlay.dispatchEvent(new PointerEvent(end, { bubbles: true, pointerId: 1, clientX: 100 + x, clientY: 100 + y }));
       overlay.dispatchEvent(new MouseEvent('click', { bubbles: true, detail: 1 }));
       fixture.detectChanges();
       return overlay;
     }
 
-    it.each([{ x: 80, direction: 'right' }, { x: -80, direction: 'left' }])('changes the date on a $direction swipe and animates without opening the calendar', ({ x }) => {
+    it.each([
+      { x: 80, direction: 'right' },
+      { x: -80, direction: 'left' },
+    ])('changes the date on a $direction swipe and animates without opening the calendar', ({ x }) => {
       const model = fixture.debugElement.injector.get(DashboardPageViewModel);
       const changeDate = vi.spyOn(model, 'changeDate');
       const overlay = gesture(x);
@@ -112,7 +124,10 @@ describe('DashboardPageContainer', () => {
       changeDate.mockRestore();
     });
 
-    it.each([{ x: 10, y: 80, end: 'pointerup' }, { x: 80, y: 0, end: 'pointercancel' }])('ignores vertical and cancelled gestures', ({ x, y, end }) => {
+    it.each([
+      { x: 10, y: 80, end: 'pointerup' },
+      { x: 80, y: 0, end: 'pointercancel' },
+    ])('ignores vertical and cancelled gestures', ({ x, y, end }) => {
       const model = fixture.debugElement.injector.get(DashboardPageViewModel);
       const changeDate = vi.spyOn(model, 'changeDate');
       const overlay = gesture(x, y, end);
@@ -138,14 +153,25 @@ describe('DashboardPageContainer', () => {
     expect(summary.textContent).toContain('Select a person to view totals');
     expect(summary.getAttribute('role')).toBe('status');
     expect(fixture.nativeElement.querySelector('form').compareDocumentPosition(summary) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(summary.compareDocumentPosition(fixture.nativeElement.querySelector('expenses-table')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(
+      summary.compareDocumentPosition(fixture.nativeElement.querySelector('expenses-table')) & Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
     const page = fixture.componentInstance as unknown as {
-      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
-        category: string | null; comment: string; isInDebt: boolean }>;
+      expenseModel: WritableSignal<{
+        date: Date;
+        sheet: Sheet | null;
+        amount: number | null;
+        category: string | null;
+        comment: string;
+        isInDebt: boolean;
+      }>;
     };
     const date = new Date(2024, 10, 4, 12);
-    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
-    expensesService.expenses.set([{ amount: 1234.5, date }, { amount: 24, date, isInDebt: true }]);
+    page.expenseModel.update(value => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    expensesService.expenses.set([
+      { amount: 1234.5, date },
+      { amount: 24, date, isInDebt: true },
+    ]);
     fixture.detectChanges();
     expect(summary.textContent?.replace(/\s+/g, ' ').trim()).toBe('Daily: 1258.50 · November: 1258.50 · Debt: 24');
     expensesService.expenses.set([]);
@@ -155,11 +181,17 @@ describe('DashboardPageContainer', () => {
 
   it('wraps totals inside 320 CSS pixels with text enlarged to 200 percent', () => {
     const page = fixture.componentInstance as unknown as {
-      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
-        category: string | null; comment: string; isInDebt: boolean }>;
+      expenseModel: WritableSignal<{
+        date: Date;
+        sheet: Sheet | null;
+        amount: number | null;
+        category: string | null;
+        comment: string;
+        isInDebt: boolean;
+      }>;
     };
     const date = new Date(2024, 10, 4, 12);
-    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    page.expenseModel.update(value => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
     expensesService.expenses.set([{ amount: 1e100, date, isInDebt: true }]);
     const host: HTMLElement = fixture.nativeElement;
     host.style.display = 'block';
@@ -178,8 +210,14 @@ describe('DashboardPageContainer', () => {
 
   it('queues a submitted expense and resets fields while retaining the date and sheet', () => {
     const page = fixture.componentInstance as unknown as {
-      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
-        category: string | null; comment: string; isInDebt: boolean }>;
+      expenseModel: WritableSignal<{
+        date: Date;
+        sheet: Sheet | null;
+        amount: number | null;
+        category: string | null;
+        comment: string;
+        isInDebt: boolean;
+      }>;
     };
     const date = new Date(2026, 0, 15, 12, 30);
     const sheet = { id: 7, title: 'data_test' };
@@ -188,9 +226,16 @@ describe('DashboardPageContainer', () => {
 
     fixture.nativeElement.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true }));
 
-    expect(expensesService.add).toHaveBeenCalledWith(7, expect.objectContaining({
-      date, amount: 42, category: 'Food', comment: 'Lunch', isInDebt: true
-    }));
+    expect(expensesService.add).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({
+        date,
+        amount: 42,
+        category: 'Food',
+        comment: 'Lunch',
+        isInDebt: true,
+      }),
+    );
     expect(page.expenseModel()).toEqual({ date, sheet, amount: null, category: null, comment: '', isInDebt: false });
   });
 
@@ -202,16 +247,31 @@ describe('DashboardPageContainer', () => {
     expect(expensesService.delete).not.toHaveBeenCalled();
   });
 
-  it.each(['pending', 'failed'] as const)('routes a %s table swipe to local discard', (status) => {
+  it.each(['pending', 'failed'] as const)('routes a %s table swipe to local discard', status => {
     const page = fixture.componentInstance as unknown as {
-      expenseModel: WritableSignal<{ date: Date; sheet: Sheet | null; amount: number | null;
-        category: string | null; comment: string; isInDebt: boolean }>;
+      expenseModel: WritableSignal<{
+        date: Date;
+        sheet: Sheet | null;
+        amount: number | null;
+        category: string | null;
+        comment: string;
+        isInDebt: boolean;
+      }>;
     };
     const date = new Date(2026, 10, 5, 12);
-    page.expenseModel.update((value) => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
+    page.expenseModel.update(value => ({ ...value, date, sheet: { id: 1, title: 'A' } }));
     const expense = { date, amount: 42, category: 'Food' };
-    records.set([{ localId: 'queued', kind: 'addExpense', spreadsheetId: 'book', enqueuedAt: 0,
-      attempts: 0, status, payload: { sheetId: 1, expense } }]);
+    records.set([
+      {
+        localId: 'queued',
+        kind: 'addExpense',
+        spreadsheetId: 'book',
+        enqueuedAt: 0,
+        attempts: 0,
+        status,
+        payload: { sheetId: 1, expense },
+      },
+    ]);
     fixture.detectChanges();
     const row = fixture.debugElement.query(By.css('tr.queued-row'));
     expect(row).not.toBeNull();

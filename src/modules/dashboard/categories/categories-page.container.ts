@@ -20,7 +20,7 @@ const MOVE_THRESHOLD = 23;
   selector: 'categories-page',
   templateUrl: './categories-page.container.html',
   styleUrl: './categories-page.container.scss',
-  imports: [FormsModule, AsyncPipe, DragDropModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule]
+  imports: [FormsModule, AsyncPipe, DragDropModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule],
 })
 export class CategoriesPageContainer {
   readonly loading$ = this.store.select(loadingSelector);
@@ -34,9 +34,9 @@ export class CategoriesPageContainer {
   }
 
   addCategory(name: string, control: NgModel): void {
-    this.categories$.pipe(first()).subscribe((categories) => {
-      const position = Math.max(...categories.map((c) => c.id), -1) + 1;
-      if (~categories.findIndex((c) => c.name === name)) {
+    this.categories$.pipe(first()).subscribe(categories => {
+      const position = Math.max(...categories.map(c => c.id), -1) + 1;
+      if (~categories.findIndex(c => c.name === name)) {
         log(`category [${name}] already exists`);
         return;
       }
@@ -54,8 +54,7 @@ export class CategoriesPageContainer {
   }
 
   cdkDragMoved(event: CdkDragMove) {
-    this.dragPlaceholderText =
-      event.distance.x > DELETE_THRESHOLD && event.distance.y < MOVE_THRESHOLD ? 'Drop to remove' : '';
+    this.dragPlaceholderText = event.distance.x > DELETE_THRESHOLD && event.distance.y < MOVE_THRESHOLD ? 'Drop to remove' : '';
   }
 
   private tryDelete(event: CdkDragDrop<Array<Category>, undefined, Category>): boolean {

@@ -11,7 +11,7 @@ describe('CategoriesPageContainer', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [CategoriesPageContainer, FormsModule],
-      providers: [{ provide: Store, useValue: { select: vi.fn(), dispatch: vi.fn() } }]
+      providers: [{ provide: Store, useValue: { select: vi.fn(), dispatch: vi.fn() } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(CategoriesPageContainer);

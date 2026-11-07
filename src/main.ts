@@ -28,7 +28,7 @@ async function main(): Promise<void> {
   await bootstrapApplication(AppComponent, { providers: [provideZonelessChangeDetection(), appConfig.providers] });
 }
 
-main().catch((err) => {
+main().catch(err => {
   console.error(err);
   log(err);
 });

@@ -21,7 +21,7 @@ export class InMemoryOutboxStorage implements OutboxStorage {
   }
 
   getAll(): Observable<Array<OutboxRecord>> {
-    return of(Array.from(this.records.values()).map((record) => structuredClone(record)));
+    return of(Array.from(this.records.values()).map(record => structuredClone(record)));
   }
 
   add(record: OutboxRecord): Observable<void> {

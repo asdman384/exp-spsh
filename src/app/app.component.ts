@@ -36,8 +36,8 @@ import pak from '../../package.json';
     MatProgressBarModule,
     MatToolbarModule,
     OutboxStatusComponent,
-    SnowComponent
-  ]
+    SnowComponent,
+  ],
 })
 export class AppComponent {
   protected readonly outbox = inject(OutboxService);
@@ -49,8 +49,8 @@ export class AppComponent {
     spreadsheetId: this.store.select(spreadsheetIdSelector),
     hasUpdates: this.swUpdate.versionUpdates.pipe(
       map((evt): evt is VersionReadyEvent => evt.type === 'VERSION_READY'),
-      startWith(false)
-    )
+      startWith(false),
+    ),
   }).pipe(debounceTime(100));
 
   readonly route = ROUTE;
@@ -62,15 +62,15 @@ export class AppComponent {
     private readonly securityService: AbstractSecurityService,
     spreadsheetService: SpreadsheetService,
     private readonly networkStatus: NetworkStatusService,
-    private readonly swUpdate: SwUpdate
+    private readonly swUpdate: SwUpdate,
   ) {
-    securityService.user$.pipe(first()).subscribe((user) => {
+    securityService.user$.pipe(first()).subscribe(user => {
       if (user) this.store.dispatch(AppActions.setCurrentSheet({ sheet: DATA_SHEET_TITLE_PREFIX + user.name }));
     });
     store
       .select(spreadsheetIdSelector)
       .pipe(first())
-      .subscribe((spreadsheetId) => {
+      .subscribe(spreadsheetId => {
         if (spreadsheetId) spreadsheetService.setSpreadsheetId(spreadsheetId);
       });
   }
