@@ -145,29 +145,29 @@ Use wrapping row fields and actions with no horizontal overflow; the photo is no
 
 ### Chunk 1 — Receipt contract and Gemini request
 
-- [ ] Read ub-mode and add failing parser/request tests in the two recognition spec files for D1–D3; record their expected failure before production edits.
-- [ ] Add `receipt-recognition.ts` with `ReceiptExpense`, accepted MIME types, `10_000_000` byte cap, receipt schema and prompt per D1–D3.
-- [ ] Implement strict unknown-data parsing and receipt/fallback date mapping per D2, rejecting the entire invalid batch.
-- [ ] Add `recognizeReceipt` to `ExpenseRecognitionService`, reusing lazy client/base64 conversion and implementing supported AbortController teardown per D2.
-- [ ] Map receipt errors to fixed safe messages and verify invalid input never invokes Gemini; preserve the existing audio method and its behavior.
-- [ ] Run focused recognition tests and `node scripts/harness.mjs`; fix failures and record command results and changed files in the task action log.
+- [x] Read ub-mode and add failing parser/request tests in the two recognition spec files for D1–D3; record their expected failure before production edits.
+- [x] Add `receipt-recognition.ts` with `ReceiptExpense`, accepted MIME types, `10_000_000` byte cap, receipt schema and prompt per D1–D3.
+- [x] Implement strict unknown-data parsing and receipt/fallback date mapping per D2, rejecting the entire invalid batch.
+- [x] Add `recognizeReceipt` to `ExpenseRecognitionService`, reusing lazy client/base64 conversion and implementing supported AbortController teardown per D2.
+- [x] Map receipt errors to fixed safe messages and verify invalid input never invokes Gemini; preserve the existing audio method and its behavior.
+- [x] Run focused recognition tests and `node scripts/harness.mjs`; fix failures and record command results and changed files in the task action log.
 
 ### Chunk 2 — Receipt lifecycle and review UI
 
-- [ ] Read ub-mode and write failing view-model/component tests for D4–D5 before their production edits; record expected failures.
-- [ ] Add page-local receipt state and start/cancel/result handling in `dashboard-page.view-model.ts` per D4, with captured scope and teardown.
-- [ ] Add confirmation validation and synchronous draft consumption before existing expense enqueue per D5; ignore stale, cancelled, and repeated submissions.
-- [ ] Create `ReceiptReviewComponent` and its stylesheet with typed Reactive Forms, Material row controls, removal, totals and outputs per D5.
-- [ ] Add the native file input and camera button in the Dashboard action row, reset selection, and wire receipt-local busy/error/review bindings per D1 and D4.
-- [ ] Render the review outside the manual form and implement focus handling, disclosure, status/error text and responsive layout per Visual/UX notes.
-- [ ] Verify same-file retry, picker cancellation, scope changes and destruction through focused tests without altering voice/manual behavior.
-- [ ] Run focused Dashboard/review tests and `node scripts/harness.mjs`; fix failures and record evidence in the task action log.
+- [x] Read ub-mode and write failing view-model/component tests for D4–D5 before their production edits; record expected failures.
+- [x] Add page-local receipt state and start/cancel/result handling in `dashboard-page.view-model.ts` per D4, with captured scope and teardown.
+- [x] Add confirmation validation and synchronous draft consumption before existing expense enqueue per D5; ignore stale, cancelled, and repeated submissions.
+- [x] Create `ReceiptReviewComponent` and its stylesheet with typed Reactive Forms, Material row controls, removal, totals and outputs per D5.
+- [x] Add the native file input and camera button in the Dashboard action row, reset selection, and wire receipt-local busy/error/review bindings per D1 and D4.
+- [x] Render the review outside the manual form and implement focus handling, disclosure, status/error text and responsive layout per Visual/UX notes.
+- [x] Verify same-file retry, picker cancellation, scope changes and destruction through focused tests without altering voice/manual behavior.
+- [x] Run focused Dashboard/review tests and `node scripts/harness.mjs`; fix failures and record evidence in the task action log.
 
 ### Chunk 3 — Coverage, documentation and verification
 
-- [ ] Complete adversarial parser, delayed-response, repeat-confirmation, invalid-form and existing-flow regression coverage from Test coverage plan without removing working tests.
-- [ ] Verify keyboard/focus behavior through mocked component unit tests; record browser layout inspection and real receipt recognition as skipped by explicit user instruction.
-- [ ] Update `CLAUDE.md`, receipt flow, Gemini interface, add-expense flow, knowledge index/glossary and history per Files to create/modify; describe current behavior in concept files.
-- [ ] Apply available ub-mode quality checks, record unavailable named tools, and fix actionable complexity or duplication findings within this feature.
-- [ ] Format changed source files and run final `node scripts/harness.mjs`; obtain independent review and resolve defects before marking acceptance criteria complete.
-- [ ] Record final evidence and limitations, stop session-owned background processes, remove only safe temporary artifacts, and update plan checkboxes to match completed work.
+- [x] Complete adversarial parser, delayed-response, repeat-confirmation, invalid-form and existing-flow regression coverage from Test coverage plan without removing working tests.
+- [x] Verify keyboard/focus behavior through mocked component unit tests; record browser layout inspection and real receipt recognition as skipped by explicit user instruction.
+- [x] Update `CLAUDE.md`, receipt flow, Gemini interface, add-expense flow, knowledge index/glossary and history per Files to create/modify; describe current behavior in concept files.
+- [x] Apply available ub-mode quality checks, record unavailable named tools, and fix actionable complexity or duplication findings within this feature.
+- [x] Format changed source files and run final `node scripts/harness.mjs`; obtain independent review and resolve defects before marking acceptance criteria complete.
+- [x] Record final evidence and limitations, stop session-owned background processes, remove only safe temporary artifacts, and update plan checkboxes to match completed work.

@@ -16,3 +16,8 @@
 - 2026-11-07: Independent plan review found one mismatch with the user's browser-check exclusion. Removed width-check promises; responsive layout remains required. Plan has three chunks with 6, 8, and 6 action items.
 - 2026-11-07: Second independent plan pass reports no gaps. Started chunk 1 with the ub-mode implementer.
 - 2026-11-07: Parent provisions crapper, dryer, and mutator in isolated ignored `tmp/ub-tools/venv` with sibling source checkouts. No project dependency changes. Quality checks will use explicit Angular commands or existing coverage.
+- 2026-11-07: Chunk 1 activated ub-mode and wrote receipt boundary/service tests before production code. Initial npx and one direct harness startup were silent and stopped by owned PID; no root cause established. A subsequent direct harness reached compilation.
+- 2026-11-07: Red evidence: `node node_modules/typescript/bin/tsc -b tsconfig.app.json tsconfig.spec.json` and targeted harness both exited 1 for missing `receipt-recognition` and `recognizeReceipt`. A table-test tuple typing issue was also found and corrected.
+- 2026-11-07: Added receipt contract, strict whole-result validation, receipt prompt/schema, inline image request, supported abortSignal teardown, fixed errors, and shared lazy SDK/base64 use. Kept audio behavior unchanged. Formatted only recognition files.
+
+- 2026-11-08: Completed UI/lifecycle, independent review, wrapping fix, current-behavior docs. Final harness all gates passed, 418 tests. Browser/real OCR skipped by user; metrics HTTP504; Docker N/A. Archive and selective commit follow.

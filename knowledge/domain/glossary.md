@@ -37,3 +37,5 @@ sources:
 
 Dashboard **automatic date** uses the current local time at submit and follows the day on resume.
 A **selected date** is a calendar or Yesterday choice that stays fixed while the page is open.
+
+**Receipt draft**: In-memory category expenses from one photo, editable before explicit confirmation.

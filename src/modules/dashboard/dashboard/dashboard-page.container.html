@@ -94,8 +94,44 @@
     </button>
 
     <voice-record-button></voice-record-button>
+    <input #receiptInput type="file" hidden [accept]="receiptAccept" capture="environment" (change)="onReceiptSelected(receiptInput)" />
+    <button
+      style="width: 56px; height: 56px; padding: 16px"
+      #receiptCamera
+      mat-icon-button
+      type="button"
+      aria-label="Read receipt photo"
+      [disabled]="!canReadReceipt()"
+      (click)="receiptInput.click()"
+    >
+      <mat-icon>photo_camera</mat-icon>
+    </button>
   </div>
 </form>
+
+@if (receiptState(); as receipt) {
+  @if (receipt.kind === 'recognizing') {
+    <section aria-label="Receipt recognition">
+      <p role="status">Reading receipt… Photo sent to Gemini. The app does not save it.</p>
+      <button mat-button type="button" (click)="cancelReceipt()">Cancel</button>
+    </section>
+  }
+  @if (receipt.kind === 'review') {
+    <p>Receipt for {{ expenseModel().sheet?.title }}</p>
+    <receipt-review
+      [expenses]="receipt.expenses"
+      [categories]="receiptCategories()"
+      (confirmed)="confirmReceipt($event)"
+      (cancelled)="cancelReceipt()"
+    />
+  }
+}
+@if (receiptError()) {
+  <p role="alert">{{ receiptError() }}</p>
+}
+@if (receiptStatus()) {
+  <p role="status">{{ receiptStatus() }}</p>
+}
 
 <div class="expense-summary" role="status" aria-live="polite">
   @if (summary().totals; as totals) {

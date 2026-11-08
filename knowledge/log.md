@@ -288,3 +288,5 @@ Earlier log entries were condensed (full text is in git history).
   All 13 statistics tests pass. Updated current-behavior documentation.
 - Preserved the owner's staged changes. No commit, staging, or browser inspection.
 - Harness: lint and production build pass; typecheck and full test compilation still fail on the existing selectYesterday test call. Source search confirms the only remaining isInDebt use in Statistics is the Debt header sum.
+
+- 2026-11-08: Added receipt photo recognition with editable confirmation and transient image handling.

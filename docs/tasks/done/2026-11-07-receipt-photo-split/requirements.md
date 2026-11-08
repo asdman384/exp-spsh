@@ -1,6 +1,6 @@
 # 2026-11-07: Receipt Photo to Split Expenses
 
-**Status:** todo
+**Status:** done
 **Priority:**
 **Type:** feature
 **Module(s):** client
@@ -34,15 +34,15 @@ is tedious. Photo recognition reduces entry effort and improves category accurac
 
 ## Acceptance Criteria
 
-- [ ] AC1: A camera control appears next to the microphone and accepts one receipt photo.
-- [ ] AC2: A mixed receipt produces grouped expenses using only the current user's categories.
-- [ ] AC3: The review card permits editing and removal; no expense is added before explicit confirmation, and repeated confirmation cannot duplicate the batch.
-- [ ] AC4: Accepted expenses use the existing outbox and have no image fields.
-- [ ] AC5: Cancel, invalid photo, failed recognition, and empty results do not add expenses.
-- [ ] AC6: No photo content is persisted or written to logs.
-- [ ] AC7: A valid receipt date is used, an absent date falls back to the selected Dashboard date, and the user can change it before save.
-- [ ] AC8: A scope change, cancellation, or page destruction prevents late results from adding or displaying a stale draft.
-- [ ] AC9: Existing voice and manual-entry tests continue to pass.
+- [x] AC1: A camera control appears next to the microphone and accepts one receipt photo.
+- [x] AC2: A mixed receipt produces grouped expenses using only the current user's categories.
+- [x] AC3: The review card permits editing and removal; no expense is added before explicit confirmation, and repeated confirmation cannot duplicate the batch.
+- [x] AC4: Accepted expenses use the existing outbox and have no image fields.
+- [x] AC5: Cancel, invalid photo, failed recognition, and empty results do not add expenses.
+- [x] AC6: No photo content is persisted or written to logs.
+- [x] AC7: A valid receipt date is used, an absent date falls back to the selected Dashboard date, and the user can change it before save.
+- [x] AC8: A scope change, cancellation, or page destruction prevents late results from adding or displaying a stale draft.
+- [x] AC9: Existing voice and manual-entry tests continue to pass.
 
 ## Common Sense Considerations
 
