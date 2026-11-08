@@ -110,3 +110,5 @@ The date is written as local wall-clock time; a queued expense is converted at s
 [^outbox]: OutboxService
 
 [^vm]: DashboardPageViewModel
+
+Receipt photos use an [editable draft](receipt-recognition.md). Explicit confirmation sends each accepted expense through the same outbox path.

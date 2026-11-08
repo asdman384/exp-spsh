@@ -1,9 +1,10 @@
 import { DOCUMENT } from '@angular/common';
-import { Injectable, computed, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngrx/store';
 import {
   EMPTY,
+  Subscription,
   catchError,
   filter,
   finalize,
@@ -21,6 +22,12 @@ import {
 import { AppActions, categoriesSelector, currentSheetSelector, loadingSelector, sheetsSelector, spreadsheetIdSelector } from 'src/@state';
 import { ExpenseRecognitionService, VoiceRecorderService } from 'src/services';
 import { OutboxService } from 'src/services/outbox/outbox.service';
+import {
+  ReceiptExpense,
+  RECEIPT_ERRORS,
+  validateReceiptInput,
+  isValidReceiptDraftRow,
+} from 'src/services/expense-recognition/receipt-recognition';
 import { Expense, ExpenseTableRow, Sheet, VoiceRecording } from 'src/shared/models';
 import { ExpensesService } from '../expenses.service';
 
@@ -46,6 +53,15 @@ interface ExpenseFormModel {
   isInDebt: boolean;
 }
 
+interface ReceiptScope {
+  spreadsheetId: string;
+  sheetId: number;
+  categories: string[];
+}
+
+type ReceiptState =
+  { kind: 'idle' } | { kind: 'recognizing'; scope: ReceiptScope } | { kind: 'review'; scope: ReceiptScope; expenses: ReceiptExpense[] };
+
 @Injectable()
 export class DashboardPageViewModel {
   private readonly store = inject(Store);
@@ -53,6 +69,15 @@ export class DashboardPageViewModel {
   readonly loading$ = this.store.select(loadingSelector);
   readonly sheets$ = this.store.select(sheetsSelector);
   readonly categories$ = this.store.select(categoriesSelector);
+  private readonly categories = toSignal(this.categories$, { initialValue: [] });
+  private readonly loading = toSignal(this.loading$, { initialValue: false });
+  private readonly destroyRef = inject(DestroyRef);
+  private receiptSubscription?: Subscription;
+  readonly receiptState = signal<ReceiptState>({ kind: 'idle' });
+  readonly receiptError = signal('');
+  readonly receiptStatus = signal('');
+  readonly receiptCategories = computed(() => this.categories().map(category => category.name));
+  readonly canReadReceipt = computed(() => !this.loading() && this.receiptState().kind === 'idle' && this.receiptScope() !== null);
 
   private readonly expensesService = inject(ExpensesService);
   private readonly outbox = inject(OutboxService);
@@ -102,6 +127,11 @@ export class DashboardPageViewModel {
   });
 
   constructor() {
+    effect(() => {
+      const state = this.receiptState();
+      if (state.kind !== 'idle' && !this.isReceiptScopeCurrent(state.scope)) this.cancelReceiptForContext();
+    });
+    this.destroyRef.onDestroy(() => this.cancelReceipt());
     this.store
       .select(currentSheetSelector)
       .pipe(
@@ -127,6 +157,83 @@ export class DashboardPageViewModel {
         }
       });
     this.recognizeExpenses();
+  }
+
+  recognizeReceipt(photo: Blob): void {
+    if (!this.canReadReceipt()) return;
+    const scope = this.receiptScope();
+    if (!scope) return;
+    const date = new Date(this.expenseModel().date);
+    this.receiptError.set('');
+    this.receiptStatus.set('');
+    try {
+      validateReceiptInput(photo, scope.categories, date);
+    } catch (error) {
+      this.receiptError.set(error instanceof Error ? error.message : RECEIPT_ERRORS.photo);
+      return;
+    }
+    this.receiptState.set({ kind: 'recognizing', scope });
+    this.receiptSubscription = this.recognition.recognizeReceipt(photo, scope.categories, date).subscribe({
+      next: expenses => {
+        if (!this.isReceiptScopeCurrent(scope)) {
+          this.cancelReceiptForContext();
+          return;
+        }
+        this.receiptState.set({ kind: 'review', scope, expenses });
+      },
+      error: () => {
+        this.receiptState.set({ kind: 'idle' });
+        this.receiptError.set(RECEIPT_ERRORS.recognition);
+      },
+    });
+  }
+
+  cancelReceipt(): void {
+    this.receiptSubscription?.unsubscribe();
+    this.receiptSubscription = undefined;
+    this.receiptState.set({ kind: 'idle' });
+    this.receiptError.set('');
+    this.receiptStatus.set('');
+  }
+
+  confirmReceipt(rows: ReceiptExpense[]): void {
+    const state = this.receiptState();
+    if (state.kind !== 'review') return;
+    if (!this.isReceiptScopeCurrent(state.scope)) {
+      this.cancelReceiptForContext();
+      return;
+    }
+    if (!rows.length || !rows.every(row => isValidReceiptDraftRow(row, state.scope.categories))) {
+      this.receiptError.set('Check the amount, category, and date for each receipt item.');
+      return;
+    }
+    this.cancelReceipt();
+    rows.forEach(({ amount, category, date, comment }) =>
+      this.expensesService.add(state.scope.sheetId, { amount, category, date: new Date(date), comment }),
+    );
+  }
+
+  private receiptScope(): ReceiptScope | null {
+    const spreadsheetId = this.spreadsheetId();
+    const sheet = this.expenseModel().sheet;
+    const categories = this.receiptCategories();
+    return spreadsheetId && sheet && categories.length ? { spreadsheetId, sheetId: sheet.id, categories } : null;
+  }
+
+  private isReceiptScopeCurrent(scope: ReceiptScope): boolean {
+    const current = this.receiptScope();
+    return (
+      !!current &&
+      current.spreadsheetId === scope.spreadsheetId &&
+      current.sheetId === scope.sheetId &&
+      current.categories.length === scope.categories.length &&
+      current.categories.every((name, index) => name === scope.categories[index])
+    );
+  }
+
+  private cancelReceiptForContext(): void {
+    this.cancelReceipt();
+    this.receiptStatus.set('Receipt cancelled because the selected person, spreadsheet, or categories changed.');
   }
 
   saveExpense(): boolean {

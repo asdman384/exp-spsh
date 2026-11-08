@@ -87,3 +87,5 @@ repository that contains this bundle.
   entry. Confirm a claim against its cited sources before relying on it for anything
   irreversible.
 * History: [log.md](log.md).
+
+* [Receipt photo recognition](flows/receipt-recognition.md) - Editable receipt drafts and explicit confirmation.

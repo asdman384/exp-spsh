@@ -66,3 +66,7 @@ limits are per project; on the free tier Google may use request data.
 [^svc]: ExpenseRecognitionService
 [^spec]: ExpenseRecognitionService spec
 [^page]: DashboardPageViewModel
+
+## Receipt images
+
+recognizeReceipt sends one inline image with a separate structured schema and receipt prompt. It validates the entire result, uses fixed errors, and cancels through the SDK AbortSignal. Images and raw model results are not logged. See [receipt flow](../flows/receipt-recognition.md).

@@ -201,3 +201,7 @@ keep it.
 `.claude/agents/` defines planner, architect, implementer, tester, reviewer, and orchestrator
 roles, plus the `/orchestrate` command. They write to `docs/specs/`, `docs/architecture/`,
 `docs/reviews/`, and `docs/dod/`.
+
+## Receipt photo entry
+
+Dashboard receipt photos use the existing lazy Gemini client. An editable review card requires explicit confirmation before expenses enter the outbox. Receipt dates fall back to the selected Dashboard date. Photos remain transient and are not logged or persisted. Scope changes and cancellation discard the draft. See knowledge/flows/receipt-recognition.md.

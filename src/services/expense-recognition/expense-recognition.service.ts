@@ -6,6 +6,14 @@ import { Observable, defer } from 'rxjs';
 import { Expense, VoiceRecording } from 'src/shared/models';
 
 import keys from '../../../keys.json';
+import {
+  ReceiptExpense,
+  RECEIPT_ERRORS,
+  parseReceiptResponse,
+  receiptPrompt,
+  receiptSchema,
+  validateReceiptInput,
+} from './receipt-recognition';
 
 export const GEMINI_MODEL = 'gemini-3.5-flash-lite';
 
@@ -73,6 +81,52 @@ export class ExpenseRecognitionService {
 
       return result;
     });
+  }
+
+  /** Reads a transient receipt image; unsubscribe aborts the request and drops its result. */
+  recognizeReceipt(photo: Blob, categories: ReadonlyArray<string>, fallbackDate: Date): Observable<ReceiptExpense[]> {
+    return new Observable(subscriber => {
+      try {
+        validateReceiptInput(photo, categories, fallbackDate);
+      } catch (error) {
+        subscriber.error(error);
+        return;
+      }
+      const controller = new AbortController();
+      void this.readReceipt(photo, [...categories], new Date(fallbackDate), controller.signal).then(
+        expenses => {
+          subscriber.next(expenses);
+          subscriber.complete();
+        },
+        () => subscriber.error(new Error(RECEIPT_ERRORS.recognition)),
+      );
+      return () => controller.abort();
+    });
+  }
+
+  private async readReceipt(
+    photo: Blob,
+    categories: ReadonlyArray<string>,
+    fallbackDate: Date,
+    signal: AbortSignal,
+  ): Promise<ReceiptExpense[]> {
+    const data = await toBase64(photo);
+    signal.throwIfAborted();
+    const ai = await this.getClient();
+    signal.throwIfAborted();
+    const response = await ai.models.generateContent({
+      model: GEMINI_MODEL,
+      contents: { role: 'user', parts: [{ inlineData: { data, mimeType: photo.type } }] },
+      config: {
+        abortSignal: signal,
+        systemInstruction: receiptPrompt(categories),
+        temperature: 0,
+        responseMimeType: 'application/json',
+        responseJsonSchema: receiptSchema(categories),
+      },
+    });
+    signal.throwIfAborted();
+    return parseReceiptResponse(JSON.parse(response.text ?? '') as unknown, categories, fallbackDate);
   }
 
   private getClient(): Promise<GoogleGenAI> {

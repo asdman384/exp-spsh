@@ -1,5 +1,5 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, ElementRef, afterNextRender, effect, inject, Injector, viewChild } from '@angular/core';
 import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -16,6 +16,8 @@ import { ExpenseTableRow, Sheet } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
 import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-button/voice-record-button.component';
 import { DashboardPageViewModel } from './dashboard-page.view-model';
+import { ReceiptReviewComponent } from './receipt-review.component';
+import { RECEIPT_MIME_TYPES, ReceiptExpense } from 'src/services/expense-recognition/receipt-recognition';
 
 @Component({
   selector: 'dashboard-page',
@@ -35,6 +37,7 @@ import { DashboardPageViewModel } from './dashboard-page.view-model';
     MatSelectModule,
     ExpensesTableComponent,
     VoiceRecordButtonComponent,
+    ReceiptReviewComponent,
   ],
   providers: [
     DashboardPageViewModel,
@@ -59,6 +62,14 @@ export class DashboardPageContainer {
   private datePointer: { id: number; x: number; y: number } | null = null;
   private suppressDateClick = false;
   private readonly viewModel = inject(DashboardPageViewModel);
+  private readonly injector = inject(Injector);
+  private readonly receiptCamera = viewChild<unknown, ElementRef<HTMLButtonElement>>('receiptCamera', { read: ElementRef });
+  protected readonly receiptState = this.viewModel.receiptState;
+  protected readonly receiptError = this.viewModel.receiptError;
+  protected readonly receiptStatus = this.viewModel.receiptStatus;
+  protected readonly receiptCategories = this.viewModel.receiptCategories;
+  protected readonly canReadReceipt = this.viewModel.canReadReceipt;
+  protected readonly receiptAccept = RECEIPT_MIME_TYPES.join(',');
   protected readonly loading$ = this.viewModel.loading$;
   protected readonly sheets$ = this.viewModel.sheets$;
   protected readonly categories$ = this.viewModel.categories$;
@@ -77,6 +88,26 @@ export class DashboardPageContainer {
 
   constructor() {
     inject(Store).dispatch(AppActions.setTitle({ title: 'Dashboard', icon: 'dashboard' }));
+    let active = false;
+    effect(() => {
+      const isActive = this.receiptState().kind !== 'idle';
+      if (active && !isActive) afterNextRender(() => this.receiptCamera()?.nativeElement.focus(), { injector: this.injector });
+      active = isActive;
+    });
+  }
+
+  protected onReceiptSelected(input: HTMLInputElement): void {
+    const photo = input.files?.[0];
+    input.value = '';
+    if (photo) this.viewModel.recognizeReceipt(photo);
+  }
+
+  protected cancelReceipt(): void {
+    this.viewModel.cancelReceipt();
+  }
+
+  protected confirmReceipt(expenses: ReceiptExpense[]): void {
+    this.viewModel.confirmReceipt(expenses);
   }
 
   protected onSubmit(event: Event): void {
