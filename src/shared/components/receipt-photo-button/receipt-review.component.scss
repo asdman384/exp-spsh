@@ -1,26 +1,34 @@
 :host {
   display: block;
-  padding: 16px;
 }
 
 section {
-  border: 1px solid currentColor;
-  border-radius: 8px;
-  padding: 16px;
   min-width: 0;
+}
+
+.item-header {
+  display: inline-flex;
+  align-items: center;
 }
 
 fieldset {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-direction: column;
   min-width: 0;
   margin: 0 0 12px;
-  padding: 8px;
+  padding: 6px;
+}
+
+.amount-category {
+  display: flex;
+  gap: 8px;
+
+  .amount {
+    flex: 1;
+  }
 }
 
 mat-form-field {
-  flex: 1 1 160px;
   min-width: 0;
   max-width: 100%;
 }

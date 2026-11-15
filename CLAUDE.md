@@ -90,7 +90,7 @@ Angular's `HttpClient`.
   Amount data cells use `inline-flex` through Material's generated `mat-column-amount` class.
 
 - **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
-  *before* bootstrap). It is used without import across effects, services, and guards, and
+  _before_ bootstrap). It is used without import across effects, services, and guards, and
   writes to both the console and an always-on overlay in the page.
 - **Failures surface as a fixed-text toast, never the real error.** The 4 remote category
   effects and `ExpensesService`'s load/delete catch on their inner observable, dispatch
@@ -104,7 +104,7 @@ Angular's `HttpClient`.
   string before the `#`, so OAuth `code`/`state` and `?logger=` must never be re-read from
   `window.location`.
 - **The NgRx entity adapter keys sheets by `title`**, so `selectedSheetId` holds a string;
-  `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering *position*, not an id.
+  `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering _position_, not an id.
 - **Expenses are not in the NgRx store.** `ExpensesService`
   (`src/modules/dashboard/expenses.service.ts`) holds the list in a signal and owns
   `load`/`add`/`delete`; there are no expense actions, reducer keys, or effects.
@@ -172,22 +172,21 @@ Angular's `HttpClient`.
   `/exp-spsh/` in a glob — it matches no file, the asset groups come out with empty `urls`, and
   the app no longer starts offline. Check `ngsw.json` after touching either file.
 
-
 ## Knowledge base
 
 `knowledge/` is an OKF v0.2 bundle (markdown + YAML frontmatter) documenting this project in
 depth — start at [`knowledge/index.md`](knowledge/index.md). Read the relevant concept before
 non-trivial work rather than re-deriving it:
 
-| Question | Concept |
-|---|---|
-| How does state flow? | `knowledge/architecture/state-management.md` |
-| What does this API call do? | `knowledge/interfaces/` |
-| How does this feature work end to end? | `knowledge/flows/` |
-| What is the sheet layout? | `knowledge/domain/spreadsheet-layout.md` |
-| What is already known to be broken? | `knowledge/constraints/known-issues.md` |
-| Why is it failing? | `knowledge/operations/troubleshooting.md` |
-| How does the offline write queue work? | `knowledge/architecture/write-outbox.md` |
+| Question                               | Concept                                      |
+| -------------------------------------- | -------------------------------------------- |
+| How does state flow?                   | `knowledge/architecture/state-management.md` |
+| What does this API call do?            | `knowledge/interfaces/`                      |
+| How does this feature work end to end? | `knowledge/flows/`                           |
+| What is the sheet layout?              | `knowledge/domain/spreadsheet-layout.md`     |
+| What is already known to be broken?    | `knowledge/constraints/known-issues.md`      |
+| Why is it failing?                     | `knowledge/operations/troubleshooting.md`    |
+| How does the offline write queue work? | `knowledge/architecture/write-outbox.md`     |
 
 Every concept cites its source files in frontmatter. The bundle is **unverified** — confirm a
 claim against its sources before acting on it irreversibly.
@@ -201,7 +200,3 @@ keep it.
 `.claude/agents/` defines planner, architect, implementer, tester, reviewer, and orchestrator
 roles, plus the `/orchestrate` command. They write to `docs/specs/`, `docs/architecture/`,
 `docs/reviews/`, and `docs/dod/`.
-
-## Receipt photo entry
-
-Dashboard receipt photos use the existing lazy Gemini client. An editable review card requires explicit confirmation before expenses enter the outbox. Receipt dates fall back to the selected Dashboard date. Photos remain transient and are not logged or persisted. Scope changes and cancellation discard the draft. See knowledge/flows/receipt-recognition.md.

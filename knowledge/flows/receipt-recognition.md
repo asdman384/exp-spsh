@@ -10,7 +10,13 @@ sources:
     title: Receipt contract
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
-    title: Dashboard receipt lifecycle
+    title: Dashboard expense subscription
+  - id: reader
+    resource: ../../src/shared/components/receipt-photo-button/receipt-reader.service.ts
+    title: Receipt draft lifecycle
+  - id: button
+    resource: ../../src/shared/components/receipt-photo-button/receipt-photo-button.component.ts
+    title: Receipt selection and review template
 ---
 
 The camera button beside the microphone opens a native single-photo picker. JPEG, PNG,
@@ -21,9 +27,28 @@ Gemini groups paid line totals after discounts into the current categories. The 
 rejects malformed, empty, or partially invalid results. A legible receipt date is used;
 an absent date uses the Dashboard date captured at selection.
 
+Comments use short, readable names in the language of the category names. One product uses
+one simple name. Different products of the same type use a shared product group. Mixed groups
+use a short list of group names within the same category expense. Comments omit raw receipt
+abbreviations, product codes, and repeated items. If no product is identifiable, the comment
+uses the readable store name or an empty string.
+
 The review card lets the user edit amounts, categories, dates, and comments, remove rows,
 or cancel. Only Add expenses sends the draft through ExpensesService and the existing
 outbox. Consuming the draft before enqueue prevents repeated confirmation.
 
 The draft belongs to its initiating spreadsheet, person, and category list. Context changes,
 cancellation, and page destruction discard it and cancel recognition. Voice entry is unchanged.
+
+`ReceiptReaderService` is provided by the Dashboard page. It owns recognition, validation,
+the review state, and cancellation. Its signals are read-only. The button connects its date
+and person input signals to the service. The service reads categories, loading state, and
+spreadsheet selection from the store. A confirmed batch contains its person ID and expenses;
+`DashboardPageViewModel` subscribes to `expenses$` and adds each expense through `ExpensesService`.
+The stream does not replay a previous batch.
+
+The button, review form, and service share `src/shared/components/receipt-photo-button/`.
+The button opens its review template with Angular Material `MatDialog`. The modal stays outside
+the Dashboard form, so receipt confirmation cannot submit the manual expense form. Escape and
+a backdrop click cancel the draft. Recognition progress and errors appear in the same modal. The button owns
+file selection and focus restoration. The review component owns row editing and validation.

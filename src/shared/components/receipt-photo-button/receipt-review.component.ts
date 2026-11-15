@@ -1,24 +1,25 @@
+import { DecimalPipe } from '@angular/common';
 import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   effect,
+  ElementRef,
   inject,
   Injector,
   input,
   output,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
-import { ReceiptExpense, isValidReceiptDraftRow } from 'src/services/expense-recognition/receipt-recognition';
+import { isValidReceiptDraftRow, ReceiptExpense } from 'src/services/expense-recognition/receipt-recognition';
 
 @Component({
   selector: 'receipt-review',
@@ -32,39 +33,47 @@ import { ReceiptExpense, isValidReceiptDraftRow } from 'src/services/expense-rec
     MatFormFieldModule,
     MatInputModule,
     MatSelectModule,
+    MatIconModule,
   ],
   styleUrl: './receipt-review.component.scss',
   template: `
     <section aria-labelledby="receipt-heading">
-      <h2 id="receipt-heading" #heading tabindex="-1">Review receipt</h2>
-      <p>Photo sent to Gemini. The app does not save it.</p>
       <form (submit)="confirm($event)">
         @for (row of rows.controls; track row; let i = $index) {
           <fieldset [formGroup]="row">
-            <legend>Item {{ i + 1 }}</legend>
-            <mat-form-field appearance="outline">
-              <mat-label>Amount</mat-label>
-              <input matInput type="number" inputmode="decimal" formControlName="amount" step="any" />
-            </mat-form-field>
-            <mat-form-field appearance="outline">
-              <mat-label>Category</mat-label>
-              <mat-select formControlName="category">
-                @for (category of categories(); track category) {
-                  <mat-option [value]="category">{{ category }}</mat-option>
-                }
-              </mat-select>
-            </mat-form-field>
+            <legend class="item-header">
+              <span>Item {{ i + 1 }}</span>
+              <button type="button" mat-icon-button [attr.aria-label]="'Remove receipt item ' + (i + 1)" (click)="remove(i)">
+                <mat-icon>close</mat-icon>
+              </button>
+            </legend>
+
             <mat-form-field appearance="outline">
               <mat-label>Date</mat-label>
               <input matInput [matDatepicker]="picker" formControlName="date" />
               <mat-datepicker-toggle matIconSuffix [for]="picker" />
               <mat-datepicker #picker />
             </mat-form-field>
+
+            <div class="amount-category">
+              <mat-form-field class="amount" appearance="outline">
+                <mat-label>Amount</mat-label>
+                <input matInput type="number" inputmode="decimal" formControlName="amount" step="any" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label>Category</mat-label>
+                <mat-select formControlName="category">
+                  @for (category of categories(); track category) {
+                    <mat-option [value]="category">{{ category }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+            </div>
+
             <mat-form-field appearance="outline">
               <mat-label>Comment</mat-label>
               <input matInput data-comment formControlName="comment" />
             </mat-form-field>
-            <button mat-button type="button" [attr.aria-label]="'Remove receipt item ' + (i + 1)" (click)="remove(i)">Remove</button>
           </fieldset>
         } @empty {
           <p>No receipt items remain.</p>
