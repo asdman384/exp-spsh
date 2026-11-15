@@ -18,6 +18,18 @@ sources:
   - id: urlparams
     resource: ../../src/shared/helpers/initial-url-params.ts
     title: initialUrlParams
+  - id: dashboard
+    resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.ts
+    title: Dashboard providers
+  - id: receiptreader
+    resource: ../../src/shared/components/receipt-photo-button/receipt-reader.service.ts
+    title: Receipt draft service
+  - id: statistics
+    resource: ../../src/modules/dashboard/statistics/statistics.container.ts
+    title: Statistics providers and locale
+  - id: table
+    resource: ../../src/shared/components/expenses-table/expenses-table.component.ts
+    title: Shared table locale
   - id: outboxstorage
     resource: ../../src/services/outbox/outbox-storage.ts
     title: OutboxStorage root binding
@@ -43,13 +55,14 @@ A rejection anywhere in the chain is written to `console.error` and `log()`. The
 |---|---|---|
 | `AbstractSecurityService` | `RedirectSecurityService` | swap to `PopupSecurityService` here to change the auth UX |
 | `HTTP_INTERCEPTORS` (multi) | `ExpAuthInterceptor` | see [auth interceptor](../interfaces/http-auth-interceptor.md) |
+| `LOCALE_ID` | `en-US` | global Angular pipe locale; table and Statistics explicitly use `pl` for numbers |
 | `LocationStrategy` | `HashLocationStrategy` | GitHub Pages cannot rewrite deep links |
 | `StorageService` | `LocalStorageService` | see [localStorage](../interfaces/local-storage.md) |
 | — | `provideHttpClient(withXhr(), withInterceptorsFromDi(), withJsonpSupport())` | XHR backend, class-based interceptors |
 | — | `provideRouter(routes, withComponentInputBinding())` + `withViewTransitions(...).ɵproviders` | [routing](routing-and-guards.md) |
 | — | `ServiceWorkerModule.register('ngsw-worker.js', { enabled: isServiceWorkerEnabled(), registrationStrategy: 'registerWhenStable:30000' })` | production always; development only with `SERVICE_WORKER_IN_DEV` |
 | — | `StoreModule.forRoot(reducers, { metaReducers })`, `EffectsModule.forRoot([AppEffects])` | [state](state-management.md) |
-| — | `StoreDevtoolsModule.instrument(...)` | only when the URL has a `logger` query param; the package is a lazy chunk fetched only then |
+| — | `StoreDevtoolsModule.instrument(...)` and `enableProfiling()` | only when the captured `logger` query value is non-empty; the package is a lazy chunk fetched only then |
 
 `provideAppInitializer(() => inject(OutboxService).init())` hydrates the
 [write outbox](write-outbox.md) at startup.
@@ -92,9 +105,18 @@ There is no shared UI-kit module. Each standalone component imports only the Mat
 modules and `@angular/common` pipes its own template uses, so heavy modules (datepicker,
 table, tabs, drag-drop) stay in the lazy `dashboard` chunk.
 
-`DashboardPageContainer` — the only datepicker host — provides `MAT_DATE_LOCALE = 'en-GB'`
+`DashboardPageContainer` provides `MAT_DATE_LOCALE = 'en-GB'`
 and a `MAT_DATE_FORMATS` override (`dateInput: { year: 'numeric', month: 'short', day:
 'numeric' }`) in its own `providers`.
+
+`ReceiptReviewComponent` also hosts datepickers. The Dashboard provides
+`DashboardPageViewModel` and `ReceiptReaderService` per page; Statistics provides
+`StatisticsDataService` per page. `ReceiptReaderService` also has a root DI registration,
+but the Dashboard overrides it with its own instance.
+
+The table and Statistics import `@angular/common/locales/global/pl` and select `pl` in
+number pipes. Dates retain English month names through `LOCALE_ID: en-US`; Dashboard
+summary strings explicitly use `en-US` without grouping.
 
 `ExpDialogComponent` (`src/shared/components/dialog/`) is unused.
 

@@ -12,6 +12,9 @@ sources:
   - id: page
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.view-model.ts
     title: DashboardPageViewModel.expenses
+  - id: statsdata
+    resource: ../../src/modules/dashboard/statistics/statistics-data.service.ts
+    title: Independent Statistics reads
   - id: stats
     resource: ../../src/modules/dashboard/statistics/statistics.container.ts
     title: StatisticsContainer.formChanged
@@ -29,7 +32,7 @@ The list is the service's `expenses` signal; it is not in the NgRx store.[^expen
 |---|---|
 | `DashboardPageViewModel` constructor (if a current sheet exists) | month start through today, inclusive |
 | dashboard date change | month start through the selected day, inclusive |
-| automatic date moves to a new day on resume or submit | month start through today, inclusive |
+| visible-resume debounce replaces a date on a different day | month start through today, inclusive |
 | dashboard person change | month start through the selected day, inclusive |
 | `OutboxService.sent$` (only on `/dashboard`) | month start through the last sent record's date |
 
@@ -65,7 +68,8 @@ load(filter) --switchMap--> online$.filter(true) --exhaustMap--> loading(true); 
 ```
 
 An offline call waits and fires when connectivity returns; a newer call replaces the
-waiting one.[^expenses] The inner `online$` stream never completes, so **the latest
+waiting one. The downstream `exhaustMap` does not cancel an active request and drops new
+load emissions while that request is running.[^expenses] The inner `online$` stream never completes, so **the latest
 `load` re-runs on every later offline → online transition**. The signal is replaced
 wholesale. `ExpensesService` is a root singleton, so the list survives navigation between
 the dashboard and statistics pages.

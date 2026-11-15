@@ -60,5 +60,6 @@ the repo root.
 - `SnowComponent` (`src/fun/snow/`) is always in the `AppComponent` template but renders 50
   flakes only on **14 February**.
 - `src/modules/playground/**` — an unguarded sandbox at `#/playground`, with its own README.
+- `src/modules/playground2/**` — a second unguarded sandbox at `#/playground2`.
 
 [^angularjson]: Build configuration

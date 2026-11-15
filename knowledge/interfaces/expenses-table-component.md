@@ -9,6 +9,9 @@ sources:
   - id: comp
     resource: ../../src/shared/components/expenses-table/expenses-table.component.ts
     title: ExpensesTableComponent
+  - id: styles
+    resource: ../../src/shared/components/expenses-table/expenses-table.component.scss
+    title: Amount cell layout
   - id: html
     resource: ../../src/shared/components/expenses-table/expenses-table.component.html
     title: Table template
@@ -63,8 +66,10 @@ So aggregate rows (`category` + `amount`) show two columns, the drill-down proje
 
 # Rendering
 
-Amount data cells use `display: inline-flex`, selected through Material's generated
-`mat-column-amount` class. The Amount header keeps its table-cell layout.
+Amount cells keep their table-cell layout. Their inner `.column-amount-container` uses
+`display: flex` with a 10 px gap to place amount, share, and delta on one line.
+Material's generated `mat-column-amount` class sets the minimum column width from
+`--exp-table-amount-column-min-width`.
 
 Amounts and deltas explicitly select the Polish locale in the number pipe: a decimal comma, up to two decimal places,
 and a non-breaking space between thousands (for example, `1 026,2`). Shares use up to one
@@ -82,7 +87,7 @@ decimal place. Statistics totals use the same format. Date pipes use the global 
 
 # Drag gesture
 
-Rows are `cdkDrag` locked to the x axis, disabled unless `draggable()`. Beyond 100 px,
+Rows are `cdkDrag` locked to the x axis, disabled unless `draggable()`. Beyond 100 px to the right,
 `isDelete` shows a delete placeholder; on drop the row is moved off-screen and `deleteRow`
 emits, otherwise it `reset()`s. `dragging` clears 250 ms after drop.
 

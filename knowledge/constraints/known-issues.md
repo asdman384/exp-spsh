@@ -24,6 +24,9 @@ sources:
   - id: security
     resource: ../../src/services/security/abstract-security.service.ts
     title: AbstractSecurityService.logout
+  - id: receipt-review
+    resource: ../../src/shared/components/receipt-photo-button/receipt-review.component.ts
+    title: Required receipt heading query
   - id: wf
     resource: ../../.github/workflows/webpack.yml
     title: CI workflow
@@ -41,6 +44,8 @@ are stable IDs — fixed items are removed, never renumbered.
 | 23 | **Queued writes can duplicate.** If Google applied a replayed batch but the response was lost, the record is retried and a second row appears. No dedupe key. | connection drop after the batch lands | `OutboxService` drain pass |
 | 24 | **Outbox order can be "order sent", not "order entered".** A retried failed record lands above later sends. | Retry after other sends | `OutboxService` |
 | 33 | **A voice-recognition failure toasts the raw error.** `DashboardPageViewModel` dispatches `operationFailed({ source: 'Gemini', message: error })` with the error object itself, bypassing `FAILURE_MESSAGES`. | Gemini error, or a note with no valid expense | `DashboardPageViewModel.recognizeExpenses` |
+| 34 | **Receipt review queries a heading outside its view.** `viewChild.required('heading')` is read in `afterNextRender`, but `#heading` exists only in the parent button template. The required query can throw when review opens. | opening a recognized receipt draft | `ReceiptReviewComponent` |
+| 35 | **Dashboard can show rows from an older selection.** `ExpensesService` uses `exhaustMap`, drops loads while a request runs, and keeps old rows until success. Loaded rows carry no spreadsheet/person scope. | changing person or date during a load; failed reload | `ExpensesService`, `DashboardPageViewModel` |
 
 # Fragility and debt
 
@@ -50,7 +55,7 @@ are stable IDs — fixed items are removed, never renumbered.
 | 13 | **`app.component.spec.ts` is `describe.skip`.** It would need `AbstractSecurityService`, `NetworkStatusService`, `SpreadsheetService`, and `SwUpdate` mocks, and it asserts scaffold text absent from the template. | [testing](../operations/testing.md) |
 | 25 | **The outbox survives logout and user changes.** `logout()` clears only localStorage. On a shared device the next user sees the previous user's failure notice (as a spreadsheet mismatch) and can Retry or Discard it. Reset by deleting IndexedDB `exp-spsh-outbox`. | `AbstractSecurityService.logout`, `OutboxService` |
 | 26 | **A hung request holds the drain pass** until reload; later triggers only coalesce behind it. No `HttpClient` call has a timeout. | `OutboxService` |
-| 27 | **A queued expense's date can shift with the device timezone.** The serial number is computed at send time with that moment's offset. | `OutboxService`, `expense-row.ts` |
+| 27 | **A queued expense's date can shift with the device timezone.** The serial number is computed at send time using the device timezone and the expense date's offset. | `OutboxService`, `expense-row.ts` |
 | 28 | **The four localStorage persist effects fail silently and permanently.** `saveSpreadsheetId$`, `saveSheetId$`, `saveCategoriesSheetId$`, `saveCategories$` catch on the outer pipe: a throwing `setItem` (quota, private mode) is only logged, and that effect completes for the rest of the session, so later values are never persisted. | `AppEffects` |
 | 31 | **The deploy job is not guarded to `master` pushes.** `pull_request` runs reach `deploy` too. | `.github/workflows/webpack.yml` |
-| 32 | **`GGG_KEY` (the Gemini key) is missing from CI and `keys.example.json`.** `ExpenseRecognitionService` reads `keys.GGG_KEY`; the workflow writes only `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID`, so the CI type-check fails, and a fresh clone copying the template does not build. | `.github/workflows/webpack.yml`, `keys.example.json` |
+| 32 | **`GGG_KEY` (the Gemini key) is missing from `keys.example.json`.** `ExpenseRecognitionService` reads `keys.GGG_KEY`, so a fresh clone copying only the template does not build. CI writes all five fields, including `GGG_KEY`. | `keys.example.json` |

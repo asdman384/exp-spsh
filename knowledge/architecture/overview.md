@@ -25,13 +25,13 @@ Google APIs directly.[^appcfg]
 
 | Property | Value |
 |---|---|
-| Version | `package.json` `version` (`0.8.2`), shown in the toolbar menu |
+| Version | `package.json` `version` (`0.13.0`), shown in the toolbar menu |
 | Framework | Angular 22, standalone components, zoneless change detection; no authored `@NgModule` |
 | State | NgRx 22, one slice `app`; expenses and the write outbox live in signal services |
 | UI kit | Angular Material 22, prebuilt `deeppurple-amber` theme |
 | Persistence | Google Sheets (remote); `localStorage` (config and cache); IndexedDB (offline write queue) |
 | Auth | Google Identity Services OAuth 2.0, redirect flow, scope `drive.file` |
-| AI | Gemini (`@google/genai`) turns voice notes into expenses |
+| AI | Gemini (`@google/genai`) turns voice notes and receipt photos into expenses |
 | Hosting | GitHub Pages under `/exp-spsh/`, hash routing |
 
 # Layers
@@ -53,8 +53,8 @@ Google APIs directly.[^appcfg]
   and effects; expenses go through `ExpensesService` and the outbox
   ([state management](state-management.md)). Setup calls `PickerService` and
   `SpreadsheetService` directly.
-- Google HTTP goes through Angular's `HttpClient`; the `gapi` client library is never loaded,
-  only its types. Only the Gemini SDK uses `fetch`.
+- Sheets and OAuth requests use Angular's `HttpClient`; the `gapi` API client is not loaded.
+  Picker loads the `gapi` loader only for its picker module. Gemini uses the SDK's `fetch` path.
 
 # Key choices
 
@@ -62,9 +62,11 @@ Google APIs directly.[^appcfg]
    ([security posture](../constraints/security-posture.md)).
 2. **Two auth strategies** behind `AbstractSecurityService`; redirect is wired
    ([authentication](../flows/authentication.md)).
-3. **Every HTTP call first asks for a valid token** via `ExpAuthInterceptor`.
+3. **Angular HTTP requests ask for a valid token** via `ExpAuthInterceptor`, except
+   token exchange and refresh requests. Gemini uses its API key outside this interceptor.
 4. **Offline-tolerant.** Reads wait for connectivity; every new expense — typed or recognized
-   from a [voice note](../flows/voice-recording.md) — is queued in IndexedDB and sent from there ([write outbox](write-outbox.md), [offline](../flows/offline-and-updates.md)).
+   from a [voice note](../flows/voice-recording.md) or confirmed
+   [receipt draft](../flows/receipt-recognition.md) — is queued in IndexedDB and sent from there ([write outbox](write-outbox.md), [offline](../flows/offline-and-updates.md)).
 5. **One tab per person.** Each user gets a `data_<name>` sheet in the shared spreadsheet
    ([spreadsheet layout](../domain/spreadsheet-layout.md)).
 

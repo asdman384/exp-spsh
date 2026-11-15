@@ -15,6 +15,9 @@ sources:
   - id: html
     resource: ../../src/modules/dashboard/dashboard/dashboard-page.container.html
     title: Dashboard form template
+  - id: amount
+    resource: ../../src/modules/dashboard/dashboard/parse-amount.ts
+    title: Amount expression parser
   - id: expenses
     resource: ../../src/modules/dashboard/expenses.service.ts
     title: ExpensesService.add
@@ -31,34 +34,49 @@ sources:
 A Signal Forms form (`@angular/forms/signals`) over one `expenseModel` signal
 `{ date, sheet, amount, category, comment, isInDebt }` owned by the page-scoped
 `DashboardPageViewModel`. The component owns form validation and display bindings.[^page][^vm] `required()` applies to
-`date`, `sheet`, `amount`, `category`. Controls bind with `[formField]`:[^html]
+`date`, `sheet`, `amount`, `category`. Controls other than the amount text draft bind with `[formField]`:[^html]
 
-- `date` — Material datepicker (`touchUi`, readonly input, no lower date bound);
+- `date` — Material datepicker (`touchUi`, readonly input, minimum 1 January of the year when the page is created);
 - `sheet` — person select, labelled `title.split('_')[1]`;
-- `amount` — number input; `category` — select over store categories;
+- `amount` — text input with a decimal keyboard hint and no currency suffix;
+  `category` — select over store categories;
 - `comment` — autosizing textarea with a clear icon; `isInDebt` — checkbox.
 
 The Date field has a transparent swipe button over it. A horizontal gesture of at least
-40 CSS pixels logs `Date swipe` and `left` or `right` in the component and runs a wave in
+40 CSS pixels, with horizontal distance greater than vertical distance, runs a wave in
 that direction. Left subtracts one local calendar day from the selected date; right adds one.
-The handler calls `changeDate`, which updates the date and loads expenses for the selected
-person. Swipes do not open the calendar. A tap opens the calendar.
+The handler calls `changeDate`, which logs the date, sets its hours and minutes to the
+current local time, and loads expenses for the selected person. The swipe handler does not
+check the calendar minimum. Swipes do not open the calendar. A tap opens the calendar.
 Vertical gestures can scroll the page. Left and right arrow keys also run the handler.
 The wave has zero duration when the user requests reduced motion.[^page][^html]
 
 `sheet`, `amount`, and `category` are typed `| null`, not `| undefined`: Signal Forms treats
 an `undefined`-able value as an optional field, which breaks `[formField]` and `required()`.
 A static `required` attribute cannot coexist with `[formField]` (`NG8022`), so Material's
-asterisk is not shown.
+asterisk is shown only for the standalone amount input.
+
+The amount input uses standalone `ngModel` for its text draft. It accepts `,` and `.` as
+decimal separators and `+` for addition, such as `12+7,5`. On blur it displays the numeric
+result. Each edit sets the numeric amount in `expenseModel`, so Enter also saves the sum.
+Empty, malformed, or non-finite values set the amount to `null` and prevent submission.
+The form reset clears the text draft. Parsing does not execute expressions.
+The amount field uses the default Material subscript sizing; the app sets no sizing
+override. Empty input shows `Enter amount`; an invalid expression shows `Use 12 or 12+7,5`.
+The parser accepts signed decimal terms and zero, permits addition only, and rounds the
+result to 15 significant digits.
+A decimal keyboard may require a layout switch
+to type `+`.[^page][^html]
 
 - When the category list is empty, the select shows a **"Click to Load"** option that
   dispatches `loadCategories`; normally the list comes from localStorage.
-- An automatic date uses the current local time at submit. On a visible next-day resume,
-  it moves to today and reloads the selected person's month through today.
-- A date selected in the calendar or with **Yesterday** stays selected through submit and
-  resume. Yesterday means the previous local calendar day, including across a year boundary.
-- After submit the form resets but keeps the resolved `date`, date mode, and `sheet`.
-  A new Dashboard page starts in automatic date mode.
+- A new Dashboard page starts with the current local date and time. Submit uses the stored
+  form date, even after midnight, and reset keeps that date and the selected person.
+- A visible `visibilitychange` event starts a five-minute debounce. When it fires, a form
+  date on a different local day becomes the current date and time, and the selected
+  person's month through today reloads. This also replaces a manually selected day.
+  Hidden events do not cancel the pending debounce.
+- The page has no automatic/selected date mode and no Yesterday button.
 
 The [voice note](voice-recording.md) button after **Add Expense** is a second entry point: it
 never submits the form, but each expense Gemini recognizes goes to the same
@@ -93,7 +111,7 @@ never submits the form, but each expense Gemini recognizes goes to the same
 | send fails `terminal` | failure notice with Retry / Discard |
 | outbox cannot persist (no IndexedDB) | toast "Couldn't save that expense. Please try again." |
 
-The form was already reset, so an entry that could not be persisted must be retyped. A
+The form resets before persistence completes, so an entry that cannot be persisted must be retyped. A
 queued expense appears in the Dashboard list and applicable totals after local persistence.
 This applies to form and voice entries. Pending and failed records remain visible for the
 selected spreadsheet, person, and day. Earlier days in the month contribute only to monthly

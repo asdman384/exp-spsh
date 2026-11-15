@@ -40,6 +40,7 @@ Paths come from the `ROUTE` enum.[^routeenum] With `HashLocationStrategy`, URLs 
 | `setup/login` | `LoginPageContainer` | — | in the setup chunk |
 | `setup/settings` | `SettingsPageContainer` | `isLoggedIn` | in the setup chunk |
 | `playground` | `PlaygroundComponent` | — | lazy |
+| `playground2` | `Playground2Component` | — | lazy |
 
 `provideRouter` uses `withComponentInputBinding()`; view transitions are enabled via
 `withViewTransitions(...).ɵproviders` with a no-op callback.

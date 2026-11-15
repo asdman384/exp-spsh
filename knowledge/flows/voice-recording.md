@@ -77,7 +77,9 @@ stops a recording.
 `DashboardPageViewModel` subscribes to `toObservable(recorder.latest)`, skipping the clip
 already held when the page opens.[^page] For each new clip it dispatches `loading(true)`, calls
 `ExpenseRecognitionService.recognize(clip, categoryNames, new Date())`
-([Gemini](../interfaces/gemini-api.md)), and `switchMap` drops an older in-flight request.
+([Gemini](../interfaces/gemini-api.md)), and `switchMap` ignores the result of an older
+request. The voice SDK call has no abort signal, so unsubscribe does not cancel its network
+work. The retry predicate always returns false, so recognition failures are not retried.
 
 - **Success** — the result is logged, then each `Expense` goes to
   `ExpensesService.add(currentSheet.id, expense)`, i.e. into the

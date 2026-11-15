@@ -75,6 +75,9 @@ harness's `typecheck` layer) is what type-checks specs.
 | State | `app.reducers.spec.ts` (`lastError`), `report-failure.spec.ts`, `app.effects.spec.ts` (`showFailureToast$`, `deleteCategory$` row index) |
 | Expenses | `expenses.service.spec.ts` (add → outbox, load and online wait, delete window and rollback, reload after `sent$`) |
 | Outbox | `outbox.service.spec.ts` (hydration, persist-first add, triggers T1–T5, drain outcomes, notice), `indexed-db-outbox-storage.service.spec.ts` |
+| Dashboard form and totals | `dashboard-page.container.spec.ts`, `dashboard-page.view-model.spec.ts`, `parse-amount.spec.ts` (submit/reset, dates, gestures, queued rows, totals, decimal and addition parsing) |
+| Statistics | `statistics-summary.spec.ts`, `statistics-data.service.spec.ts`, `statistics.container.spec.ts` (category comparisons, debt, January rollover, obsolete reads, reconnect, drill-down) |
+| Receipts | `receipt-recognition.spec.ts`, `dashboard-receipt.spec.ts`, `receipt-photo-button.component.spec.ts`, `receipt-review.component.spec.ts` (validation, confirmation, cancellation, context, dialog, editing) |
 | Voice and Gemini | `voice-recorder.service.spec.ts`, `voice-record-button.component.spec.ts`, `expense-recognition.service.spec.ts` (SDK mocked) |
 | Security | `security.service.spec.ts` (which token each strategy's `logout()` revokes; `google` stubbed with `vi.stubGlobal`) |
 | Components | `expenses-table`, `statistics.container` (animation, month scroll), `dashboard-page.container` (voice button placement, never submits), `outbox-status`, `outbox-failure-notice`; smoke tests for categories, dashboard shell, dialog, local storage, test-perf |
@@ -83,14 +86,14 @@ harness's `typecheck` layer) is what type-checks specs.
 ([known issues](../constraints/known-issues.md) #13).
 
 Not covered: guards, the interceptor, token acquisition and refresh, `PickerService`, the
-setup page, the dashboard form submit and voice-to-expense wiring, and the success paths of
-the category effects.
+setup page, and the success paths of the category effects. Dashboard specs cover submit,
+reset, and voice-to-expense wiring; test presence does not establish that the suite passes.
 There is no end-to-end testing.
 
 # Rules
 
 `CLAUDE.md`: never delete or overwrite working tests without permission, and run
-`node scripts/harness.mjs` after every change ([working agreements](../constraints/working-agreements.md)).
+`node scripts/harness.mjs` after every code change ([working agreements](../constraints/working-agreements.md)).
 CI runs no tests ([CI](ci-and-deployment.md)).
 
 [^ng]: test target configuration

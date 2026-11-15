@@ -14,6 +14,9 @@ sources:
   - id: reader
     resource: ../../src/shared/components/receipt-photo-button/receipt-reader.service.ts
     title: Receipt draft lifecycle
+  - id: review
+    resource: ../../src/shared/components/receipt-photo-button/receipt-review.component.ts
+    title: Receipt review form
   - id: button
     resource: ../../src/shared/components/receipt-photo-button/receipt-photo-button.component.ts
     title: Receipt selection and review template
@@ -37,8 +40,9 @@ The review card lets the user edit amounts, categories, dates, and comments, rem
 or cancel. Only Add expenses sends the draft through ExpensesService and the existing
 outbox. Consuming the draft before enqueue prevents repeated confirmation.
 
-The draft belongs to its initiating spreadsheet, person, and category list. Context changes,
-cancellation, and page destruction discard it and cancel recognition. Voice entry is unchanged.
+The draft belongs to its initiating spreadsheet, person, and category list. Spreadsheet, person, or category-list changes, cancellation, and page destruction discard
+it and cancel recognition. A date change alone does not discard the draft; the fallback
+date stays the value captured at selection.
 
 `ReceiptReaderService` is provided by the Dashboard page. It owns recognition, validation,
 the review state, and cancellation. Its signals are read-only. The button connects its date
@@ -51,4 +55,8 @@ The button, review form, and service share `src/shared/components/receipt-photo-
 The button opens its review template with Angular Material `MatDialog`. The modal stays outside
 the Dashboard form, so receipt confirmation cannot submit the manual expense form. Escape and
 a backdrop click cancel the draft. Recognition progress and errors appear in the same modal. The button owns
-file selection and focus restoration. The review component owns row editing and validation.
+file selection and dialog focus restoration. The review component owns row editing and
+validation through a reactive `FormArray`. Its total uses the global `en-US` number locale.
+Its required `heading` view query has no matching reference in its own template; the
+`#heading` belongs to the button template. Its after-render focus callback can therefore
+throw (see [known issues](../constraints/known-issues.md) #34).

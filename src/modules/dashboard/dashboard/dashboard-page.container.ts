@@ -1,5 +1,6 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
+import { FormsModule, NgModel } from '@angular/forms';
 import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -18,6 +19,7 @@ import { VoiceRecordButtonComponent } from 'src/shared/components/voice-record-b
 import { DashboardPageViewModel } from './dashboard-page.view-model';
 import { ReceiptPhotoButtonComponent } from 'src/shared/components/receipt-photo-button/receipt-photo-button.component';
 import { ReceiptReaderService } from 'src/shared/components/receipt-photo-button/receipt-reader.service';
+import { parseAmount } from './parse-amount';
 
 @Component({
   selector: 'dashboard-page',
@@ -25,6 +27,7 @@ import { ReceiptReaderService } from 'src/shared/components/receipt-photo-button
   styleUrl: './dashboard-page.container.scss',
   imports: [
     FormField,
+    FormsModule,
     AsyncPipe,
     DatePipe,
     MatButtonModule,
@@ -71,6 +74,19 @@ export class DashboardPageContainer {
   protected readonly expenseModel = this.viewModel.expenseModel;
   protected readonly timeFormat = TIME_FORMAT;
   protected readonly minDate = new Date(new Date().getFullYear(), 0, 1);
+  protected readonly amountText = signal<string | null>(null);
+  private readonly amountInput = viewChild<NgModel>('amountInput');
+  protected readonly amountPattern = /\s*-?(?:\d+(?:[.,]\d*)?|[.,]\d+)(?:\s*\+\s*-?(?:\d+(?:[.,]\d*)?|[.,]\d+))*\s*/;
+
+  protected onAmountInput(text: string): void {
+    this.amountText.set(text);
+    this.expenseModel.update(value => ({ ...value, amount: parseAmount(text) }));
+  }
+
+  protected finishAmount(): void {
+    const amount = this.expenseModel().amount;
+    if (amount !== null) this.amountText.set(amount.toLocaleString('en-US', { useGrouping: false, maximumSignificantDigits: 15 }));
+  }
 
   protected readonly expenseForm = form(this.expenseModel, p => {
     required(p.date);
@@ -86,6 +102,8 @@ export class DashboardPageContainer {
   protected onSubmit(event: Event): void {
     event.preventDefault();
     if (this.expenseForm().valid() && this.viewModel.saveExpense()) {
+      this.amountText.set(null);
+      this.amountInput()?.reset('');
       this.expenseForm().reset(this.expenseModel());
     }
   }

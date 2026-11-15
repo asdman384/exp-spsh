@@ -43,7 +43,7 @@ older successful run. Installed PWAs switch versions only when their worker fetc
 
 - No test, lint, or spec type-check in CI; `npm run build` type-checks the app only.
 - `deploy` is not guarded to `push`/`master`, so pull-request runs also reach it.
-- `GGG_KEY` is not written into `keys.json`, so the build fails type-checking
-  `ExpenseRecognitionService` ([known issues](../constraints/known-issues.md) #32).
+- CI writes `GGG_KEY` from its repository secret. The local template still omits that
+  field ([known issues](../constraints/known-issues.md) #32).
 
 [^pkg]: version field

@@ -27,6 +27,8 @@ sources:
 
 From `CLAUDE.md` (the source of truth; `AGENTS.md` points to it):[^claudemd]
 
+The repository requires ASD-STE100 Simplified Technical English.
+
 1. **Never** delete or overwrite working tests without explicit permission.
 2. **Always** run `node scripts/harness.mjs` after any code change.
 3. One task at a time.

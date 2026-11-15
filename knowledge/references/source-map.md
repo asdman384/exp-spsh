@@ -45,7 +45,7 @@ sources:
 | `services/picker/` | `PickerService` | [OAuth and Picker](../interfaces/google-oauth.md) |
 | `services/outbox/` | `OutboxService` (the queue, signal state, drain loop), `OutboxStorage`, `IndexedDbOutboxStorage`, `InMemoryOutboxStorage` (test double), `OUTBOX_MESSAGES` | [write outbox](../architecture/write-outbox.md) |
 | `services/storage/` | `StorageService`, `LocalStorageService` | [localStorage](../interfaces/local-storage.md) |
-| `services/expense-recognition/` | `ExpenseRecognitionService` — voice note to `Expense[]` via `@google/genai` | [Gemini](../interfaces/gemini-api.md) |
+| `services/expense-recognition/` | `ExpenseRecognitionService` — voice and receipt recognition via `@google/genai`; `receipt-recognition.ts` validates receipt input and output | [Gemini](../interfaces/gemini-api.md) |
 | `services/network-status.service.ts` | `online$` | [offline](../flows/offline-and-updates.md) |
 | `services/voice-recorder/` | `VoiceRecorderService` — mic permission, `MediaRecorder` lifecycle, the latest in-memory recording | [voice recording](../flows/voice-recording.md) |
 | `shared/models/` | `Expense`, `Category`, `Sheet`, `Token`, `Userinfo`, `OutboxRecord`, `VoiceRecording` | [domain](../domain/) |
@@ -54,10 +54,14 @@ sources:
 | `shared/components/expenses-table/` | the shared table | [table contract](../interfaces/expenses-table-component.md) |
 | `shared/components/outbox-status/`, `outbox-failure-notice/` | toolbar badge; Retry/Discard/Close snackbar (imported by path, not via the barrel) | [write outbox](../architecture/write-outbox.md) |
 | `shared/components/voice-record-button/` | hold-to-record button (imported by path, not via the barrel) | [voice recording](../flows/voice-recording.md) |
+| `shared/components/receipt-photo-button/` | photo picker, review dialog, reactive draft form, `ReceiptReaderService` | [receipt recognition](../flows/receipt-recognition.md) |
 | `shared/components/dialog/` | `ExpDialogComponent`, unused | — |
 | `modules/dashboard/` | shell + `dashboard/`, `categories/`, `statistics/`; `expenses.service.ts` (`ExpensesService`, the signal-held expense list) | [flows](../flows/), [state management](../architecture/state-management.md#expensesservice) |
+| `modules/dashboard/dashboard/parse-amount.ts` | signed decimals and addition for the amount draft | [add expense](../flows/add-expense.md) |
+| `modules/dashboard/statistics/` | `StatisticsDataService`, `summarizeMonth`, selection and drill-down | [statistics](../flows/statistics.md) |
 | `modules/setup/` | shell + `login-page.containers.ts`, `setup-page/` | [initial setup](../flows/initial-setup.md) |
 | `modules/playground/` | unguarded sandbox (own README) | [app system](../systems/exp-spsh-app.md) |
+| `modules/playground2/` | second unguarded sandbox | [app system](../systems/exp-spsh-app.md) |
 | `fun/snow/` | 14 February snow | [app system](../systems/exp-spsh-app.md) |
 | `scripts/client.js` | vendored Google Identity Services, a global build script | [OAuth](../interfaces/google-oauth.md) |
 | `assets/` | icons, images, fonts | — |

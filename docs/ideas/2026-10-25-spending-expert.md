@@ -11,13 +11,13 @@ totals. Statistics show one month as an unsorted list with no comparison, no lim
 forecast. And whatever you just logged (typed offline, or recognised by voice) is invisible
 until the spreadsheet confirms it.
 
-Top 3 ideas:
-3. Add a "Today / This month" running total under the form, which later carries per-category
-   limits (#3, then #8).
+Top 3 ideas: 3. Add a "Today / This month" running total under the form, which later carries per-category
+limits (#3, then #8).
 
 ## User journeys
 
 ### First launch and setup
+
 Steps: open the app, sign in with a Google redirect, consent, and land on Setup. Setup shows
 three read-only id fields and a **Choose spreadsheet** button. The Picker then needs a
 spreadsheet that **already exists**: there is no "create one for me" option, so a new user has
@@ -30,30 +30,35 @@ an empty category list on the first expense.
 **Verdict: painful** (it happens only once, but it is where a new user gives up).
 
 ### Logging a purchase (form)
+
 Steps: the date is prefilled and the user is preselected. Tap Amount, type it, open the
 Category select, scroll and pick one, optionally add a comment, tap **Add Expense**. That is
 5–6 taps and about 8–12 s. The form keeps the date and user and clears the rest, which is
 right. Friction:
+
 - `type="number"` without `inputmode="decimal"`. On some Android keyboards with a Polish,
   Ukrainian or Russian locale, entering a decimal comma is awkward.
 - Category is a long dropdown, not a grid of one-tap chips.
 - No frequent or recent shortcuts.
 - The confirmation goes only to a screen reader (`LiveAnnouncer`). A sighted user sees only
   the toolbar badge, and the row appears only after the send and reload.
-**Verdict: ok.**
+  **Verdict: ok.**
 
 ### Logging by voice
+
 Steps: hold the mic, say "35 на продукты, отними 10 на хозтовары", release. One gesture and
 about 5 s, the best entry path in the app. Gemini knows the category list, splits a total
 into parts, and understands "вчера" (yesterday). Friction:
+
 - There is no review step. Every recognised item goes straight into the outbox, so a misheard
   amount or category lands in the sheet, and the only fix is an online swipe-delete.
 - Offline, recognition fails with a toast and the clip is effectively lost (there is no queue
   for recognition, and retries are disabled).
 - Currency words are deliberately ignored, so 100 грн and 100 zł are summed as the same money.
-**Verdict: good when online, risky for accuracy.**
+  **Verdict: good when online, risky for accuracy.**
 
 ### Fixing a mistake
+
 Steps: find the row in today's list and swipe it right past 100 px. There is no confirmation
 and no undo. There is **no edit**: fixing a wrong amount means delete and retype. Delete
 needs a network connection, works only on the newest 100 rows (known issue #2), and is
@@ -62,18 +67,21 @@ except as a "failed" record.
 **Verdict: painful.**
 
 ### "How much did I spend this month / on food?"
+
 Steps: avatar menu, **Statistics** (disabled offline), wait for the month to load, read
 per-category sums. Tapping a category drills into its rows. That is 3 taps and a network
 wait. Friction:
+
 - Categories are listed in data order, not by size.
 - There is no share of the total, no comparison with last month, no daily average and no
   month-end projection.
 - The total mixes "debt" rows into spending.
 - The dashboard itself shows no sum at all, not even for today.
 - There is no combined household view (one person per tab).
-**Verdict: ok for "how much", poor for "is that a lot?"**
+  **Verdict: ok for "how much", poor for "is that a lot?"**
 
 ### Offline at the shop
+
 Steps: the app opens from the service worker, the form works, and **Add** queues to
 IndexedDB. Good. But the list does not show the new entry, the confirmation is invisible, and
 the badge is the only clue, so double-logging is likely. Statistics and Categories are
@@ -81,6 +89,7 @@ blocked. Voice recognition fails. Delete fails.
 **Verdict: ok for the form, poor for voice.**
 
 ### End-of-month review
+
 Steps: Statistics, select the month, scan the categories, drill into the biggest one. There
 is nothing to compare against (no previous month, no limits, no trend), and no way to spot
 recurring charges or small frequent purchases except opening the spreadsheet and building a
@@ -90,8 +99,8 @@ nothing here.
 
 ## Ideas
 
-
 ### 4. Review a voice result before it is filed, with Undo
+
 - **Problem for the user:** Gemini sometimes mishears ("пятнадцать" becomes 50) or picks the
   neighbouring category. Today that goes straight to the sheet, and fixing it needs a
   network connection and a swipe-delete.
@@ -106,8 +115,8 @@ nothing here.
 - **Value:** high · **Effort:** S–M
 - **Type:** data-quality
 
-
 ### 6. Daily burn rate and month-end forecast
+
 - **Problem for the user:** On the 12th, I don't know whether I am on track. By the time the
   month total looks bad, the money is gone.
 - **Idea:** Under the month total in Statistics (and on the dashboard line from #3), show
@@ -121,6 +130,7 @@ nothing here.
 - **Type:** insight
 
 ### 7. One-tap repeats of frequent purchases
+
 - **Problem for the user:** Most entries repeat: the same coffee, the same bus ticket, the
   same lunch. Each one is 5–6 taps of retyping.
 - **Idea:** Above the Amount field, show a row of 4–6 chips built from the most frequent
@@ -136,6 +146,7 @@ nothing here.
 - **Type:** tracking-friction
 
 ### 8. Monthly limit per category
+
 - **Problem for the user:** I see after the fact that I spent 1 400 on eating out. Nothing
   warned me while it was happening.
 - **Idea:** On the Categories page, add an optional monthly limit next to each name. When a
@@ -157,6 +168,7 @@ nothing here.
 - **Type:** budgeting
 
 ### 9. "Small leaks" view in the category drill-down
+
 - **Problem for the user:** 12 coffees a month don't feel like money. 12 × 14 = 168 a month,
   over 2 000 a year, does.
 - **Idea:** When drilling into a category, group the rows by comment and show "Coffee ×12 ·
@@ -170,19 +182,8 @@ nothing here.
 - **Value:** medium · **Effort:** S
 - **Type:** insight
 
-### 10. Easy amount entry (decimal keyboard and simple sums)
-- **Problem for the user:** On a phone with a comma-decimal locale (pl, uk, ru) a `number`
-  field can refuse "4,40". At a market I want to type "12+7.5" for two items.
-- **Idea:** Use a decimal keypad (`inputmode="decimal"`), accept both "," and ".", and
-  evaluate a simple "a+b" sum when the field loses focus. Also show the user's currency
-  symbol as a suffix.
-- **Why it saves money / effort:** Removes a failed-entry moment at the till, the exact
-  friction that makes people stop logging.
-- **Fits the design?** Yes. Form only.
-- **Value:** medium · **Effort:** S
-- **Type:** tracking-friction
-
 ### 11. Don't lose voice notes offline
+
 - **Problem for the user:** In a basement shop with no signal, I hold the mic, speak, and get
   an error. The note is gone, and voice is exactly the path I use when my hands are full.
 - **Idea:** When recognition cannot run (offline or a transient error), save the clip itself
@@ -198,6 +199,7 @@ nothing here.
 - **Type:** tracking-friction
 
 ### 12. Easier first run: create the spreadsheet and seed starter categories
+
 - **Problem for the user:** A new user has to create a blank Google spreadsheet elsewhere,
   pick it, then type every category by hand before the first expense.
 - **Idea:** On Setup, offer **Create a new spreadsheet for me** next to **Choose existing**.
@@ -212,6 +214,7 @@ nothing here.
 - **Type:** tracking-friction
 
 ### 13. Debt ledger: see and settle what is owed
+
 - **Problem for the user:** The "Debt" flag records that something was bought on credit or
   is owed. In the app, though, there is no total of what is outstanding and no way to mark it
   repaid, and in Statistics debt rows are silently mixed into spending.
@@ -229,6 +232,7 @@ nothing here.
 - **Type:** data-quality
 
 ### 14. Edit an expense
+
 - **Problem for the user:** A typo in the amount means delete plus retype, online only, and
   only for the newest 100 rows.
 - **Idea:** Tapping a row opens it in the form prefilled, with an **Update** button.
@@ -240,6 +244,7 @@ nothing here.
 - **Type:** data-quality
 
 ### 15. Recurring expenses and subscription spotting
+
 - **Problem for the user:** Rent, phone and streaming hit every month. Either I log them by
   hand each time, or they never appear and my month looks cheaper than it is. Forgotten
   subscriptions are classic silent leaks.
@@ -259,6 +264,7 @@ nothing here.
 - **Type:** habit
 
 ### 16. Household view
+
 - **Problem for the user:** The app is built for several people (one `data_<name>` tab
   each), but no screen shows what the family spent in total or per category.
 - **Idea:** Add an **All** tab in the Statistics user carousel that sums every person's tab
@@ -271,6 +277,7 @@ nothing here.
 - **Type:** insight
 
 ### 17. Receipt photo to split expenses
+
 - **Problem for the user:** A supermarket receipt mixes groceries, household items and
   sweets. Splitting it by voice is tedious.
 - **Idea:** A camera button next to the mic. Gemini reads the photo and returns items grouped
@@ -284,6 +291,7 @@ nothing here.
 - **Type:** tracking-friction
 
 ### 18. Currency awareness in voice
+
 - **Problem for the user:** The prompt tells Gemini to ignore the currency word, so "100
   гривен" said during a trip is added as 100 zł (or whatever the home currency is).
 - **Idea:** When a spoken currency differs from the user's home currency, keep the original
@@ -296,6 +304,7 @@ nothing here.
 - **Type:** data-quality
 
 ### 19. Home-screen shortcuts
+
 - **Problem for the user:** Logging starts with opening the app and waiting for the
   dashboard.
 - **Idea:** Add manifest `shortcuts` for "Add expense" and "Voice expense". On Android these
@@ -338,7 +347,7 @@ These are S effort; each could ship in about a day.
 - **In-app export or CSV:** the Google Sheet already is the export.
 - **Storing receipt images:** it needs Drive file management and storage. Recognise the
   receipt and throw the photo away (#17).
-- **In-app category rename:** expenses store the category *name*, so a rename orphans history
+- **In-app category rename:** expenses store the category _name_, so a rename orphans history
   unless it rewrites every `data_*` tab. Do it in the sheet with find-and-replace if needed.
 - **Savings goals and net-worth accounts:** they need balances the app never sees. They fit
   the spreadsheet better than this logging tool.

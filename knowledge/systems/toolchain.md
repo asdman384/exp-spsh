@@ -16,6 +16,9 @@ sources:
   - id: eslint
     resource: ../../eslint.config.js
     title: ESLint flat config
+  - id: prettier
+    resource: ../../.prettierrc
+    title: Prettier options
   - id: dev
     resource: ../../.claude/rules/development.md
     title: Development environment rules
@@ -39,8 +42,8 @@ sources:
 There is no `zone.js`; the app is zoneless.[^pkg] Angular CLI 22 requires Node.js
 `>= 22.22.3` (or `>= 24.15.0` / `>= 26.0.0`).
 
-Angular 22 defaults components to `OnPush`, and no component sets `changeDetection`
-explicitly.
+Angular 22 defaults components to `OnPush`. `StatisticsContainer` and
+`ReceiptReviewComponent` also set `changeDetection: ChangeDetectionStrategy.OnPush` explicitly.
 
 # TypeScript configuration
 
@@ -60,6 +63,7 @@ Ambient `types`: `vitest/globals`, `gapi`, `gapi.client.oauth2-v2`, `gapi.client
 
 | Script | Command | Notes |
 |---|---|---|
+| `harness` | `node scripts/harness.mjs` | lint, typecheck, production build, tests |
 | `build` | `ng build --configuration=production` | `@angular/build:application` |
 | `watch` | `ng build --watch --configuration=development` | incremental dev build |
 | `serve` | `npx http-server -p 4200 -c-1 dist/` | **not** `ng serve` |
@@ -80,10 +84,12 @@ relaxes a few rules the older code predates (component selector prefix, `prefer-
 `array-type`, `no-inferrable-types`, `consistent-indexed-object-style`).
 `no-explicit-any` stays an error; legitimate uses carry an inline disable with a reason.[^eslint]
 
-Prettier: `printWidth: 120`, single quotes, no trailing commas, semicolons, 2-space indent.
+Prettier: `printWidth: 140`, single quotes, `trailingComma: all`, semicolons, 2-space
+indent, `arrowParens: avoid`, and `endOfLine: auto`.
 Prettier is an exact development dependency. `npm run format` formats JS (including MJS/CJS),
 TS, HTML, CSS, and SCSS files across the project. `npm run format:check` checks the same files
-without writing them. Both commands use `.prettierrc` and respect `.gitignore`.
+without writing them. Both commands use `.prettierrc`. The script does not pass
+`--ignore-path .gitignore`; Prettier uses its standard ignores and `.prettierignore` if present.
 `.editorconfig`: UTF-8, final newline, trimmed whitespace, single quotes in TypeScript.
 
 # Local platform

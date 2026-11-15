@@ -36,9 +36,8 @@ still runs the `postinstall` iOS service-worker patch
 # Secrets
 
 The build step assembles `keys.json` by shell string concatenation from the secrets
-`CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, and `APP_ID`. It does **not** write `GGG_KEY`, which
-`ExpenseRecognitionService` needs, so the build fails
-([known issues](../constraints/known-issues.md) #32). The values are compiled into the
+`CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID`, and `GGG_KEY`. All five fields are
+present in the generated file. `GGG_KEY` supplies the Gemini client key. The values are compiled into the
 published bundle ([security posture](../constraints/security-posture.md)); rotating one means
 updating the secret and re-running the workflow.
 

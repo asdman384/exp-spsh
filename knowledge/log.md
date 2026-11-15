@@ -1,5 +1,16 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-15 - knowledge review against the working tree
+
+- Checked concept claims against source, configuration, and existing test cases at d3ef70d
+  plus the owner's staged changes. Updated dates, amount input, table layout, receipt
+  recognition, routes, formatting, CI secrets, test coverage, indexes, and source map.
+- Removed Things that will surprise you from CLAUDE.md. Retained its current facts in
+  the relevant concepts and corrected claims that no longer match the implementation.
+- Kept the bundle unverified: this is a source review, not runtime or external API verification.
+- Changed documentation only. Preserved the existing Git index and source changes.
+
+
 ## 2026-11-05 - dates you can trust
 
 - Added submit-time dates, visible next-day refresh, and a Yesterday action.

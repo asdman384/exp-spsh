@@ -29,13 +29,14 @@ sources:
 | **Memento** | The one-snapshot holder (`src/shared/helpers`) that optimistic effects use for rollback. |
 | **`initialUrlParams`** | The pre-`#` query string (`code`, `state`, `logger`) captured once at startup, before the router drops it. |
 | **TOTAL** | A string constant in `src/constants/UI.ts`; the table hides the selection checkbox for rows whose category is `TOTAL`. |
-| **aggregator** | A `(Expense[]) => Expense[]` in the statistics page: `groupByCategory` or `filterByCategoryName(name)`. |
+| **aggregator** | A `({ current, previous }) => ExpenseTableRow[]` in the statistics page: `groupByCategory` or `filterByCategoryName(name)`. |
 | **`log()`** | A **global** installed by `src/logger.ts`, writing to the console and an on-page overlay. Not an import. |
 | **playground** | An unguarded sandbox route for trying Angular features; not part of the product. |
 | **setup** | The flow that binds a spreadsheet picked through Google Picker, creates the tabs, and applies validations. |
 | **popup / redirect strategy** | The two `AbstractSecurityService` implementations. Redirect is wired in `app.config.ts`. |
 
-Dashboard **automatic date** uses the current local time at submit and follows the day on resume.
-A **selected date** is a calendar or Yesterday choice that stays fixed while the page is open.
+The Dashboard **form date** starts at page creation and remains unchanged on submit.
+Calendar or swipe changes set its hours and minutes to the current local time. A visible-resume
+debounce replaces any different local day with today after five minutes.
 
 **Receipt draft**: In-memory category expenses from one photo, editable before explicit confirmation.

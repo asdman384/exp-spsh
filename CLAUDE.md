@@ -69,108 +69,16 @@ shims run; hence the `npx npm run <script>` form seen in the README.
 It holds `CLIENT_ID`, `API_KEY`, `CLIENT_SECRET`, `APP_ID`, `GGG_KEY` and is **imported as a
 module**, so a missing file — or a missing field — is a build-time module-resolution or
 type-check failure. `APP_ID` is the Google Cloud project number, used by the Picker (see
-below); `GGG_KEY` is the Gemini API key. CI writes the file from repository secrets, but does
-not yet write `GGG_KEY`, and `keys.example.json` lacks it (known issue #32).
+`knowledge/interfaces/google-oauth.md`); `GGG_KEY` is the Gemini API key. CI writes all five fields from repository secrets. `keys.example.json` lacks `GGG_KEY`
+(known issue #32 in `knowledge/constraints/known-issues.md`).
 
 ## Architecture
 
 Angular 22 standalone, zoneless PWA (`provideZonelessChangeDetection`; no `zone.js`) + NgRx 22.
 Components default to `OnPush`. **There is no backend**: the user's own Google
 Spreadsheet is the database and the browser calls Google APIs directly. The `gapi` client
-library is never loaded — only its TypeScript types are used; all traffic goes through
-Angular's `HttpClient`.
-
-### Things that will surprise you
-
-- **Angular uses `en-US` with Polish number formatting.** `app.config.ts` provides
-  `LOCALE_ID: 'en-US'`. The shared table and Statistics import the standard `pl` locale.
-  Their number pipes explicitly select `pl`: a decimal comma and a non-breaking space
-  between thousands (`1 026,2`).
-  Date pipes use English month names.
-  Amount data cells use `inline-flex` through Material's generated `mat-column-amount` class.
-
-- **`log()` is a global**, installed by `src/logger.ts` (dynamically imported in `main.ts`
-  _before_ bootstrap). It is used without import across effects, services, and guards, and
-  writes to both the console and an always-on overlay in the page.
-- **Failures surface as a fixed-text toast, never the real error.** The 4 remote category
-  effects and `ExpensesService`'s load/delete catch on their inner observable, dispatch
-  `operationFailed({ source, message })` (via `reportFailure` in
-  `src/@state/report-failure.ts`), and `showFailureToast$` opens a snackbar with one of the
-  `FAILURE_MESSAGES` strings. The raw error goes only to `log()` —
-  the overlay is where you debug. The setup page and the four localStorage persist effects
-  only log, with no toast.
-- **Pre-`#` query params are read once, from `initialUrlParams`**
-  (`src/shared/helpers/initial-url-params.ts`). The router's first redirect drops the query
-  string before the `#`, so OAuth `code`/`state` and `?logger=` must never be re-read from
-  `window.location`.
-- **The NgRx entity adapter keys sheets by `title`**, so `selectedSheetId` holds a string;
-  `Sheet.id` is the numeric Google `gid`. `Category.id` is an ordering _position_, not an id.
-- **Expenses are not in the NgRx store.** `ExpensesService`
-  (`src/modules/dashboard/expenses.service.ts`) holds the list in a signal and owns
-  `load`/`add`/`delete`; there are no expense actions, reducer keys, or effects.
-- **Adding an expense never touches the network directly.** `ExpensesService.add` calls
-  `OutboxService.add` (`src/services/outbox/outbox.service.ts`), and `OutboxService` drains
-  that IndexedDB queue serially whenever the app can reach the spreadsheet; `ExpensesService`
-  reloads the month through the sent expense date from `OutboxService.sent$` (see `knowledge/architecture/write-outbox.md`).
-  The outbox is not NgRx either: the store has **one** feature slice (`app`) and **one**
-  effects class (`EffectsModule.forRoot([AppEffects])`); `OutboxService.init()` runs from
-  `provideAppInitializer` in `app.config.ts`. The queue lives in IndexedDB
-  (database `exp-spsh-outbox`), not `localStorage`, and it **survives logout** — reset it via
-  DevTools → Application → IndexedDB → delete `exp-spsh-outbox`. There is no cross-tab
-  coordination: the app is a phone PWA used in a single tab, so only the in-tab single-flight
-  guards a drain pass.
-- **Dashboard dates default to the current local time at submit.** A visible next-day resume
-  moves an automatic date and its table to today. Calendar and Yesterday selections remain
-  fixed through submit and resume. The calendar has no lower bound. Date mode belongs to the
-  page-scoped view-model and resets when the Dashboard page is created.
-- **Dashboard Date has a swipe overlay.** Horizontal gestures of at least 40 CSS pixels
-  call the component handler, log the direction, and show a wave in that direction.
-  A tap opens the calendar. Left subtracts one local calendar day; right adds one.
-  Both call `changeDate`. Arrow keys also call the handler.
-- **Dashboard includes queued expenses in its list and totals.** Its view-model combines
-  pending and failed outbox records for the selected spreadsheet and numeric person ID with
-  loaded expenses. Queued rows come first in reverse outbox order. `ExpenseTableRow.enqueuedAt`
-  marks a grey row with an accessible cloud icon. Swipe resolves one current record by scope,
-  addition time, and all expense fields, then calls public `OutboxService.discard(localId)`.
-  A missing queued record does not cause a remote delete. Statistics uses loaded expenses only.
-- **Statistics owns a page-scoped two-month snapshot.** `StatisticsDataService` reads the
-  previous and selected months in one range query and cancels obsolete requests. Categories
-  sort by amount, with spending shares and deltas against the full previous month. Debt
-  appears only as a separate total in the summary header. The debt flag has no effect on category totals, shares, deltas, or detail rows. It does not
-  read or replace the Dashboard expense signal. See `knowledge/flows/statistics.md`.
-- **The service worker runs only in production builds.** `SERVICE_WORKER_IN_DEV` in
-  `src/shared/helpers/service-worker-mode.ts` (default `false`) is the one switch for
-  development builds. With it off, `main.ts` unregisters any worker scoped to `/exp-spsh/`
-  left over from an earlier build and deletes its `ngsw:/exp-spsh/…` caches before
-  bootstrap, reloading once if that worker was controlling the page. The dev build still emits
-  `ngsw-worker.js`/`ngsw.json`, so flipping the constant is the whole change.
-- **The hold-to-record voice note lives only in memory.** `VoiceRecorderService`
-  (`src/services/voice-recorder/`) holds the latest `VoiceRecording` in a signal — it is not in
-  the NgRx store (a `Blob` isn't serialisable) and is never persisted. It survives logout
-  (`AppComponent.logout` does not reload) but is lost on an actual page reload.
-- **Voice notes become queued expenses via Gemini.** `DashboardPageViewModel` sends each new
-  recording to `ExpenseRecognitionService`, which calls `gemini-3.5-flash-lite` through
-  `@google/genai` with `keys.GGG_KEY` (the SDK uses `fetch`, so `ExpAuthInterceptor` is not
-  involved and no OAuth scope is needed). The SDK is loaded by dynamic `import()` — keep it
-  that way, or the barrel pulls ~390 kB into `main`. Every recognized `Expense` goes to
-  `ExpensesService.add` (the outbox); a failure is the one toast that shows the raw error
-  (`source: 'Gemini'`). See `knowledge/flows/voice-recording.md`.
-- **OAuth scope is `drive.file`.** Setup has no URL field —
-  `PickerService` opens the Google Picker (`https://apis.google.com/js/api.js`,
-  loaded lazily, not vendored like `src/scripts/client.js`) and the user's selection is what
-  grants the app access to that one file. A spreadsheet the app never created or the user
-  never picked through Picker is invisible to it, even to someone who pastes its id directly.
-- `npm install` must run `postinstall`, which patches
-  `node_modules/@angular/service-worker/ngsw-worker.js` for iOS. `--ignore-scripts` silently
-  produces a broken worker.
-- Deployment is a GitHub Pages project site under `/exp-spsh/`. That path is encoded in
-  `angular.json`'s `baseHref` and in the Google OAuth redirect URIs. CI **does not run tests**.
-- The manifest `theme_color` and HTML `theme-color` both use `#673ab7` (purple).
-  Keep these values aligned for browser and installed-app system UI.
-- **`ngsw-config.json` `files` globs match paths inside the build output** (`/main.js`), not
-  deployed URLs; `baseHref` adds `/exp-spsh/` when `ngsw.json` is generated. Never put
-  `/exp-spsh/` in a glob — it matches no file, the asset groups come out with empty `urls`, and
-  the app no longer starts offline. Check `ngsw.json` after touching either file.
+library is never loaded — only its TypeScript types are used. Sheets and OAuth requests use Angular's `HttpClient`;
+Gemini uses the lazy `@google/genai` SDK and `fetch`.
 
 ## Knowledge base
 

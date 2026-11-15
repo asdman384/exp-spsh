@@ -51,7 +51,7 @@ src/fun/               seasonal extras
 
 - Standalone, with an `imports` array listing only what the template uses; no shared UI-kit
   module.
-- `OnPush` by default (Angular 22); nothing sets `changeDetection`.
+- `OnPush` by default (Angular 22); Statistics and receipt review also set it explicitly.
 - Separate `.html`/`.scss` files, except small components with inline templates
   (`SetupComponent`, `LoginPageContainer`, `OutboxStatusComponent`,
   `OutboxFailureNoticeComponent`).
@@ -63,7 +63,8 @@ src/fun/               seasonal extras
 - Template-visible members are `protected`; observables end in `$`.
 - Block control flow (`@if`, `@for` with `track`, `@empty`).
 - Forms: the dashboard uses **Signal Forms** (`form()`, `required()`, `[formField]`);
-  categories and setup use template-driven `ngModel`.
+  its amount draft uses standalone `ngModel`. Categories and setup use template-driven
+  `ngModel`; receipt review uses reactive `FormArray`/`FormGroup` controls.
 
 # RxJS and NgRx idioms
 
@@ -79,8 +80,8 @@ src/fun/               seasonal extras
 
 # Styling and comments
 
-SCSS (schematics default), Material `deeppurple-amber`, Prettier at 120 columns with single
-quotes and no trailing commas.
+SCSS (schematics default), Material `deeppurple-amber`, Prettier at 140 columns with single
+quotes and trailing commas (`trailingComma: all`).
 
 Public `SpreadsheetService` methods start their JSDoc with a link to the Google API reference
 they call — keep that habit. Newer code cites the `docs/specs/` decision (`D3`, `AC19`) it

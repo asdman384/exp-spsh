@@ -23,7 +23,9 @@ sources:
 # Selection and loading
 
 The user, year, and month tabs select a numeric sheet ID and a local calendar month.
-Years run from the current year to 2019. The month carousel scrolls to the current month.
+Years run from the current year to 2019. Month labels use the browser's default locale.
+The month carousel scrolls to the current month through Material's private `_elementRef`
+and `_tabHeader.scrollDistance` members.
 A selection change returns to the category summary.
 
 `StatisticsDataService` belongs to the page. It reads one range from the start of the
@@ -48,7 +50,7 @@ Spending rows show current minus previous amount, with a sign and direction arro
 previous entries means a zero baseline. The comparison is against the full previous
 calendar month, including when the selected month is still in progress.
 
-The table displays share and delta below the amount to keep the column count small.
+The table displays share and delta beside the amount in the same cell.
 The summary header shows `Debt · amount`, the signed sum of current-month debt.
 There is no debt table or debt drill-down. The flag does not affect spending deltas.
 
@@ -67,7 +69,8 @@ In detail mode the total sums all rows of that category.
 # Animation
 
 The page keeps the straight and reverse View Transitions animations for drill-down and
-back. A new emission cancels an obsolete pending table update. `summaryTable` is an
+back. A new emission unsubscribes from the previous table-update observable; its View Transition
+callback can still run, but the closed subscriber does not emit obsolete rows. `summaryTable` is an
 optional view query because selection can run before the view exists. The month selector
 is read after view init.
 

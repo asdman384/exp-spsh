@@ -19,10 +19,11 @@ sources:
 
 # First move
 
-Open the **log overlay** (the `memory` icon at the bottom).[^logger] It has the raw error
-from every `catchError`, every `METHOD url` from the interceptor, and a copy button for bug
-reports. Toasts only say *that* something failed, with fixed wording; setup failures and
-localStorage write failures show nothing at all.[^effects]
+Open the **log overlay** (the `memory` icon at the bottom).[^logger] It contains logged service and effect errors, each `METHOD url` from the interceptor,
+and a copy button for bug reports. Category and saved-expense failures use fixed toast
+messages; voice recognition passes its raw error to the toast. Receipt recognition shows
+fixed errors in its dialog without logging images or raw results. Setup and localStorage
+write failures only log.[^effects]
 
 Add `?logger=1` before the `#` to also load NgRx DevTools and see which action stalled.
 
@@ -31,7 +32,7 @@ Add `?logger=1` before the `#` to also load NgRx DevTools and see which action s
 | Symptom | Likely cause | Check |
 |---|---|---|
 | Setup spinner stops, nothing happens | the setup pipeline failed and only logged | overlay; no edit rights, offline, or Picker/`APP_ID` problem ([setup](../flows/initial-setup.md)) |
-| CI build fails on `keys.GGG_KEY` | the workflow does not write the Gemini key | [known issues](../constraints/known-issues.md) #32 |
+| Local build fails on `keys.GGG_KEY` | `keys.example.json` omits the Gemini key | [known issues](../constraints/known-issues.md) #32 |
 | Toast with raw error text after a voice note | Gemini failed or recognized no valid expense | overlay; [voice recording](../flows/voice-recording.md#recognition) |
 | Redirected to `#/setup` on every visit | `spreadsheetId` or `categoriesSheetId` missing | localStorage; logout clears it |
 | Login loops back to Google | redirect URI mismatch, or consent screen in testing mode (7-day refresh tokens) | Cloud console: redirect URI must equal `origin + pathname` |

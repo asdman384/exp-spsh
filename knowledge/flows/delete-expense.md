@@ -25,7 +25,7 @@ sources:
 
 # Trigger
 
-Dashboard only (`[draggable]="true"`). A row dragged horizontally past 100 px is flung
+Dashboard only (`[draggable]="true"`). A row dragged more than 100 px to the right is flung
 off-screen and `deleteRow` emits; below that it springs back.[^table] The container
 calls `DashboardPageViewModel.deleteExpense`. There is no confirmation.[^dashboard]
 
