@@ -61,6 +61,12 @@
               ],
               "outputHashing": "all"
             },
+            "e2e": {
+              "outputPath": {
+                "base": "tmp/e2e-dist/exp-spsh",
+                "browser": ""
+              }
+            },
             "development": {
               "optimization": false,
               "extractLicenses": false,
@@ -109,7 +115,9 @@
           "options": {
             "lintFilePatterns": [
               "src/**/*.ts",
-              "src/**/*.html"
+              "src/**/*.html",
+              "e2e/**/*.ts",
+              "playwright.config.ts"
             ]
           }
         }

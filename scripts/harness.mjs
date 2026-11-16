@@ -11,7 +11,12 @@ const ng = join(root, 'node_modules/@angular/cli/bin/ng.js');
 const tsc = join(root, 'node_modules/typescript/bin/tsc');
 const layers = [
   { name: 'lint', title: 'ESLint + angular-eslint', cli: ng, args: ['lint'] },
-  { name: 'typecheck', title: 'tsc -b, app + spec', cli: tsc, args: ['-b', 'tsconfig.app.json', 'tsconfig.spec.json'] },
+  {
+    name: 'typecheck',
+    title: 'tsc -b, app + spec + e2e',
+    cli: tsc,
+    args: ['-b', 'tsconfig.app.json', 'tsconfig.spec.json', 'tsconfig.e2e.json'],
+  },
   {
     name: 'build',
     title: 'type-check + production bundle',

@@ -21,6 +21,12 @@ sources:
   - id: specs
     resource: ../../src
     title: The .spec.ts files
+  - id: playwright
+    resource: ../../playwright.config.ts
+    title: Playwright browser test configuration
+  - id: e2e
+    resource: ../../e2e/README.md
+    title: Browser test setup and conventions
 ---
 
 # How to run
@@ -89,7 +95,24 @@ harness's `typecheck` layer) is what type-checks specs.
 Not covered: guards, the interceptor, token acquisition and refresh, `PickerService`, the
 success paths of the category effects. Dashboard specs cover submit,
 reset, and voice-to-expense wiring; test presence does not establish that the suite passes.
-There is no end-to-end testing.
+
+# End-to-end tests
+
+Playwright Test runs browser scenarios in Chromium. `npm run e2e` builds the
+production app in `tmp/e2e-dist/exp-spsh` and manages a static server on port 4300.
+`E2E_BASE_URL` selects an existing app server and skips the build and local server.
+The URL includes the `/exp-spsh/` base path and a trailing slash.
+
+`e2e/pages` holds page objects. `e2e/fixtures/test.ts` provides typed, test-scoped
+page objects. `e2e/tests` holds scenarios and assertions. The signed-out test uses
+an empty storage state, opens the root URL, and checks the login redirect, page
+title, and visible, enabled sign-in button. It does not use a Google account.
+
+The harness lints and type-checks E2E files. Browser scenarios run separately with
+`npm run e2e`. `npm run e2e:headed` opens Chromium; `npm run e2e:ui` opens Playwright
+UI mode. `npm run e2e:report` opens the HTML report. Failure artifacts and reports
+are under ignored `tmp/`. Setup, extension rules, and CI commands are in
+[the E2E guide](../../e2e/README.md).
 
 # Rules
 

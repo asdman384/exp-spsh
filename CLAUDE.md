@@ -24,6 +24,8 @@ npm run serve          # static server on :4200 over dist/  -- NOT `ng serve`
 npm test               # one pass, headless Chromium
 npm run test:headed    # watch mode (still headless -- the name means watching, not a visible browser)
 npm run test:coverage
+npm run e2e             # Playwright Chromium; builds and serves on :4300
+npm run e2e:ui          # Playwright UI mode
 ```
 
 **Local loop is two terminals**: `npm run watch` in one, `npm run serve` in the other, then
@@ -47,9 +49,13 @@ npx ng test --ui                                        # interactive Vitest UI
 
 ```bash
 npm run lint            # ng lint -- ESLint + angular-eslint over src/**/*.ts and src/**/*.html
-npx tsc -b tsconfig.app.json tsconfig.spec.json   # plain TS project-reference build; also
+npx tsc -b tsconfig.app.json tsconfig.spec.json tsconfig.e2e.json   # plain TS project-reference build; also
                                                    # type-checks *.spec.ts, which `build` does not
 ```
+
+The lint target also checks `e2e/**/*.ts` and `playwright.config.ts`. The harness
+type-checks these files with `tsconfig.e2e.json`. Browser scenarios run separately
+from the harness; see `e2e/README.md` for setup, Page Objects, fixtures, and reports.
 
 `eslint.config.js` relaxes several stock angular-eslint/typescript-eslint rules (component
 selector prefix, `prefer-inject`, `array-type`, `no-inferrable-types`,
