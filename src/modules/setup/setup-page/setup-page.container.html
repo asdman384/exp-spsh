@@ -1,32 +1,114 @@
 <div class="info">
   <div class="loading-container">
     @if (loading()) {
-      <mat-progress-spinner color="primary" mode="indeterminate" [value]="0"> </mat-progress-spinner>
+      <mat-progress-spinner color="primary" mode="indeterminate" aria-label="Setting up spreadsheet" />
     }
     <mat-icon class="doc-icon" color="primary">description</mat-icon>
   </div>
 </div>
 
-<form class="info full-width">
-  <mat-form-field appearance="outline" class="readonly full-width">
-    <mat-label>Spreadsheet</mat-label>
-    <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" readonly placeholder="Not picked yet" />
-    <mat-icon matSuffix>description</mat-icon>
-  </mat-form-field>
+<form class="info setup-form">
+  <div class="actions">
+    <button type="button" mat-flat-button (click)="createNewSpreadsheet()" [disabled]="loading()">Create a new spreadsheet for me</button>
+    <button type="button" mat-stroked-button (click)="chooseExisting()" [disabled]="loading()">Choose existing</button>
+  </div>
 
-  <mat-form-field appearance="outline" class="readonly">
-    <mat-label>Data Sheet id</mat-label>
-    <input [name]="sheetField" matInput [ngModel]="$safeNavigationMigration((sheet$ | async)?.id)" readonly />
-    <mat-icon [class]="sheetDone() ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
-  </mat-form-field>
+  <div aria-live="polite">
+    @if (loading()) {
+      <p>Setting up your spreadsheet…</p>
+    }
+    @if (categoriesSheetDone()) {
+      <p>Categories tab is ready.</p>
+    }
+    @if (sheetDone()) {
+      <p>Data tab is ready.</p>
+    }
+    @if (stage() === 'ready') {
+      <p>Your spreadsheet is ready. Select Finish to continue.</p>
+    }
+  </div>
+  @if (error()) {
+    <p role="alert" class="error">{{ error() }}</p>
+    @if (retryAllowed()) {
+      <button type="button" mat-button (click)="retrySetup()" [disabled]="loading()">Retry</button>
+    }
+  }
 
-  <mat-form-field appearance="outline" class="readonly">
-    <mat-label>Categories Sheet id</mat-label>
-    <input [name]="categoriesSheetIdField" matInput [ngModel]="categoriesSheetId | async" readonly />
-    <mat-icon [class]="categoriesSheetDone() ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
-  </mat-form-field>
+  @if (draft() !== undefined && (stage() === 'categories' || stage() === 'save')) {
+    <section class="category-editor" aria-labelledby="category-heading">
+      <h2 id="category-heading">Starter categories</h2>
+      <p>Edit these names, then select Save categories. You can also skip and add categories later.</p>
+      @for (name of draft(); track $index; let i = $index) {
+        <div class="category-row">
+          <mat-form-field appearance="outline">
+            <mat-label>Category {{ i + 1 }}</mat-label>
+            <input
+              matInput
+              [name]="'category-' + i"
+              [ngModel]="name"
+              (ngModelChange)="editCategory(i, $event)"
+              [readonly]="!!acceptedCategories()"
+              [disabled]="loading()"
+              [attr.aria-describedby]="validationError() ? 'category-validation' : null"
+            />
+          </mat-form-field>
+          <button
+            type="button"
+            mat-button
+            [attr.aria-label]="'Remove category ' + (i + 1)"
+            (click)="removeCategory(i)"
+            [disabled]="!canEditCategories()"
+          >
+            Remove
+          </button>
+        </div>
+      }
+      @if (validationError()) {
+        <p id="category-validation" role="alert" class="error">{{ validationError() }}</p>
+      }
+      @if (!draft()?.length) {
+        <p>Use Skip to continue without categories.</p>
+      }
+      @if (acceptedCategories()) {
+        <p>These names are fixed while saving. If saving fails, use Retry to save the remaining categories.</p>
+      } @else {
+        <div class="actions">
+          <button type="button" mat-button (click)="addCategory()" [disabled]="!canEditCategories()">Add category</button>
+          <button type="button" mat-flat-button (click)="saveCategories()" [disabled]="!canEditCategories() || !draft()?.length">
+            Save categories
+          </button>
+          <button type="button" mat-button (click)="skipCategories()" [disabled]="!canEditCategories()">Skip</button>
+        </div>
+      }
+    </section>
+  }
 
-  <button mat-flat-button color="primary" (click)="checkSetup(state())" [disabled]="loading()">
-    {{ state() === 'check document' ? 'Choose spreadsheet' : state() }}
+  <details>
+    <summary>Details</summary>
+    <div class="id-fields">
+      <mat-form-field appearance="outline" class="readonly">
+        <mat-label>Spreadsheet</mat-label>
+        <input [name]="spreadsheetIdField" matInput [ngModel]="spreadsheetId | async" readonly placeholder="Not picked yet" />
+        <mat-icon matSuffix>description</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="readonly">
+        <mat-label>Data Sheet id</mat-label>
+        <input [name]="sheetField" matInput [ngModel]="$safeNavigationMigration((sheet$ | async)?.id)" readonly />
+        <mat-icon [class]="sheetDone() ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="readonly">
+        <mat-label>Categories Sheet id</mat-label>
+        <input [name]="categoriesSheetIdField" matInput [ngModel]="categoriesSheetId | async" readonly />
+        <mat-icon [class]="categoriesSheetDone() ? 'icon-green' : 'icon-gray'" matPrefix>task</mat-icon>
+      </mat-form-field>
+    </div>
+  </details>
+  <button
+    type="button"
+    mat-flat-button
+    (click)="finishSetup()"
+    [disabled]="loading() || stage() !== 'ready' || !sheetDone() || !categoriesSheetDone()"
+  >
+    Finish
   </button>
 </form>

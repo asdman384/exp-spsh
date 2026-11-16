@@ -1,5 +1,18 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-16 - spreadsheet creation and starter categories
+
+- Added direct spreadsheet creation, ordered tab setup, editable starter categories, Skip,
+  and native Details for IDs. Added retained-file and persisted-row recovery.
+- Added creation HTTP tests and setup tests for choices, state, validation, save recovery,
+  busy guards, and accessible controls. Updated the setup and API concepts.
+- The health check found missing receipt-review heading and photo-disclosure elements.
+  A temporary repair passed the existing test. Concurrent edits later removed that repair
+  and changed the receipt test; those edits remain intact. The final harness passes but
+  reports the existing receipt required-view-query error in its console output.
+- Browser verification is skipped at the owner's request. The final harness passes
+  lint, typecheck, build, and 476 tests (2 skipped); formatting also passes.
+
 ## 2026-11-15 - knowledge review against the working tree
 
 - Checked concept claims against source, configuration, and existing test cases at d3ef70d

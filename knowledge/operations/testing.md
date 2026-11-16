@@ -79,6 +79,7 @@ harness's `typecheck` layer) is what type-checks specs.
 | Statistics | `statistics-summary.spec.ts`, `statistics-data.service.spec.ts`, `statistics.container.spec.ts` (category comparisons, debt, January rollover, obsolete reads, reconnect, drill-down) |
 | Receipts | `receipt-recognition.spec.ts`, `dashboard-receipt.spec.ts`, `receipt-photo-button.component.spec.ts`, `receipt-review.component.spec.ts` (validation, confirmation, cancellation, context, dialog, editing) |
 | Voice and Gemini | `voice-recorder.service.spec.ts`, `voice-record-button.component.spec.ts`, `expense-recognition.service.spec.ts` (SDK mocked) |
+| Setup | `setup-page.container.spec.ts` (creation/Picker, tab sequence/reuse, drafts, validation, sequential writes, lost-response recovery, read errors, guards, details, category state before navigation); `spreadsheet.service.spec.ts` (creation request/response/errors) |
 | Security | `security.service.spec.ts` (which token each strategy's `logout()` revokes; `google` stubbed with `vi.stubGlobal`) |
 | Components | `expenses-table`, `statistics.container` (animation, month scroll), `dashboard-page.container` (voice button placement, never submits), `outbox-status`, `outbox-failure-notice`; smoke tests for categories, dashboard shell, dialog, local storage, test-perf |
 
@@ -86,7 +87,7 @@ harness's `typecheck` layer) is what type-checks specs.
 ([known issues](../constraints/known-issues.md) #13).
 
 Not covered: guards, the interceptor, token acquisition and refresh, `PickerService`, the
-setup page, and the success paths of the category effects. Dashboard specs cover submit,
+success paths of the category effects. Dashboard specs cover submit,
 reset, and voice-to-expense wiring; test presence does not establish that the suite passes.
 There is no end-to-end testing.
 

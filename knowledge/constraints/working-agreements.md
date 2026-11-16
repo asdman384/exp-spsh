@@ -23,22 +23,6 @@ sources:
     title: Subagent definitions
 ---
 
-# Mandatory rules
-
-From `CLAUDE.md` (the source of truth; `AGENTS.md` points to it):[^claudemd]
-
-The repository requires ASD-STE100 Simplified Technical English.
-
-1. **Never** delete or overwrite working tests without explicit permission.
-2. **Always** run `node scripts/harness.mjs` after any code change.
-3. One task at a time.
-4. If unsure, **ask**.
-5. Update `CLAUDE.md` and `knowledge/` when architecture, infrastructure, or a feature changes.
-   Concept files state current behaviour in the present tense; history goes only in
-   `knowledge/log.md`.
-
-Detailed guidance is in `.claude/rules/`: `code-style.md`, `development.md`, `testing.md`.[^rules]
-
 # Tool permissions and hooks
 
 `.claude/settings.json`:[^settings]
@@ -56,14 +40,14 @@ Detailed guidance is in `.claude/rules/`: `code-style.md`, `development.md`, `te
 
 `policy/sprint-window.json` (`W3-NG-SPRINT-42`):[^policy]
 
-| Field | Value |
-|---|---|
-| `allowed_write_paths` | `src/` |
-| `denied_write_paths` | `angular.json`, `package.json` |
-| `allowed_build_configurations` | `development` |
+| Field                              | Value                                     |
+| ---------------------------------- | ----------------------------------------- |
+| `allowed_write_paths`              | `src/`                                    |
+| `denied_write_paths`               | `angular.json`, `package.json`            |
+| `allowed_build_configurations`     | `development`                             |
 | `approval_required_configurations` | `staging` (not defined in `angular.json`) |
-| `not_after` | `2028-08-13T00:00:00.000Z` |
-| `approval_owner` / `recovery` | `self` / stop the session |
+| `not_after`                        | `2028-08-13T00:00:00.000Z`                |
+| `approval_owner` / `recovery`      | `self` / stop the session                 |
 
 In practice: build and dependency configuration changes need explicit approval.
 
@@ -80,7 +64,11 @@ plus the `/orchestrate` command. Their outputs go to `docs/specs/`, `docs/archit
   ([testing](../operations/testing.md)).
 
 [^claudemd]: Repository instructions
+
 [^rules]: Code style, development, and testing rules
+
 [^policy]: policy/sprint-window.json
+
 [^settings]: Tool permissions and hooks
+
 [^agents]: Subagent definitions

@@ -7,6 +7,63 @@
   padding: 0 16px;
 }
 
+.setup-form {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 640px;
+  margin-inline: auto;
+  padding-bottom: 24px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+
+  button {
+    max-width: 100%;
+    height: auto;
+    min-height: 40px;
+    padding-block: 8px;
+    white-space: normal;
+  }
+}
+
+.category-editor,
+details {
+  width: 100%;
+  min-width: 0;
+}
+
+.category-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 8px;
+
+  mat-form-field {
+    flex: 1 1 180px;
+    min-width: 0;
+  }
+}
+
+.id-fields {
+  display: flex;
+  flex-direction: column;
+  margin-top: 16px;
+}
+
+summary {
+  cursor: pointer;
+  padding-block: 12px;
+}
+
+.error {
+  color: var(--mat-sys-error, #b3261e);
+}
+
 .loading-container {
   width: 100px;
   height: 100px;

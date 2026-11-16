@@ -39,6 +39,30 @@ describe('SpreadsheetService', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('createSpreadsheet()', () => {
+    it('posts the Expenses title and returns the spreadsheet response', () => {
+      const response: gapi.client.sheets.Spreadsheet = { spreadsheetId: 'created-id', properties: { title: 'Expenses' } };
+      const next = vi.fn();
+      service.createSpreadsheet().subscribe(next);
+      const request = httpMock.expectOne(req => req.url === 'https://sheets.googleapis.com/v4/spreadsheets');
+      expect(request.request.method).toBe('POST');
+      expect(request.request.body).toEqual({ properties: { title: 'Expenses' } });
+      expect(request.request.params.has('key')).toBe(true);
+      expect(request.request.params.get('alt')).toBe('json');
+      request.flush(response);
+      expect(next).toHaveBeenCalledExactlyOnceWith(response);
+    });
+
+    it('passes errors to the caller without another creation request', () => {
+      const error = vi.fn();
+      service.createSpreadsheet().subscribe({ error });
+      httpMock.expectOne(req => req.method === 'POST').flush('Failed', { status: 503, statusText: 'Unavailable' });
+      expect(error).toHaveBeenCalledOnce();
+      expect(error.mock.calls[0][0].status).toBe(503);
+      httpMock.expectNone(req => req.method === 'POST');
+    });
+  });
+
   describe('addExpense() column E (in-debt flag)', () => {
     it('[AC1] writes numberValue: expense.amount into the column-E cell when isInDebt is true', () => {
       const expense: Expense = { ...baseExpense, isInDebt: true };

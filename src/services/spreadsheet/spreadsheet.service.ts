@@ -106,8 +106,15 @@ export class SpreadsheetService {
       .pipe(map(result => result.values?.map<Category>(([name, position]) => ({ name, id: position })) || []));
   }
 
+  createSpreadsheet(): Observable<gapi.client.sheets.Spreadsheet> {
+    return this.http.post<gapi.client.sheets.Spreadsheet>(
+      'https://sheets.googleapis.com/v4/spreadsheets',
+      { properties: { title: 'Expenses' } },
+      { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
+    );
+  }
+
   /**
-   * https://developers.google.com/sheets/api/reference/rest#rest-resource:-v4.spreadsheets
    * https://developers.google.com/sheets/api/reference/rest/v4/spreadsheets/get
    * @param spreadsheetId
    * @returns gapi.client.sheets.Spreadsheet

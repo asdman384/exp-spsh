@@ -27,7 +27,7 @@ from `https://content-sheets.googleapis.com/v4/spreadsheets/<spreadsheetId>`.[^s
 - The `gapi` client library is never loaded; only its types are used.
 - Every call adds `key: keys.API_KEY`, and [`ExpAuthInterceptor`](http-auth-interceptor.md)
   adds a `Bearer` token.
-- `setSpreadsheetId` must run before any call except `getSpreadsheet`. It runs in
+- `setSpreadsheetId` must run before any call except `getSpreadsheet` and `createSpreadsheet`. It runs in
   `AppComponent`'s constructor (from persisted state) and during
   [setup](../flows/initial-setup.md).
 
@@ -35,6 +35,7 @@ from `https://content-sheets.googleapis.com/v4/spreadsheets/<spreadsheetId>`.[^s
 
 | Method | HTTP | Endpoint | Notable params |
 |---|---|---|---|
+| `createSpreadsheet()` | POST | `https://sheets.googleapis.com/v4/spreadsheets` | `{ properties: { title: 'Expenses' } }`; returns a typed Spreadsheet with `spreadsheetId`; no automatic retry |
 | `getSpreadsheet(id)` | GET | `/v4/spreadsheets/{id}` | `includeGridData: false`; the only call taking an explicit id |
 | `getAllCategories()` | GET | `/values/categories!A:B` | `valueRenderOption: UNFORMATTED_VALUE` |
 | `addCategory({name,id})` | POST | `/values/categories!A1:B1:append` | `insertDataOption: INSERT_ROWS`, `valueInputOption: RAW` |
@@ -55,7 +56,7 @@ read (`loadExpenses`) uses [gviz](gviz-query.md), not this API. Validation detai
 
 The service returns raw `Observable`s and inspects no status codes. Callers decide: effects
 toast via `reportFailure`, the outbox classifies with `classifyWriteError`
-([write outbox](../architecture/write-outbox.md#classifywriteerror)), and setup logs.
+([write outbox](../architecture/write-outbox.md#classifywriteerror)), and setup displays stage-specific errors with retained-file recovery.
 
 [^svc]: SpreadsheetService
 [^row]: Expense row mapping

@@ -9,15 +9,15 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { Router } from '@angular/router';
 
 import { Store } from '@ngrx/store';
-import { EMPTY, Observable, catchError, forkJoin, map, of, switchMap, tap, withLatestFrom } from 'rxjs';
+import { EMPTY, Observable, catchError, concatMap, finalize, from, map, of, switchMap, take, tap, toArray } from 'rxjs';
 
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
 import { CATEGORIES_SHEET_ID, CATEGORIES_SHEET_TITLE, DATA_SHEETS, DATA_SHEET_TITLE_PREFIX, ROUTE, SPREADSHEET_ID } from 'src/constants';
 import { AbstractSecurityService, PickerService, SpreadsheetService } from 'src/services';
 import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
-import { Sheet, Userinfo } from 'src/shared/models';
+import { Category, Sheet, Userinfo } from 'src/shared/models';
 
-type State = 'check document' | 'finish';
+type Stage = 'choose' | 'tabs' | 'categories' | 'save' | 'ready';
 
 @Component({
   selector: 'setup-page',
@@ -33,9 +33,15 @@ export class SettingsPageContainer {
   readonly sheet$: Observable<Sheet | undefined> = this.store.select(currentSheetSelector);
   readonly categoriesSheetId: Observable<number | undefined> = this.store.select(categoriesSheetIdSelector);
   protected readonly loading = signal<boolean>(false);
-  protected readonly state = signal<State>('check document');
+  protected readonly stage = signal<Stage>('choose');
+  protected readonly selectedSpreadsheetId = signal<string | undefined>(undefined);
+  protected readonly error = signal('');
   protected readonly sheetDone = signal<boolean>(false);
   protected readonly categoriesSheetDone = signal<boolean>(false);
+  protected readonly draft = signal<string[] | undefined>(undefined);
+  protected readonly acceptedCategories = signal<Category[] | undefined>(undefined);
+  protected readonly validationError = signal('');
+  protected readonly retryAllowed = signal(false);
 
   constructor(
     private readonly router: Router,
@@ -47,49 +53,221 @@ export class SettingsPageContainer {
     this.store.dispatch(AppActions.setTitle({ title: 'Settings', icon: 'settings' }));
   }
 
-  checkSetup(state: State): void {
-    if (state === 'finish') {
-      this.finishSetup();
-      return;
-    }
-
+  chooseExisting(): void {
+    if (this.loading()) return;
     this.loading.set(true);
-    log('open Picker...');
-
+    let picked = false;
     this.picker
       .pickSpreadsheet()
       .pipe(
-        switchMap(spreadsheetId => {
-          if (!spreadsheetId) {
-            log('Picker: no spreadsheet picked');
-            this.loading.set(false);
-            return EMPTY;
+        switchMap(id => {
+          if (!id) return EMPTY;
+          picked = true;
+          return this.setupSpreadsheet(id);
+        }),
+        catchError(error => {
+          log(error);
+          if (picked) this.setSetupError();
+          else {
+            this.error.set('Could not open the spreadsheet picker. Try Choose existing again.');
+            this.retryAllowed.set(false);
           }
-          log('load SpreadSheet...');
-          return this.loadSpreadSheet(spreadsheetId);
-        }),
-        tap(spreadsheet => log('load SpreadSheet done, sheets: ', spreadsheet.sheets)),
-        tap(spreadsheet => this.storeDataSheets(spreadsheet)),
-        withLatestFrom(this.security.user$),
-        tap(([, user]) => {
-          if (!user) throw new Error('error getting user');
-        }),
-        switchMap(([spreadsheet, user]) => forkJoin([this.createDataSheet(spreadsheet, user!), this.createCategoriesSheet(spreadsheet)])),
-        catchError(e => {
-          log(e);
-          this.loading.set(false);
           return EMPTY;
         }),
+        finalize(() => this.loading.set(false)),
       )
-      .subscribe(() => {
-        this.loading.set(false);
-        this.state.set('finish');
-        this.store.dispatch(AppActions.storeCategories({ categories: [] }));
-      });
+      .subscribe();
+  }
+
+  createNewSpreadsheet(): void {
+    if (this.loading()) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.retryAllowed.set(false);
+    let createdId: string | undefined;
+    this.spreadsheetService
+      .createSpreadsheet()
+      .pipe(
+        switchMap(spreadsheet => {
+          createdId = spreadsheet.spreadsheetId;
+          if (!createdId?.trim()) throw new Error('No spreadsheet ID returned');
+          return this.setupSpreadsheet(createdId);
+        }),
+        catchError(error => {
+          log(error);
+          if (createdId?.trim()) this.setSetupError();
+          else this.error.set('A spreadsheet might have been created. Use Choose existing to find it.');
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe();
+  }
+
+  retrySetup(): void {
+    const id = this.selectedSpreadsheetId();
+    if (this.loading() || !id || !this.retryAllowed()) return;
+    this.loading.set(true);
+    this.error.set('');
+    this.retryAllowed.set(false);
+    const request =
+      this.stage() === 'tabs' ? this.setupSpreadsheet(id) : this.stage() === 'save' ? this.saveAcceptedCategories() : this.loadCategories();
+    request
+      .pipe(
+        catchError(error => {
+          log(error);
+          this.setSetupError();
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe();
+  }
+
+  private setupSpreadsheet(id: string): Observable<unknown> {
+    if (id !== this.selectedSpreadsheetId()) {
+      this.selectedSpreadsheetId.set(id);
+      this.sheetDone.set(false);
+      this.categoriesSheetDone.set(false);
+      this.draft.set(undefined);
+      this.acceptedCategories.set(undefined);
+      this.validationError.set('');
+    }
+    this.stage.set('tabs');
+    this.error.set('');
+    this.retryAllowed.set(false);
+    this.spreadsheetService.setSpreadsheetId(id);
+    this.store.dispatch(AppActions.spreadsheetId({ spreadsheetId: id }));
+    return this.spreadsheetService.getSpreadsheet(id).pipe(
+      tap(spreadsheet => this.storeDataSheets(spreadsheet)),
+      switchMap(spreadsheet =>
+        this.security.user$.pipe(
+          take(1),
+          switchMap(user => {
+            if (!user) throw new Error('Could not get the user');
+            return this.createCategoriesSheet(spreadsheet).pipe(switchMap(() => this.createDataSheet(spreadsheet, user)));
+          }),
+        ),
+      ),
+      switchMap(() => (this.acceptedCategories() ? this.saveAcceptedCategories() : this.loadCategories())),
+    );
+  }
+
+  private loadCategories(): Observable<Category[]> {
+    this.stage.set('categories');
+    return this.spreadsheetService.getAllCategories().pipe(
+      tap(categories => {
+        if (categories.length) this.completeCategories(categories);
+        else if (!this.draft()) {
+          this.draft.set([
+            'Groceries',
+            'Eating out',
+            'Transport',
+            'Home',
+            'Health',
+            'Clothes',
+            'Entertainment',
+            'Subscriptions',
+            'Gifts',
+            'Other',
+          ]);
+        }
+      }),
+    );
+  }
+
+  editCategory(index: number, name: string): void {
+    if (!this.canEditCategories()) return;
+    this.draft.update(names => names?.map((value, i) => (i === index ? name : value)));
+    this.validationError.set('');
+  }
+
+  addCategory(): void {
+    if (!this.canEditCategories()) return;
+    this.draft.update(names => [...names!, '']);
+    this.validationError.set('');
+  }
+
+  removeCategory(index: number): void {
+    if (!this.canEditCategories()) return;
+    this.draft.update(names => names?.filter((_, i) => i !== index));
+    this.validationError.set('');
+  }
+
+  protected canEditCategories(): boolean {
+    return !this.loading() && this.stage() === 'categories' && this.draft() !== undefined && !this.acceptedCategories() && !this.error();
+  }
+
+  saveCategories(): void {
+    if (!this.canEditCategories()) return;
+    const names = this.draft()!.map(name => name.trim());
+    this.draft.set(names);
+    if (!names.length) {
+      this.validationError.set('Use Skip to continue without categories.');
+      return;
+    }
+    if (names.some(name => !name)) {
+      this.validationError.set('Enter a name for each category.');
+      return;
+    }
+    if (new Set(names).size !== names.length) {
+      this.validationError.set('Use a different name for each category.');
+      return;
+    }
+    this.validationError.set('');
+    this.acceptedCategories.set(names.map((name, id) => ({ name, id })));
+    this.loading.set(true);
+    this.error.set('');
+    this.retryAllowed.set(false);
+    this.saveAcceptedCategories()
+      .pipe(
+        catchError(error => {
+          log(error);
+          this.setSetupError();
+          return EMPTY;
+        }),
+        finalize(() => this.loading.set(false)),
+      )
+      .subscribe();
+  }
+
+  private saveAcceptedCategories(): Observable<Category[]> {
+    this.stage.set('save');
+    return this.spreadsheetService.getAllCategories().pipe(
+      switchMap(saved => {
+        const savedNames = new Set(saved.map(category => category.name));
+        return from(this.acceptedCategories()!.filter(category => !savedNames.has(category.name))).pipe(
+          concatMap(category => this.spreadsheetService.addCategory(category)),
+          toArray(),
+        );
+      }),
+      switchMap(() => this.spreadsheetService.getAllCategories()),
+      tap(categories => this.completeCategories(categories)),
+    );
+  }
+
+  skipCategories(): void {
+    if (!this.canEditCategories()) return;
+    this.completeCategories([]);
+  }
+
+  private completeCategories(categories: Category[]): void {
+    this.store.dispatch(AppActions.storeCategories({ categories }));
+    this.stage.set('ready');
+  }
+
+  private setSetupError(): void {
+    this.retryAllowed.set(true);
+    this.error.set(
+      this.stage() === 'tabs'
+        ? 'Could not set up the spreadsheet tabs. Try again.'
+        : this.stage() === 'save'
+          ? 'Could not save all categories. Retry to check saved rows and finish saving.'
+          : 'Could not read categories. Try again.',
+    );
   }
 
   private storeDataSheets(spreadsheet: gapi.client.sheets.Spreadsheet): void {
-    this.spreadsheetService.setSpreadsheetId(spreadsheet.spreadsheetId!);
     const dataSheets = spreadsheet.sheets
       ?.filter(sheet => !sheet.properties?.hidden)
       .filter(sheet => sheet.properties?.title?.includes(DATA_SHEET_TITLE_PREFIX))
@@ -127,19 +305,8 @@ export class SettingsPageContainer {
     );
   }
 
-  private loadSpreadSheet(spreadsheetId: string): Observable<gapi.client.sheets.Spreadsheet> {
-    return this.spreadsheetService.getSpreadsheet(spreadsheetId).pipe(
-      tap(({ spreadsheetId }) => {
-        if (spreadsheetId === undefined) {
-          throw Error('error getting spreadsheet');
-        }
-        log('loaded spreadsheet ' + spreadsheetId);
-        this.store.dispatch(AppActions.spreadsheetId({ spreadsheetId }));
-      }),
-    );
-  }
-
-  private finishSetup(): void {
+  finishSetup(): void {
+    if (this.loading() || this.stage() !== 'ready' || !this.sheetDone() || !this.categoriesSheetDone()) return;
     this.router.navigate([ROUTE.dashboard], {
       replaceUrl: true,
       queryParams: { state: null, code: null, scope: null },

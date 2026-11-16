@@ -62,7 +62,7 @@ result. Each edit sets the numeric amount in `expenseModel`, so Enter also saves
 Empty, malformed, or non-finite values set the amount to `null` and prevent submission.
 The form reset clears the text draft. Parsing does not execute expressions.
 The amount field uses the default Material subscript sizing; the app sets no sizing
-override. Empty input shows `Enter amount`; an invalid expression shows `Use 12 or 12+7,5`.
+override. Empty input shows `Enter #`; an invalid expression shows `Use 12 or 12+7,5`.
 The parser accepts signed decimal terms and zero, permits addition only, and rounds the
 result to 15 significant digits.
 A decimal keyboard may require a layout switch
@@ -103,13 +103,13 @@ never submits the form, but each expense Gemini recognizes goes to the same
 
 # Outcomes
 
-| Path | User sees |
-|---|---|
-| queued, then sent | a grey row and applicable totals after persistence, then a normal row after the saved list reloads |
-| queued, cannot send yet (offline, signed out) | the announcement, outbox badge, and grey row in the selected Dashboard scope |
-| send fails `retryable`/`auth` | stays pending; retried on the next trigger |
-| send fails `terminal` | failure notice with Retry / Discard |
-| outbox cannot persist (no IndexedDB) | toast "Couldn't save that expense. Please try again." |
+| Path                                          | User sees                                                                                          |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| queued, then sent                             | a grey row and applicable totals after persistence, then a normal row after the saved list reloads |
+| queued, cannot send yet (offline, signed out) | the announcement, outbox badge, and grey row in the selected Dashboard scope                       |
+| send fails `retryable`/`auth`                 | stays pending; retried on the next trigger                                                         |
+| send fails `terminal`                         | failure notice with Retry / Discard                                                                |
+| outbox cannot persist (no IndexedDB)          | toast "Couldn't save that expense. Please try again."                                              |
 
 The form resets before persistence completes, so an entry that cannot be persisted must be retyped. A
 queued expense appears in the Dashboard list and applicable totals after local persistence.
@@ -122,9 +122,13 @@ The date is written as local wall-clock time; a queued expense is converted at s
 ([known issues](../constraints/known-issues.md) #27).
 
 [^html]: Dashboard form template
+
 [^page]: DashboardPageContainer
+
 [^expenses]: ExpensesService.add
+
 [^svc]: SpreadsheetService.addExpense
+
 [^outbox]: OutboxService
 
 [^vm]: DashboardPageViewModel

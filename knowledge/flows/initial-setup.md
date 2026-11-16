@@ -1,7 +1,7 @@
 ---
 type: Flow
 title: Initial setup
-description: Binding a spreadsheet to the app - picking it with Google Picker, tab discovery, tab creation, validation formatting, and the state that unlocks the dashboard.
+description: Creating or choosing a spreadsheet, ensuring tabs, and loading or saving starter categories before the dashboard.
 tags: [flow, setup, onboarding, sheets]
 status: stable
 generated: { by: claude_code/claude-opus-5-5, at: 2026-09-27T00:00:00Z }
@@ -22,51 +22,64 @@ sources:
 
 # Trigger
 
-`#/setup/settings`, from the toolbar menu or automatically: `isLoggedIn`/`isSetupReady`
-redirect to `setup` → `login`, which forwards to `settings` once a user exists.[^guards]
+`#/setup/settings` opens from the toolbar menu or the login flow. Setup calls the
+spreadsheet service directly and keeps request stages and drafts in local signals.[^setup]
 
-The page shows three read-only fields (spreadsheet id, data sheet id, categories sheet id)
-and one button whose label is the state: **Choose spreadsheet**, then **finish**.[^setuphtml]
-There is no URL entry: under `drive.file` the app can only open a file the user picks.
+# File choice and tabs
 
-# Steps
+The form shows **Create a new spreadsheet for me** and **Choose existing** in one wrapping
+action group. Creation posts the title **Expenses** to the Sheets API with existing HTTP
+authentication and `drive.file` access. It retains the returned ID before further requests.
+Choose existing opens Google Picker; cancellation preserves the selected file, draft, and
+completion state.[^picker] No default Google tab is removed.
 
-`SettingsPageContainer.checkSetup` calls services directly, not through effects:[^setup]
+For a confirmed ID, Setup sets the service ID, dispatches `spreadsheetId`, and reads fresh
+metadata. It discovers visible `data_` tabs for the User selector. It reuses exact matching
+tab titles or creates missing tabs. It formats `categories` (two columns) first, then
+`data_<user.name>` (five columns), because data validation refers to categories. Existing
+expense and category rows remain unchanged. Each tab is complete only after its format
+request succeeds.[^setup]
 
-1. **Pick.** `PickerService.pickSpreadsheet()` gets a token, lazily loads the Picker, and
-   opens it on `ViewId.SPREADSHEETS`.[^picker] Cancel → `undefined` → spinner stops,
-   nothing else happens.
-2. **Load.** `getSpreadsheet(id)` (`includeGridData: false`); dispatch `spreadsheetId`
-   (stored and persisted).
-3. **Discover data sheets.** `setSpreadsheetId(id)` on `SpreadsheetService`; every non-hidden
-   tab whose title contains `data_` is dispatched as `upsertDataSheet` — this exposes other
-   people's tabs in the User selector.
-4. **Ensure the two tabs, in parallel** (`forkJoin`). `createSheet` reuses a tab with the
-   same title if present, else calls `addSheet`:
-   - `data_<user.name>` (5 columns) → `upsertDataSheet`, `setCurrentSheet` →
-     `setDataSheetFormats` → data-sheet icon turns green;
-   - `categories` (2 columns) → `categoriesSheetId` → `setCategoriesSheetFormats` →
-     categories icon turns green.
-5. **Reset categories.** Dispatch `storeCategories([])` and switch the button to **finish**.
-6. **Finish.** Navigate to `dashboard` (`replaceUrl`), stripping `state`, `code`, `scope`.
+# Category choice
 
-# Post-conditions
+After both tabs are ready, Setup reads categories. Non-empty results go to `storeCategories`
+and enable Finish. An empty result opens a local draft in this order: Groceries, Eating out,
+Transport, Home, Health, Clothes, Entertainment, Subscriptions, Gifts, Other.
 
-The dashboard opens when `spreadsheetId` and `categoriesSheetId` are both truthy
-(`isSetupReady`). Both persist in localStorage until logout.
+The editor supports names, additions, and removals. Save categories trims names and rejects
+blank names and exact case-sensitive duplicates. It freezes the accepted list and assigns
+positions from zero in displayed order. Before every save attempt it reads persisted rows,
+then calls `addCategory` sequentially for names that are absent. It preserves all existing
+rows and positions. A final read publishes the saved result through `storeCategories` before
+Finish becomes available. The dashboard category selector receives these names without a
+reload. The existing category effect persists that state in the local cache.
+
+Skip is available before acceptance and publishes an empty list without writes. An empty
+draft directs the user to Skip. Once saving starts the draft is read-only and Skip is
+unavailable, including after partial success.[^setup]
+
+# Completion and details
+
+Native Details starts closed and contains all three read-only ID fields. Progress and errors
+remain outside it. Controls wrap on narrow screens. Busy controls are disabled and handlers
+also reject concurrent actions.[^setuphtml]
+
+Finish requires both tab flags, a completed category path, and no request in progress. It
+navigates to `dashboard` with `replaceUrl` and removes `state`, `code`, and `scope` query
+parameters. The route guard separately checks the stored spreadsheet and category-tab IDs.[^guards]
 
 # Failure behaviour
 
-A trailing `catchError` logs the error and stops the spinner; there is no toast and no
-message, and the button stays on **Choose spreadsheet** so the user can retry. The cause is
-only in the [log overlay](../architecture/dependency-wiring.md#the-global-log). Common causes:
+Creation, tab setup, category reads, and category saves show visible errors and stop progress.
+A category-read failure does not expose an empty-sheet draft. Known-file Retry keeps the ID;
+tab retries read fresh metadata and reuse existing tabs. Save retries read persisted names
+and append only missing accepted names, including when a write response was lost. Failed
+final reads follow the same recovery path. Drafts and accepted lists stay local to this visit;
+this is not a transaction across concurrent editors.
 
-- the account lacks **edit** rights (the first `batchUpdate` fails);
-- offline (the route has no `isOnline` guard);
-- a Picker load failure, or a wrong `APP_ID` in `keys.json`.
-
-Steps 2–4 may have partly run before the failure (e.g. `spreadsheetId` stored, one tab
-created); a retry reuses existing tabs.
+If creation fails without a usable ID, the page explains that a spreadsheet might exist and
+offers Choose existing. Generic Retry never repeats that creation request. Setup requires
+network access and does not use the expense outbox.[^setup]
 
 [^guards]: isSetupReady
 [^picker]: PickerService

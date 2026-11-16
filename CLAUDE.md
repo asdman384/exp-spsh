@@ -7,11 +7,10 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 - **ALWAYS** use ASD-STE100 Simplified Technical English.
 - **NEVER** delete or overwrite working tests without explicit permission.
 - **ALWAYS** `node scripts/harness.mjs` after any code change.
-- One task at a time. Do not make multiple unrelated changes simultaneously.
+- One task at a time.
 - If you are unsure — **ASK**, do not guess.
-- Update `CLAUDE.md` and `knowledge/` when architecture or infrastructure changes or a feature is added or modified.
-- when update the `knowledge/` rewrote each as a plain present-tense statement of current behaviour. Concept files should describe only the
-  system as it is now. The `knowledge/log.md` is the only place change history belongs.
+- Update `knowledge/` when architecture or infrastructure changes or a feature is added or modified.
+- when update the `knowledge/` rewrote each as a plain present-tense statement of current behaviour. Concept files should describe only the system as it is now. The `knowledge/log.md` is the only place change history belongs.
 
 ## Commands
 
