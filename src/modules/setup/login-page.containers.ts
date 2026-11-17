@@ -16,16 +16,31 @@ import { initialUrlParams } from 'src/shared/helpers/initial-url-params';
 @Component({
   selector: 'login-page',
   template: `
-    @if ((isOnline$ | async) === false) {
-      <div class="info">
-        <h2>No network connection</h2>
-        <p>Connect to the internet to proceed with setup.</p>
-        <mat-icon>wifi_off</mat-icon>
+    @let offline = (isOnline$ | async) === false;
+    <main aria-labelledby="login-heading">
+      <h1 id="login-heading" class="info">Sign in</h1>
+      <div role="status" aria-atomic="true">
+        @if (offline) {
+          <div class="info" id="login-offline-message">
+            <h2>No network connection</h2>
+            <p>Connect to the internet to proceed with setup.</p>
+            <mat-icon aria-hidden="true">wifi_off</mat-icon>
+          </div>
+        }
       </div>
-    }
-    <div class="info">
-      <button mat-flat-button color="primary" [disabled]="(isOnline$ | async) === false" (click)="login()">Google Sign In</button>
-    </div>
+      <div class="info">
+        <button
+          type="button"
+          mat-flat-button
+          color="primary"
+          [disabled]="offline"
+          [attr.aria-describedby]="offline ? 'login-offline-message' : null"
+          (click)="login()"
+        >
+          Google Sign In
+        </button>
+      </div>
+    </main>
   `,
   styles: [
     `

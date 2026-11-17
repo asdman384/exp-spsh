@@ -6,7 +6,8 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 - **ALWAYS** use ASD-STE100 Simplified Technical English.
 - **NEVER** delete or overwrite working tests without explicit permission.
-- **ALWAYS** `node scripts/harness.mjs` after any code change.
+- Run `node scripts/harness.mjs` after code changes, except during E2E work.
+- during E2E work use focused Playwright, lint, and TypeScript checks instead.
 - One task at a time.
 - If you are unsure — **ASK**, do not guess.
 - Update `knowledge/` when architecture or infrastructure changes or a feature is added or modified.
@@ -24,7 +25,7 @@ npm run serve          # static server on :4200 over dist/  -- NOT `ng serve`
 npm test               # one pass, headless Chromium
 npm run test:headed    # watch mode (still headless -- the name means watching, not a visible browser)
 npm run test:coverage
-npm run e2e             # Playwright Chromium; builds and serves on :4300
+npm run e2e             # Playwright in Google Chrome at 425 × 896; builds and serves on :4300
 npm run e2e:ui          # Playwright UI mode
 ```
 

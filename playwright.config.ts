@@ -1,6 +1,7 @@
-import { defineConfig, devices } from '@playwright/test';
+import { defineConfig } from '@playwright/test';
+import { authFile } from './e2e/auth/state';
 
-const baseURL = process.env['E2E_BASE_URL'] ?? 'http://127.0.0.1:4300/exp-spsh/';
+const baseURL = process.env['E2E_BASE_URL'] ?? 'http://localhost:4300/exp-spsh/';
 const isCI = !!process.env['CI'];
 
 export default defineConfig({
@@ -13,11 +14,30 @@ export default defineConfig({
   outputDir: 'tmp/playwright-results',
   use: {
     baseURL,
+    channel: 'chrome',
+    viewport: { width: 425, height: 896 },
+    isMobile: true,
+    hasTouch: true,
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', testIgnore: '**/authenticated/**' },
+    {
+      name: 'google-setup',
+      testMatch: '**/google.setup.ts',
+      retries: 0,
+      timeout: 60_000,
+      use: { trace: 'off', video: 'off', screenshot: 'off', serviceWorkers: 'block' },
+    },
+    {
+      name: 'authenticated',
+      testMatch: '**/authenticated/**/*.spec.ts',
+      dependencies: ['google-setup'],
+      use: { storageState: authFile, trace: 'off', video: 'off', screenshot: 'off' },
+    },
+  ],
   webServer: process.env['E2E_BASE_URL']
     ? undefined
     : {

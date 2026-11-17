@@ -31,15 +31,15 @@ sources:
 
 # How to run
 
-| Command | Behaviour |
-|---|---|
-| `npm test` | one pass, headless Chromium |
-| `npm run test:headed` | watch mode — **still headless** |
-| `npm run test:coverage` | one pass with coverage |
-| `npx ng test --watch=false --include <file>` | one spec file |
-| `npx ng test --watch=false --filter "<regex>"` | matching suite/test names |
-| `npx ng test --ui` | Vitest UI |
-| `node scripts/harness.mjs --test [--include <file>]` | the harness's test layer |
+| Command                                              | Behaviour                       |
+| ---------------------------------------------------- | ------------------------------- |
+| `npm test`                                           | one pass, headless Chromium     |
+| `npm run test:headed`                                | watch mode — **still headless** |
+| `npm run test:coverage`                              | one pass with coverage          |
+| `npx ng test --watch=false --include <file>`         | one spec file                   |
+| `npx ng test --watch=false --filter "<regex>"`       | matching suite/test names       |
+| `npx ng test --ui`                                   | Vitest UI                       |
+| `node scripts/harness.mjs --test [--include <file>]` | the harness's test layer        |
 
 The runner is `@angular/build:unit-test` with `runnerConfig: vitest.config.ts`,
 `browsers: ["chromiumHeadless"]`, and `tsconfig.spec.json`.[^ng] `vitest.config.ts` sets
@@ -74,20 +74,20 @@ harness's `typecheck` layer) is what type-checks specs.
 
 # Coverage
 
-| Area | Specs |
-|---|---|
-| Row mapping and dates | `expense-row.spec.ts`, `spreadsheet.service.spec.ts` (URLs/verbs, column E, serial round-trip, DST, delete and category ranges), `spreadsheet.service.replay.spec.ts` |
-| Helpers | `index.spec.ts` (`isExpenseEqual`, `toMessage`), `classify-write-error.spec.ts`, `service-worker-mode.spec.ts` |
-| State | `app.reducers.spec.ts` (`lastError`), `report-failure.spec.ts`, `app.effects.spec.ts` (`showFailureToast$`, `deleteCategory$` row index) |
-| Expenses | `expenses.service.spec.ts` (add → outbox, load and online wait, delete window and rollback, reload after `sent$`) |
-| Outbox | `outbox.service.spec.ts` (hydration, persist-first add, triggers T1–T5, drain outcomes, notice), `indexed-db-outbox-storage.service.spec.ts` |
-| Dashboard form and totals | `dashboard-page.container.spec.ts`, `dashboard-page.view-model.spec.ts`, `parse-amount.spec.ts` (submit/reset, dates, gestures, queued rows, totals, decimal and addition parsing) |
-| Statistics | `statistics-summary.spec.ts`, `statistics-data.service.spec.ts`, `statistics.container.spec.ts` (category comparisons, debt, January rollover, obsolete reads, reconnect, drill-down) |
-| Receipts | `receipt-recognition.spec.ts`, `dashboard-receipt.spec.ts`, `receipt-photo-button.component.spec.ts`, `receipt-review.component.spec.ts` (validation, confirmation, cancellation, context, dialog, editing) |
-| Voice and Gemini | `voice-recorder.service.spec.ts`, `voice-record-button.component.spec.ts`, `expense-recognition.service.spec.ts` (SDK mocked) |
-| Setup | `setup-page.container.spec.ts` (creation/Picker, tab sequence/reuse, drafts, validation, sequential writes, lost-response recovery, read errors, guards, details, category state before navigation); `spreadsheet.service.spec.ts` (creation request/response/errors) |
-| Security | `security.service.spec.ts` (which token each strategy's `logout()` revokes; `google` stubbed with `vi.stubGlobal`) |
-| Components | `expenses-table`, `statistics.container` (animation, month scroll), `dashboard-page.container` (voice button placement, never submits), `outbox-status`, `outbox-failure-notice`; smoke tests for categories, dashboard shell, dialog, local storage, test-perf |
+| Area                      | Specs                                                                                                                                                                                                                                                                 |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Row mapping and dates     | `expense-row.spec.ts`, `spreadsheet.service.spec.ts` (URLs/verbs, column E, serial round-trip, DST, delete and category ranges), `spreadsheet.service.replay.spec.ts`                                                                                                 |
+| Helpers                   | `index.spec.ts` (`isExpenseEqual`, `toMessage`), `classify-write-error.spec.ts`, `service-worker-mode.spec.ts`                                                                                                                                                        |
+| State                     | `app.reducers.spec.ts` (`lastError`), `report-failure.spec.ts`, `app.effects.spec.ts` (`showFailureToast$`, `deleteCategory$` row index)                                                                                                                              |
+| Expenses                  | `expenses.service.spec.ts` (add → outbox, load and online wait, delete window and rollback, reload after `sent$`)                                                                                                                                                     |
+| Outbox                    | `outbox.service.spec.ts` (hydration, persist-first add, triggers T1–T5, drain outcomes, notice), `indexed-db-outbox-storage.service.spec.ts`                                                                                                                          |
+| Dashboard form and totals | `dashboard-page.container.spec.ts`, `dashboard-page.view-model.spec.ts`, `parse-amount.spec.ts` (submit/reset, dates, gestures, queued rows, totals, decimal and addition parsing)                                                                                    |
+| Statistics                | `statistics-summary.spec.ts`, `statistics-data.service.spec.ts`, `statistics.container.spec.ts` (category comparisons, debt, January rollover, obsolete reads, reconnect, drill-down)                                                                                 |
+| Receipts                  | `receipt-recognition.spec.ts`, `dashboard-receipt.spec.ts`, `receipt-photo-button.component.spec.ts`, `receipt-review.component.spec.ts` (validation, confirmation, cancellation, context, dialog, editing)                                                           |
+| Voice and Gemini          | `voice-recorder.service.spec.ts`, `voice-record-button.component.spec.ts`, `expense-recognition.service.spec.ts` (SDK mocked)                                                                                                                                         |
+| Setup                     | `setup-page.container.spec.ts` (creation/Picker, tab sequence/reuse, drafts, validation, sequential writes, lost-response recovery, read errors, guards, details, category state before navigation); `spreadsheet.service.spec.ts` (creation request/response/errors) |
+| Security                  | `security.service.spec.ts` (which token each strategy's `logout()` revokes; `google` stubbed with `vi.stubGlobal`)                                                                                                                                                    |
+| Components                | `expenses-table`, `statistics.container` (animation, month scroll), `dashboard-page.container` (voice button placement, never submits), `outbox-status`, `outbox-failure-notice`; smoke tests for categories, dashboard shell, dialog, local storage, test-perf       |
 
 `app.component.spec.ts` is `describe.skip`
 ([known issues](../constraints/known-issues.md) #13).
@@ -98,7 +98,8 @@ reset, and voice-to-expense wiring; test presence does not establish that the su
 
 # End-to-end tests
 
-Playwright Test runs browser scenarios in Chromium. `npm run e2e` builds the
+All Playwright projects use Google Chrome Stable with a 425 × 896 CSS pixel
+viewport, mobile layout, and touch input. `npm run e2e` builds the
 production app in `tmp/e2e-dist/exp-spsh` and manages a static server on port 4300.
 `E2E_BASE_URL` selects an existing app server and skips the build and local server.
 The URL includes the `/exp-spsh/` base path and a trailing slash.
@@ -108,17 +109,37 @@ page objects. `e2e/tests` holds scenarios and assertions. The signed-out test us
 an empty storage state, opens the root URL, and checks the login redirect, page
 title, and visible, enabled sign-in button. It does not use a Google account.
 
-The harness lints and type-checks E2E files. Browser scenarios run separately with
-`npm run e2e`. `npm run e2e:headed` opens Chromium; `npm run e2e:ui` opens Playwright
+`npm run e2e:auth` runs the authenticated project. Its setup dependency
+reads test account tokens from the ignored `e2e/google-tokens.local.json`.
+It checks the access token with Google and uses the app refresh flow when needed.
+Each authenticated test loads the verified state from
+`tmp/playwright-auth/google.json` in its own context.
+
+During E2E work, do not run `scripts/harness.mjs`, or `npm run harness`.
+Use focused Playwright tests, `npx tsc -p tsconfig.e2e.json`, and ESLint instead.
+The harness lints and type-checks E2E files when it runs for other work. Browser scenarios run separately with
+`npm run e2e`. `npm run e2e:headed` opens Chrome; `npm run e2e:ui` opens Playwright
 UI mode. `npm run e2e:report` opens the HTML report. Failure artifacts and reports
 are under ignored `tmp/`. Setup, extension rules, and CI commands are in
 [the E2E guide](../../e2e/README.md).
 
+`npm run e2e:auth -- spending.spec.ts` uses the existing test spreadsheet
+identified by `spreadsheetId`, `categoriesSheetId`, and `dataSheetId` in the
+private E2E config. The test checks both tab IDs against their titles, restores
+the selection in its own browser context, and opens the dashboard. It adds an
+expense for today in Europe/Warsaw using an existing category and a unique
+comment. It verifies persistence after a reload, deletes the matching row with
+a rightward drag, and checks the deletion after another reload.
+With `--headed`, the spending test calls `page.pause()` on the dashboard
+before it adds the expense. Playwright Inspector lets the user step through
+actions or resume execution. Headless runs do not pause.
+
 # Rules
 
 `CLAUDE.md`: never delete or overwrite working tests without permission, and run
-`node scripts/harness.mjs` after every code change ([working agreements](../constraints/working-agreements.md)).
+`node scripts/harness.mjs` after code changes except during E2E work ([working agreements](../constraints/working-agreements.md)).
 CI runs no tests ([CI](ci-and-deployment.md)).
 
 [^ng]: test target configuration
+
 [^vitest]: vitest.config.ts

@@ -35,6 +35,8 @@ export function isSetupReady(): Observable<boolean | UrlTree> {
   const store = inject(Store);
   const router = inject(Router);
   return combineLatest([store.select(spreadsheetIdSelector), store.select(categoriesSheetIdSelector)]).pipe(
-    map(ids => (ids.every(id => id) ? true : router.createUrlTree([ROUTE.setup]))),
+    map(([spreadsheetId, categoriesSheetId]) =>
+      spreadsheetId && categoriesSheetId !== undefined ? true : router.createUrlTree([ROUTE.setup]),
+    ),
   );
 }

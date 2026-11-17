@@ -37,6 +37,7 @@ yarn-error.log
 testem.log
 /typings
 keys.json
+/e2e/google-tokens.local.json
 logs
 
 # System files

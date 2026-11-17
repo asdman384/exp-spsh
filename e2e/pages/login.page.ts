@@ -11,4 +11,8 @@ export class LoginPage {
     // Enter through the app root so the test exercises the authentication guard.
     await this.page.goto('./');
   }
+
+  async signIn(): Promise<void> {
+    await this.signInButton.click();
+  }
 }

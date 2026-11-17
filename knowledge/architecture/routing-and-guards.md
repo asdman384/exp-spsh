@@ -55,7 +55,7 @@ Functional guards returning `Observable<boolean | UrlTree>`:[^guards]
 | Guard | Passes when | Otherwise |
 |---|---|---|
 | `isLoggedIn` | `AbstractSecurityService.user$` holds a user | `UrlTree` to `setup` |
-| `isSetupReady` | `spreadsheetId` **and** `categoriesSheetId` are truthy in the store | `UrlTree` to `setup` |
+| `isSetupReady` | The store has a nonempty `spreadsheetId` and a defined `categoriesSheetId` (including 0) | `UrlTree` to `setup` |
 | `isOnline` | `NetworkStatusService.online$` is `true` | `UrlTree` to `[]` (root) |
 
 # Navigation conventions

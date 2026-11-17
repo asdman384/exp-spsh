@@ -15,9 +15,10 @@
     "format": "prettier --write \"**/*.{js,mjs,cjs,ts,html,css,scss}\"",
     "format:check": "prettier --check \"**/*.{js,mjs,cjs,ts,html,css,scss}\"",
     "viz": "npx ng build --configuration production --stats-json && npx esbuild-visualizer --metadata ./dist/exp-spsh/stats.json --filename ./dist/exp-spsh/stats.html",
-    "e2e": "playwright test",
-    "e2e:headed": "playwright test --headed",
-    "e2e:ui": "playwright test --ui",
+    "e2e": "playwright test --project=chromium",
+    "e2e:headed": "playwright test --project=chromium --headed",
+    "e2e:ui": "playwright test --project=chromium --ui",
+    "e2e:auth": "playwright test --project=authenticated",
     "e2e:report": "playwright show-report tmp/playwright-report",
     "e2e:serve": "ng build --configuration=production,e2e && http-server tmp/e2e-dist -a 127.0.0.1 -p 4300 -c-1"
   },
