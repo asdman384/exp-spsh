@@ -90,10 +90,22 @@ The spending test checks the tab names against their IDs and opens the dashboard
 with the saved selection. It adds a `12.34` expense for today in Europe/Warsaw
 with the first category and a unique comment. It reloads, checks the saved row,
 deletes that row with a rightward drag, and reloads to check the deletion.
-Run this scenario with `npm run e2e:auth -- spending.spec.ts`.
-With `--headed`, this scenario pauses on the dashboard before adding the expense.
+The offline scenario loads a category, disconnects the browser, adds an expense,
+checks its pending icon, and reconnects. After a reload it counts matching rows
+in the data tab and on the dashboard. Each spending test closes its page and
+removes remaining rows with its exact unique comment during fixture teardown.
+Authenticated tests use one worker. Use a separate dedicated sheet for concurrent
+runs because Google Sheets deletes rows by position.
+Run both spending scenarios with `npm run e2e:auth -- spending.spec.ts`.
+With `--headed`, the online scenario pauses on the dashboard before adding the expense.
 Use **Step over** in Playwright Inspector to follow each action, or **Resume**
 to continue. Headless runs do not pause.
+
+Run the category scenarios with `npm run e2e:auth -- categories.spec.ts`.
+They use the same dedicated spreadsheet. One scenario adds a category, tries
+the same name again, and drags the category right to delete it. The other
+swaps two test categories. Both check the saved list after a reload.
+Fixture teardown removes any rows with the exact category names from that test.
 
 Use role and accessible-name locators, then test IDs if the UI has no suitable
 accessible locator. Use Playwright's retrying assertions and automatic waiting.
@@ -120,8 +132,9 @@ The projects inherit their browser settings from the top-level `use` in
 `playwright.config.ts`. In CI, the config rejects `test.only`, uses
 one worker, and retries failures twice. CI commands are `npm ci`, browser
 installation, `node scripts/harness.mjs`, and `npm run e2e`; provide `keys.json`
-before the build and retain both report folders on failure. The existing
-deployment workflow does not run E2E tests.
+before the build and retain both report folders on failure. The guest E2E workflow runs on pull requests to master with placeholder build
+keys and uploads the HTML report on failure. Google-authenticated tests use a
+dedicated account and run separately.
 
 This setup uses the supported Playwright [Page Object Model](https://playwright.dev/docs/pom),
 [fixtures](https://playwright.dev/docs/test-fixtures), and

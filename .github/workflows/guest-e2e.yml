@@ -1,0 +1,28 @@
+# name: Guest browser test
+
+# on:
+#   pull_request:
+#     branches: [master]
+
+# permissions:
+#   contents: read
+
+# jobs:
+#   guest:
+#     runs-on: ubuntu-latest
+#     steps:
+#       - uses: actions/checkout@v4
+#       - uses: actions/setup-node@v4
+#         with:
+#           node-version: 22.x
+#           cache: npm
+#       - run: npm ci
+#       - name: Create guest build configuration
+#         run: jq '. + {GGG_KEY:"guest-test"}' keys.example.json > keys.json
+#       - run: npx playwright install --with-deps chrome ffmpeg
+#       - run: npm run e2e
+#       - uses: actions/upload-artifact@v4
+#         if: failure()
+#         with:
+#           name: guest-playwright-report
+#           path: tmp/playwright-report/

@@ -56,7 +56,7 @@ export async function readCredentials(origin: string): Promise<{ access_token: s
   return configured;
 }
 
-export async function prepareSpendingSpreadsheet(context: BrowserContext, request: APIRequestContext, origin: string): Promise<string> {
+export async function prepareTestSpreadsheet(context: BrowserContext, request: APIRequestContext, origin: string) {
   const { spreadsheetId, categoriesSheetId, dataSheetId } = await readConfig();
   if (
     typeof spreadsheetId !== 'string' ||
@@ -74,7 +74,7 @@ export async function prepareSpendingSpreadsheet(context: BrowserContext, reques
   const stored = (name: string) => JSON.parse(storage?.find(entry => entry.name === name)?.value ?? 'null');
   const name = stored(USER)?.name;
   const token = stored(REDIRECT_TOKEN)?.googleToken?.access_token;
-  if (!storage || !name || !token) throw new Error('The spending test requires the Google setup project.');
+  if (!storage || !name || !token) throw new Error('Spreadsheet tests require the Google setup project.');
 
   const metadata = await request
     .get(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
@@ -100,5 +100,32 @@ export async function prepareSpendingSpreadsheet(context: BrowserContext, reques
     { name: DATA_SHEETS, value: JSON.stringify([{ id: dataSheetId, title }]) },
   );
   await context.setStorageState(state);
-  return spreadsheetId;
+  return {
+    spreadsheetId,
+    dataSheetId: dataSheetId!,
+    async removeTestRows(tab: 'spending' | 'categories', matches: string[]) {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`;
+      const headers = { Authorization: `Bearer ${token}` };
+      const sheetId = tab === 'categories' ? categoriesSheetId : dataSheetId;
+      const range = tab === 'categories' ? `${CATEGORIES_SHEET_TITLE}!A:A` : `'${title.replaceAll("'", "''")}'!B:B`;
+      const response = await request.get(`${url}/values/${encodeURIComponent(range)}`, { headers, maxRedirects: 0 }).catch(() => {
+        throw new Error('Could not read test rows during cleanup.');
+      });
+      if (!response.ok()) throw new Error(`Read test rows during cleanup (HTTP ${response.status()}).`);
+      const { values = [] } = (await response.json()) as { values?: string[][] };
+      // Delete bottom to top so each remaining index still addresses its original row.
+      const requests = values
+        .flatMap(([value], startIndex) =>
+          matches.includes(value)
+            ? [{ deleteDimension: { range: { sheetId, dimension: 'ROWS', startIndex, endIndex: startIndex + 1 } } }]
+            : [],
+        )
+        .reverse();
+      if (!requests.length) return;
+      const deleted = await request.post(`${url}:batchUpdate`, { headers, data: { requests }, maxRedirects: 0 }).catch(() => {
+        throw new Error('Could not reach Google to delete the test rows.');
+      });
+      if (!deleted.ok()) throw new Error(`Delete test rows during cleanup (HTTP ${deleted.status()}).`);
+    },
+  };
 }

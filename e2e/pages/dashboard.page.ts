@@ -45,14 +45,30 @@ export class DashboardPage {
     }
   }
 
-  async reloadExpenses(comment: string, expectedInSheet: boolean) {
-    const loaded = this.page.waitForResponse(response => response.url().includes('/gviz/tq') && response.request().method() === 'GET');
+  async reloadExpenses(sheet: { spreadsheetId: string; dataSheetId: number; comment: string }, expectedCount: number) {
+    const loaded = this.page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return (
+        response.request().method() === 'GET' &&
+        url.origin === 'https://docs.google.com' &&
+        url.pathname === `/a/google.com/spreadsheets/d/${sheet.spreadsheetId}/gviz/tq` &&
+        url.searchParams.get('gid') === String(sheet.dataSheetId) &&
+        /^select A, B, C, D, E\s+where D >= date /i.test(url.searchParams.get('tq') ?? '')
+      );
+    });
     await this.page.reload();
     const response = await loaded;
     expect(response.ok(), `Read expenses (HTTP ${response.status()})`).toBeTruthy();
     const result = await response.text();
-    expect(/"status"\s*:\s*"ok"/.test(result), 'Google returned an expense table').toBeTruthy();
-    expect(result.includes(comment), 'Test comment in the reloaded sheet').toBe(expectedInSheet);
+    const payload = result.match(/setResponse\(([\s\S]*)\);?\s*$/)?.[1];
+    if (!payload) throw new Error('Google did not return an expense table.');
+    const table = JSON.parse(payload);
+    expect(table.status).toBe('ok');
+    const rows = table.table.rows as { c: ({ v: unknown } | null)[] }[];
+    expect(
+      rows.filter(row => row.c[1]?.v === sheet.comment),
+      'Matching expense rows in Google Sheets',
+    ).toHaveLength(expectedCount);
     await expect(this.page.getByRole('progressbar')).toHaveCount(0);
     await expect(this.page.getByRole('status').filter({ hasText: 'Today:' })).toBeVisible();
   }

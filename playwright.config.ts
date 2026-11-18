@@ -33,6 +33,7 @@ export default defineConfig({
     },
     {
       name: 'authenticated',
+      workers: 1, // Spending tests share a sheet and delete rows by index.
       testMatch: '**/authenticated/**/*.spec.ts',
       dependencies: ['google-setup'],
       use: { storageState: authFile, trace: 'off', video: 'off', screenshot: 'off' },
@@ -41,6 +42,7 @@ export default defineConfig({
   webServer: process.env['E2E_BASE_URL']
     ? undefined
     : {
+        stdout: 'pipe',
         command: 'npm run e2e:serve',
         url: baseURL,
         reuseExistingServer: false,

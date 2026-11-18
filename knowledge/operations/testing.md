@@ -130,9 +130,19 @@ the selection in its own browser context, and opens the dashboard. It adds an
 expense for today in Europe/Warsaw using an existing category and a unique
 comment. It verifies persistence after a reload, deletes the matching row with
 a rightward drag, and checks the deletion after another reload.
-With `--headed`, the spending test calls `page.pause()` on the dashboard
+The offline spending scenario disconnects after loading a category, checks the
+pending row, reconnects, and checks for one saved row after a reload. Both
+scenarios match the spreadsheet ID, data tab and expense query on reload. A
+test-scoped fixture removes rows with the exact test comment during teardown.
+The authenticated project uses a single worker for the shared test spreadsheet.
+With `--headed`, the online spending test calls `page.pause()` on the dashboard
 before it adds the expense. Playwright Inspector lets the user step through
 actions or resume execution. Headless runs do not pause.
+
+`npm run e2e:auth -- categories.spec.ts` checks category creation, duplicate
+names, swipe deletion, and drag reordering on the same test spreadsheet.
+The tests compare the category list from Sheets after a reload and check the
+visible rows. Teardown removes the categories created by each test.
 
 # Rules
 
