@@ -22,6 +22,8 @@ sources:
     title: Receipt selection and review template
 ---
 
+The installed Android app has one launcher shortcut, **Receipt photo**. It requests camera access and prefers the rear camera. Take photo copies one frame to a JPEG and releases the camera. The dialog keeps the image in memory while sheet data loads. Cancellation or a change to the selected spreadsheet or person discards the image. Missing sheet data or categories produces a message. When the reader is ready, it receives the photo once. Closing the dialog returns to the dashboard.
+
 The camera button beside the microphone opens a native single-photo picker. JPEG, PNG,
 WebP, HEIC, and HEIF files up to 10 MB are accepted. The app sends the image to Gemini
 and keeps no photo in browser storage, Drive, the spreadsheet, or logs.

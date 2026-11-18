@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-18 - Receipt photo shortcut
+
+- Added a guarded Android launcher shortcut with camera preview and single-photo handoff to receipt review.
+
 ## 2026-11-16 - spreadsheet creation and starter categories
 
 - Added direct spreadsheet creation, ordered tab setup, editable starter categories, Skip,
@@ -202,7 +206,7 @@ Earlier log entries were condensed (full text is in git history).
 * **2026-09-05** â€” Bundle created (OKF v0.2): architecture, domain, flows, interfaces,
   systems, operations, constraints, source map.
 
-* **2026-11-03** — Dashboard expense state, operations, date windows, and voice recognition
+* **2026-11-03** ï¿½ Dashboard expense state, operations, date windows, and voice recognition
   live in a page-scoped `DashboardPageViewModel`; the component retains form validation,
   display configuration, and action handlers. Submission/reset regression tests pin behaviour.
   Verification: seven dashboard tests pass before extraction; after extraction, typecheck,

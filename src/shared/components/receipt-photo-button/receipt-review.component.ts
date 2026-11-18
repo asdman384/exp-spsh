@@ -38,6 +38,7 @@ import { isValidReceiptDraftRow, ReceiptExpense } from 'src/services/expense-rec
   styleUrl: './receipt-review.component.scss',
   template: `
     <section aria-labelledby="receipt-heading">
+      <h2 id="receipt-heading" #heading tabindex="-1">Receipt for {{ sheetTitle() }}</h2>
       <form (submit)="confirm($event)">
         @for (row of rows.controls; track row; let i = $index) {
           <fieldset [formGroup]="row">
@@ -88,6 +89,7 @@ import { isValidReceiptDraftRow, ReceiptExpense } from 'src/services/expense-rec
   `,
 })
 export class ReceiptReviewComponent {
+  readonly sheetTitle = input<string>();
   readonly expenses = input.required<ReceiptExpense[]>();
   readonly categories = input.required<ReadonlyArray<string>>();
   readonly confirmed = output<ReceiptExpense[]>();

@@ -12,6 +12,11 @@ export const routes: Routes = [
     component: DashboardPageContainer,
   },
   {
+    path: ROUTE.receiptPhoto,
+    component: DashboardPageContainer,
+    data: { captureMode: true },
+  },
+  {
     path: ROUTE.categories,
     canActivate: [isLoggedIn, isOnline],
     component: CategoriesPageContainer,

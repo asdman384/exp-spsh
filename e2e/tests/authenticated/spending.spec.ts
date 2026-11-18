@@ -4,7 +4,7 @@ import { expect, test } from '../../fixtures/test';
 const timeZone = 'Europe/Warsaw';
 test.use({ timezoneId: timeZone });
 
-test('a signed-in user can add spending for today and delete it', async ({ page, dashboardPage, spending, headless }) => {
+test('a signed-in user can add spending for today and delete it', async ({ page, dashboardPage, spending }) => {
   test.setTimeout(90_000);
   const { spreadsheetId, comment } = spending;
   const row = dashboardPage.expense(comment);

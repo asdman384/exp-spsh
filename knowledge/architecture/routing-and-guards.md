@@ -33,6 +33,7 @@ Paths come from the `ROUTE` enum.[^routeenum] With `HashLocationStrategy`, URLs 
 | `''` | — | — | redirects to `dashboard` |
 | `dashboard` | `DashboardComponent` | `isLoggedIn`, `isSetupReady` | lazy |
 | `dashboard/''` | `DashboardPageContainer` | inherited | in the dashboard chunk |
+| `dashboard/receipt-photo` | `DashboardPageContainer` in camera mode | inherited | in the dashboard chunk |
 | `dashboard/categories` | `CategoriesPageContainer` | `isLoggedIn`, `isOnline` | in the dashboard chunk |
 | `dashboard/statistics` | `StatisticsContainer` | `isLoggedIn`, `isOnline`, `canDeactivate` | in the dashboard chunk |
 | `setup` | `SetupComponent` | — | lazy |
@@ -47,6 +48,8 @@ Paths come from the `ROUTE` enum.[^routeenum] With `HashLocationStrategy`, URLs 
 
 The `statistics` `canDeactivate` calls `component.tableAnimation('none')` and returns `true`;
 it resets a CSS class, it never blocks.[^dashroutes]
+
+The receipt shortcut opens the camera after both dashboard guards pass. A setup redirect drops the capture request. Closing the shortcut dialog replaces the camera URL with the dashboard URL.
 
 # Guards
 

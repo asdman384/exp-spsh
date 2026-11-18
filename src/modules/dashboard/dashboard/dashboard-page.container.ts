@@ -1,5 +1,5 @@
 import { AsyncPipe, DatePipe } from '@angular/common';
-import { Component, inject, signal, viewChild } from '@angular/core';
+import { Component, inject, input, signal, viewChild } from '@angular/core';
 import { FormsModule, NgModel } from '@angular/forms';
 import { FormField, form, required } from '@angular/forms/signals';
 import { MatButtonModule } from '@angular/material/button';
@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { Store } from '@ngrx/store';
-import { AppActions } from 'src/@state';
+import { AppActions, currentSheetSelector } from 'src/@state';
 import { TIME_FORMAT } from 'src/constants';
 import { ExpenseTableRow, Sheet } from 'src/shared/models';
 import { ExpensesTableComponent } from 'src/shared/components';
@@ -63,6 +63,8 @@ import { parseAmount } from './parse-amount';
   ],
 })
 export class DashboardPageContainer {
+  protected readonly selectedSheet = inject(Store).selectSignal(currentSheetSelector);
+  readonly captureMode = input(false);
   private datePointer: { id: number; x: number; y: number } | null = null;
   private suppressDateClick = false;
   private readonly viewModel = inject(DashboardPageViewModel);

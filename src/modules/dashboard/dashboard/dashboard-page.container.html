@@ -107,7 +107,11 @@
     </button>
 
     <voice-record-button></voice-record-button>
-    <receipt-photo-button [date]="expenseModel().date" [sheet]="expenseModel().sheet" />
+    <receipt-photo-button
+      [captureMode]="captureMode() === true"
+      [date]="expenseModel().date"
+      [sheet]="captureMode() === true ? (selectedSheet() ?? null) : expenseModel().sheet"
+    />
   </div>
 </form>
 

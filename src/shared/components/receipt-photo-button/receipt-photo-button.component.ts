@@ -1,4 +1,7 @@
-import { Component, DestroyRef, ElementRef, TemplateRef, effect, inject, input, viewChild } from '@angular/core';
+import { Component, DestroyRef, ElementRef, TemplateRef, ViewContainerRef, effect, inject, input, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { ROUTE } from 'src/constants';
+import { ReceiptCameraComponent } from './receipt-camera.component';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog, MatDialogContent, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -9,7 +12,7 @@ import { ReceiptReviewComponent } from './receipt-review.component';
 
 @Component({
   selector: 'receipt-photo-button',
-  imports: [MatButtonModule, MatIconModule, MatDialogContent, ReceiptReviewComponent],
+  imports: [MatButtonModule, MatIconModule, MatDialogContent, ReceiptReviewComponent, ReceiptCameraComponent],
   template: `
     <input #receiptInput type="file" hidden [accept]="receiptAccept" capture="environment" (change)="onReceiptSelected(receiptInput)" />
     <button
@@ -25,6 +28,9 @@ import { ReceiptReviewComponent } from './receipt-review.component';
     </button>
     <ng-template #review>
       <mat-dialog-content>
+        @if (capturing()) {
+          <receipt-camera [sheet]="sheet()" (captured)="capturing.set(false)" (cancelled)="closeCamera()" />
+        }
         @if (reader.receiptState(); as receipt) {
           @if (receipt.kind === 'recognizing') {
             <section aria-label="Receipt recognition">
@@ -33,8 +39,8 @@ import { ReceiptReviewComponent } from './receipt-review.component';
             </section>
           }
           @if (receipt.kind === 'review') {
-            <h2 id="receipt-heading" #heading tabindex="-1">Receipt for {{ sheet()?.title }}</h2>
             <receipt-review
+              [sheetTitle]="sheet()?.title"
               [expenses]="receipt.expenses"
               [categories]="reader.receiptCategories()"
               (confirmed)="reader.confirmReceipt($event)"
@@ -48,7 +54,7 @@ import { ReceiptReviewComponent } from './receipt-review.component';
         @if (reader.receiptStatus()) {
           <p role="status">{{ reader.receiptStatus() }}</p>
         }
-        @if (reader.receiptState().kind === 'idle') {
+        @if (reader.receiptState().kind === 'idle' && !capturing()) {
           <button mat-button type="button" (click)="reader.cancelReceipt()">Close</button>
         }
       </mat-dialog-content>
@@ -56,6 +62,12 @@ import { ReceiptReviewComponent } from './receipt-review.component';
   `,
 })
 export class ReceiptPhotoButtonComponent {
+  readonly captureMode = input(false);
+  protected readonly capturing = signal(false);
+  private shortcutStarted = false;
+  private readonly viewContainer = inject(ViewContainerRef);
+  private readonly router = inject(Router);
+  private readonly destroyRef = inject(DestroyRef);
   readonly date = input.required<Date>();
   readonly sheet = input.required<Sheet | null>();
   private readonly review = viewChild<TemplateRef<unknown>>('review');
@@ -67,29 +79,43 @@ export class ReceiptPhotoButtonComponent {
 
   constructor() {
     this.reader.connect(this.date, this.sheet);
-    inject(DestroyRef).onDestroy(() => {
+    this.destroyRef.onDestroy(() => {
       this.reader.cancelReceipt();
       this.dialogRef?.close();
     });
     effect(() => {
-      const isActive = this.reader.receiptState().kind !== 'idle' || !!this.reader.receiptError() || !!this.reader.receiptStatus();
+      if (this.captureMode() && !this.shortcutStarted) {
+        this.shortcutStarted = true;
+        this.capturing.set(true);
+      }
+      const isActive =
+        this.capturing() || this.reader.receiptState().kind !== 'idle' || !!this.reader.receiptError() || !!this.reader.receiptStatus();
       const template = this.review();
       if (isActive && template && !this.dialogRef) {
         const ref = this.dialog.open(template, {
-          ariaLabel: 'Receipt review',
+          ariaLabel: this.shortcutStarted ? 'Receipt photo' : 'Receipt review',
+          viewContainerRef: this.viewContainer,
           width: '720px',
           maxWidth: '95vw',
           restoreFocus: this.receiptCamera()?.nativeElement ?? true,
         });
         this.dialogRef = ref;
-        ref.beforeClosed().subscribe(() => this.reader.cancelReceipt());
+        ref.beforeClosed().subscribe(() => {
+          this.capturing.set(false);
+          this.reader.cancelReceipt();
+        });
         ref.afterClosed().subscribe(() => {
           if (this.dialogRef === ref) this.dialogRef = undefined;
+          if (this.shortcutStarted && !this.destroyRef.destroyed) void this.router.navigate([ROUTE.dashboard], { replaceUrl: true });
         });
       } else if (!isActive) {
         this.dialogRef?.close();
       }
     });
+  }
+
+  protected closeCamera(): void {
+    this.dialogRef?.close();
   }
 
   protected onReceiptSelected(input: HTMLInputElement): void {
