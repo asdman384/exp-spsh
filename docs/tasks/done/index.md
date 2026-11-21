@@ -4,3 +4,4 @@
 
 - [2026-11-07-receipt-photo-split] Receipt Photo to Split Expenses � archived 2026-11-08
 - [2026-11-18-home-screen-shortcuts] Receipt Photo Shortcut — archived 2026-11-18
+- [2026-11-19-category-spending-chart] Six-Month Category Spending Chart — archived 2026-11-21

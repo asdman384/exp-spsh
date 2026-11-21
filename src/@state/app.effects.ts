@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { Actions, createEffect, ofType } from '@ngrx/effects';
-import { EMPTY, catchError, exhaustMap, map, switchMap, tap, throwError, withLatestFrom } from 'rxjs';
+import { EMPTY, catchError, exhaustMap, map, tap, throwError, withLatestFrom } from 'rxjs';
 
 import { Store } from '@ngrx/store';
 import { CATEGORIES, CATEGORIES_SHEET_ID, DATA_SHEETS, SPREADSHEET_ID } from 'src/constants';
@@ -32,10 +32,10 @@ export class AppEffects {
   readonly saveSheetId$ = createEffect(
     () =>
       this.actions$.pipe(
-        ofType(AppActions.upsertDataSheet),
+        ofType(AppActions.spreadsheetId, AppActions.upsertDataSheet),
         tap(log),
-        switchMap(() => this.store.select(sheetsSelector)),
-        tap(sheets => LocalStorageService.put(DATA_SHEETS, sheets)),
+        withLatestFrom(this.store.select(sheetsSelector)),
+        tap(([, sheets]) => LocalStorageService.put(DATA_SHEETS, sheets)),
         catchError(e => {
           log(e);
           return EMPTY;

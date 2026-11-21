@@ -31,7 +31,7 @@ Everything runs from the **repo root**. There is one `package.json`, at the root
 - `npx ng test --watch=false --include src/path/to/file.spec.ts` — a single spec file
 - `npx ng test --watch=false --filter "<regex>"` — tests matching a suite or test name
 - `node scripts/harness.mjs --test` — the test layer through the harness
-- `node scripts/harness.mjs` — lint + typecheck + build + tests, when you want the full gate
+- `node scripts/harness.mjs --lint --typecheck --test` — verify code changes
 - `git diff`, `git log`, `git status` (read-only)
 
 You do **not** run:

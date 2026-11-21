@@ -14,7 +14,9 @@
   </div>
 
   <div aria-live="polite">
-    @if (loading()) {
+    @if (report() === 'checking') {
+      <p>Checking Overview…</p>
+    } @else if (loading()) {
       <p>Setting up your spreadsheet…</p>
     }
     @if (categoriesSheetDone()) {
@@ -23,8 +25,13 @@
     @if (sheetDone()) {
       <p>Data tab is ready.</p>
     }
-    @if (stage() === 'ready') {
+    @if (stage() === 'ready' && !loading()) {
       <p>Your spreadsheet is ready. Select Finish to continue.</p>
+      @if (report() === 'absent') {
+        <p id="overview-description">Overview shows spending by person and category for the previous 12 months and the current month.</p>
+      } @else if (report() === 'ready') {
+        <p>Overview is ready.</p>
+      }
     }
   </div>
   @if (error()) {
@@ -103,12 +110,26 @@
       </mat-form-field>
     </div>
   </details>
-  <button
-    type="button"
-    mat-flat-button
-    (click)="finishSetup()"
-    [disabled]="loading() || stage() !== 'ready' || !sheetDone() || !categoriesSheetDone()"
-  >
-    Finish
-  </button>
+  @if (stage() === 'ready' && reportError()) {
+    <p role="alert" class="error">{{ reportError() }}</p>
+  }
+  <div class="actions">
+    @if (stage() === 'ready') {
+      @if (report() === 'absent') {
+        <button type="button" mat-stroked-button aria-describedby="overview-description" (click)="updateReport()" [disabled]="loading()">
+          Add Overview
+        </button>
+      } @else if (reportError()) {
+        <button type="button" mat-stroked-button (click)="updateReport()" [disabled]="loading()">Retry report</button>
+      }
+    }
+    <button
+      type="button"
+      mat-flat-button
+      (click)="finishSetup()"
+      [disabled]="loading() || stage() !== 'ready' || !sheetDone() || !categoriesSheetDone()"
+    >
+      Finish
+    </button>
+  </div>
 </form>

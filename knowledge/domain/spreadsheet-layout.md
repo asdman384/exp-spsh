@@ -15,6 +15,9 @@ sources:
   - id: setup
     resource: ../../src/modules/setup/setup-page/setup-page.container.ts
     title: Sheet creation during setup
+  - id: report
+    resource: ../../src/services/spreadsheet/category-spending-report.ts
+    title: Category spending report
   - id: serialdoc
     resource: https://developers.google.com/sheets/api/reference/rest/v4/DateTimeRenderOption
     title: Sheets DateTimeRenderOption (SERIAL_NUMBER)
@@ -27,10 +30,10 @@ sources:
 |---|---|---|---|
 | `categories` | 2 | setup (`addSheet(title, 2)`) | one [category](category.md) per row |
 | `data_<name>` | 5 | setup (`addSheet(title, EXPENSE_COLUMN_COUNT)`) | one [expense](expense.md) per row, per person |
+| `Overview` | 10 on creation | **Add Overview** in Setup | spending for the selected person and category over the previous 12 months and the current month |
 | anything else | — | the user | ignored; setup picks up only non-hidden tabs whose title contains `data_` |
 
-New tabs start with `gridProperties: { rowCount: 1, columnCount }`. There is no header row;
-row 0 is data.
+Category and personal expense tabs start with one row. Their first row holds data.
 
 # `data_<name>`
 
@@ -50,6 +53,34 @@ Column positions come from `EXPENSE_COLUMNS` in `expense-row.ts`.[^row]
 |---|---|---|
 | A | `name` | none |
 | B | `id` (position) | `NUMBER_GREATER_THAN_EQ 0`, strict |
+
+# `Overview`
+
+| Location on creation | Use |
+|---|---|
+| B1 | Person dropdown with names from the hidden roster column. |
+| B2 | Category dropdown with names from `categories!A:A`. Both selectors start empty. |
+| B3 | Total of the 13 monthly amounts for the selected person and category. Blank when all monthly amounts are blank. |
+| A4:B17 | Headers followed by 13 month-start dates in order and spending totals with two decimal places and no currency symbol. |
+| D:D | Hidden user list, one name per matching `data_<name>` tab in tab order, including hidden tabs. |
+| E1 | Hidden formula for the earliest numeric purchase date in the selected person's D column. |
+| E4:E17 | Hidden category-axis labels formatted from the visible dates. Each of the 13 months has a tick on the chart. |
+| A19 | Anchor of the native line chart with visible point markers. |
+
+The spreadsheet calendar determines the current month and the 12 months before it. Each amount sums C for an
+exact, case-sensitive category in A and a timestamp in D from the start of that month up to
+the start of the next month, exclusive. Full-column references include purchases inserted at
+row 1. Column E on an expense tab holds debt and has no part in this total.[^report]
+
+With either selector empty, a person outside the roster, or no dated purchases, all amounts
+are blank. Months before the person's first purchase in any category also have blank amounts.
+From the first purchase month onward, a month with no matching rows has a numeric zero.
+For example, for the May–October portion of the report, a first transport purchase in July and 80 zł of groceries
+in August give two leading gaps followed by 0, 80, 0 and 0 for groceries.
+
+After creation, Setup refreshes the user list in column D and clears obsolete names.
+If the list needs more space, Setup appends rows. The owner can edit the selectors, formulas and chart in
+Sheets.[^report]
 
 # Date encoding
 
@@ -87,4 +118,5 @@ never `eval`s. See [gviz](../interfaces/gviz-query.md).
   between a read and a delete can remove the wrong row.
 
 [^row]: Column order and date conversion
+[^report]: Category spending report
 [^serialdoc]: Sheets DateTimeRenderOption (SERIAL_NUMBER)

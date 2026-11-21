@@ -1,16 +1,50 @@
 import { TestBed } from '@angular/core/testing';
 
 import { MatSnackBar } from '@angular/material/snack-bar';
-import { Action, Store } from '@ngrx/store';
+import { Action, provideStore, Store } from '@ngrx/store';
+import { provideEffects } from '@ngrx/effects';
 import { provideMockActions } from '@ngrx/effects/testing';
 import { Subject, of } from 'rxjs';
 
+import { DATA_SHEETS } from 'src/constants';
 import { NetworkStatusService, SpreadsheetService } from 'src/services';
 import { Category } from 'src/shared/models';
 import { AppActions } from './app.actions';
 import { AppEffects } from './app.effects';
-import { categoriesSelector, categoriesSheetIdSelector } from './app.selectors';
+import { reducers } from './app.reducers';
+import { categoriesSelector, categoriesSheetIdSelector, currentSheetIdSelector, sheetsSelector } from './app.selectors';
 import { FAILURE_MESSAGES } from './report-failure';
+
+describe('Spreadsheet selection', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('clears the previous users from lookups and storage before saving users from the selected file', () => {
+    const setItem = vi.fn();
+    vi.stubGlobal('localStorage', { setItem });
+    vi.stubGlobal('log', vi.fn());
+    TestBed.configureTestingModule({
+      providers: [provideStore(reducers), provideEffects(AppEffects), { provide: SpreadsheetService, useValue: {} }],
+    });
+    const store = TestBed.inject(Store);
+    const sheets = store.selectSignal(sheetsSelector);
+    const currentSheet = store.selectSignal(currentSheetIdSelector);
+    const oldSheet = { id: 1, title: 'data_Alex' };
+    const newSheet = { id: 2, title: 'data_Sam' };
+    store.dispatch(AppActions.spreadsheetId({ spreadsheetId: 'first' }));
+    store.dispatch(AppActions.upsertDataSheet({ dataSheet: oldSheet }));
+    store.dispatch(AppActions.setCurrentSheet({ sheet: oldSheet }));
+    setItem.mockClear();
+
+    store.dispatch(AppActions.spreadsheetId({ spreadsheetId: 'second' }));
+    expect(sheets()).toEqual([]);
+    expect(currentSheet()).toBeNull();
+    expect(setItem).toHaveBeenCalledWith(DATA_SHEETS, '[]');
+
+    store.dispatch(AppActions.upsertDataSheet({ dataSheet: newSheet }));
+    expect(sheets()).toEqual([newSheet]);
+    expect(setItem).toHaveBeenLastCalledWith(DATA_SHEETS, JSON.stringify([newSheet]));
+  });
+});
 
 // [AC16] showFailureToast$ — established here as the first effects-test precedent in this repo.
 //

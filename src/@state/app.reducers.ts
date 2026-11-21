@@ -33,7 +33,11 @@ export const reducers: ActionReducerMap<{ app: AppState }> = {
     initialState,
     on(AppActions.loading, (state, { loading }) => ({ ...state, loading })),
     on(AppActions.setTitle, (state, { title, icon }) => ({ ...state, title, icon })),
-    on(AppActions.spreadsheetId, (state, { spreadsheetId }) => ({ ...state, spreadsheetId })),
+    on(AppActions.spreadsheetId, (state, { spreadsheetId }) =>
+      spreadsheetId === state.spreadsheetId
+        ? state
+        : { ...state, spreadsheetId, dataSheets: sheetsAdapter.getInitialState({ selectedSheetId: null }) },
+    ),
     on(AppActions.upsertDataSheet, (state, { dataSheet }) => ({
       ...state,
       dataSheets: sheetsAdapter.upsertOne(dataSheet, state.dataSheets),

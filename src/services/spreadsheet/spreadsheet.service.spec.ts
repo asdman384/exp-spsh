@@ -63,6 +63,207 @@ describe('SpreadsheetService', () => {
     });
   });
 
+  describe('syncCategorySpendingReport()', () => {
+    const fileUrl = 'https://content-sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID;
+    const tag: gapi.client.sheets.DeveloperMetadata = {
+      metadataKey: 'exp_spsh.report',
+      metadataValue: 'category_spending_v1',
+      visibility: 'DOCUMENT',
+      location: { sheetId: 3 },
+    };
+    const rosterColumn = { sheetId: 3, startColumnIndex: 3, endColumnIndex: 4 };
+    const report: gapi.client.sheets.Sheet = {
+      properties: { sheetId: 3, title: 'Renamed report', gridProperties: { rowCount: 40, columnCount: 10 } },
+      developerMetadata: [tag],
+      charts: [{ chartId: 18, spec: { title: 'Owner title' } }],
+    };
+    const personalTabs: gapi.client.sheets.Sheet[] = [
+      { properties: { sheetId: 2, title: "data_O'Brien Jr", index: 1 } },
+      { properties: { sheetId: 1, title: 'data_Alex_Smith', index: 0 } },
+      { properties: { sheetId: 4, title: 'data_hidden', hidden: true, index: 2 } },
+      { properties: { sheetId: 5, title: 'data_chart', sheetType: 'OBJECT', index: 3 } },
+      { properties: { sheetId: 6, title: 'data_' } },
+      { properties: { sheetId: 7, title: 'unrelated_data_name' } },
+    ];
+    const rosterRows = ['Alex_Smith', "O'Brien Jr", 'hidden', 'chart'].map(stringValue => ({ values: [{ userEnteredValue: { stringValue } }] }));
+
+    function readMetadata() {
+      return httpMock.expectOne(req => req.method === 'GET' && req.url === fileUrl && req.params.get('includeGridData') === 'false');
+    }
+
+    function writeReport() {
+      const write = httpMock.expectOne(req => req.method === 'POST' && req.url === fileUrl + ':batchUpdate');
+      expect(write.request.params.get('alt')).toBe('json');
+      expect(write.request.params.has('key')).toBe(true);
+      return write;
+    }
+
+    it('inspects an unconfigured spreadsheet without creating a report', () => {
+      const next = vi.fn();
+      service.syncCategorySpendingReport(SPREADSHEET_ID, false).subscribe(next);
+      readMetadata().flush({ sheets: personalTabs });
+      expect(next).toHaveBeenCalledExactlyOnceWith('absent');
+    });
+
+    it('creates one complete report in the requested file using the first available positive sheet ID', () => {
+      const next = vi.fn();
+      service.syncCategorySpendingReport(SPREADSHEET_ID, true).subscribe(next);
+      service.setSpreadsheetId('different-file');
+      readMetadata().flush({ sheets: personalTabs });
+      const write = writeReport();
+      const requests: gapi.client.sheets.Request[] = write.request.body.requests;
+      expect(requests[0].addSheet?.properties).toMatchObject({
+        sheetId: 3,
+        title: 'Overview',
+        gridProperties: { rowCount: 40, columnCount: 10 },
+      });
+      expect(requests.map(request => Object.keys(request)[0])).toEqual([
+        'addSheet',
+        'createDeveloperMetadata',
+        'updateCells',
+        'updateCells',
+        'updateCells',
+        'updateDimensionProperties',
+        'repeatCell',
+        'addChart',
+        'repeatCell',
+      ]);
+      expect(requests[1].createDeveloperMetadata?.developerMetadata).toEqual(tag);
+      const grid = requests[2].updateCells!;
+      expect(grid.start).toEqual({ sheetId: 3, rowIndex: 0, columnIndex: 0 });
+      expect(grid.fields).toContain('dataValidation');
+      const rows = grid.rows!;
+      for (const [index, source] of ['=Overview!$D:$D', '=categories!$A:$A'].entries()) {
+        expect(rows[index].values![1]).toEqual({
+          dataValidation: { condition: { type: 'ONE_OF_RANGE', values: [{ userEnteredValue: source }] }, strict: true, showCustomUi: true },
+        });
+      }
+      expect(rows[2].values![0].userEnteredValue?.stringValue).toBe('Period total');
+      expect(rows[2].values![1].userEnteredValue?.formulaValue).toBe('=IF(COUNT(B5:B17);SUM(B5:B17);"")');
+      expect(rows[4].values![0].userEnteredValue?.formulaValue).toBe('=EOMONTH(TODAY();-13)+1');
+      expect(rows).toHaveLength(17);
+      for (const [index, row] of rows.slice(4).entries()) {
+        const [month, amount] = row.values!;
+        if (index > 0) expect(month.userEnteredValue?.formulaValue).toBe(`=EDATE(A${index + 4};1)`);
+        expect(month.userEnteredFormat?.numberFormat).toEqual({ type: 'DATE', pattern: 'mmm yyyy' });
+        expect(amount.userEnteredFormat?.numberFormat).toEqual({ type: 'NUMBER', pattern: '#,##0.00' });
+        for (const text of ['EXACT(', '"A:A"', '"C:C"', '"D:D"', `A${index + 5}`, 'EDATE(']) {
+          expect(amount.userEnteredValue?.formulaValue).toContain(text);
+        }
+        expect(amount.userEnteredValue?.formulaValue).not.toContain('"E:E"');
+      }
+      const history = requests[3].updateCells!;
+      expect(history.start).toEqual({ sheetId: 3, rowIndex: 0, columnIndex: 4 });
+      expect(history.rows![0].values![0].userEnteredValue?.formulaValue).toContain('MIN(');
+      expect(history.rows!.slice(4).map(row => row.values![0].userEnteredValue?.formulaValue)).toEqual(
+        Array.from({ length: 13 }, (_, i) => `=TEXT(A${5 + i};"mmm yyyy")`),
+      );
+      expect(requests[4].updateCells).toEqual({ range: rosterColumn, fields: 'userEnteredValue', rows: rosterRows });
+      expect(requests[5].updateDimensionProperties).toMatchObject({
+        range: { sheetId: 3, dimension: 'COLUMNS', startIndex: 3, endIndex: 5 },
+        properties: { hiddenByUser: true },
+      });
+      const lastAmount = { sheetId: 3, startRowIndex: 16, endRowIndex: 17, startColumnIndex: 1, endColumnIndex: 2 };
+      expect(requests[6].repeatCell).toEqual({
+        range: lastAmount,
+        cell: { userEnteredValue: { numberValue: 0 } },
+        fields: 'userEnteredValue',
+      });
+      const chart = requests[7].addChart!.chart!;
+      expect(requests[8].repeatCell).toEqual({ range: lastAmount, cell: rows[16].values![1], fields: 'userEnteredValue' });
+      const chartRange = { sheetId: 3, startRowIndex: 3, endRowIndex: 17 };
+      expect(chart.position?.overlayPosition?.anchorCell).toEqual({ sheetId: 3, rowIndex: 18, columnIndex: 0 });
+      expect(chart.spec?.hiddenDimensionStrategy).toBe('SHOW_ALL');
+      expect(chart.spec?.basicChart).toMatchObject({
+        chartType: 'LINE',
+        interpolateNulls: false,
+        headerCount: 1,
+        axis: [
+          { position: 'BOTTOM_AXIS', title: 'Month' },
+          { position: 'LEFT_AXIS', title: 'Spending' },
+        ],
+        domains: [{ domain: { sourceRange: { sources: [{ ...chartRange, startColumnIndex: 4, endColumnIndex: 5 }] } } }],
+        series: [
+          {
+            series: { sourceRange: { sources: [{ ...chartRange, startColumnIndex: 1, endColumnIndex: 2 }] } },
+            targetAxis: 'LEFT_AXIS',
+            pointStyle: { shape: 'CIRCLE', size: 6 },
+          },
+        ],
+      });
+      expect(next).not.toHaveBeenCalled();
+      write.flush({});
+      expect(next).toHaveBeenCalledExactlyOnceWith('ready');
+    });
+
+    it('refreshes column D on later visits and adds rows when needed', () => {
+      for (const rowCount of [rosterRows.length - 1, rosterRows.length]) {
+        const currentReport = { ...report, properties: { ...report.properties, gridProperties: { rowCount, columnCount: 10 } } };
+        const next = vi.fn();
+        service.syncCategorySpendingReport(SPREADSHEET_ID, false).subscribe(next);
+        readMetadata().flush({ sheets: [currentReport, ...personalTabs] });
+        const write = writeReport();
+        const update = { updateCells: { range: rosterColumn, fields: 'userEnteredValue', rows: rosterRows } };
+        expect(write.request.body.requests).toEqual(
+          rowCount < rosterRows.length ? [{ appendDimension: { sheetId: 3, dimension: 'ROWS', length: 1 } }, update] : [update],
+        );
+        write.flush({});
+        expect(next).toHaveBeenCalledExactlyOnceWith('ready');
+      }
+    });
+
+    it.each<[string, gapi.client.sheets.Spreadsheet, string]>([
+      ['occupied title', { sheets: [{ properties: { title: 'overVIEW' } }] }, 'title-conflict'],
+      ['two markers', { sheets: [report, { ...report, properties: { sheetId: 9 } }] }, 'roster-conflict'],
+      [
+        'missing column D',
+        { sheets: [{ ...report, properties: { ...report.properties, gridProperties: { rowCount: 40, columnCount: 3 } } }] },
+        'roster-conflict',
+      ],
+    ])('returns a conflict without writing for %s', (_name, metadata, outcome) => {
+      const next = vi.fn();
+      service.syncCategorySpendingReport(SPREADSHEET_ID, true).subscribe(next);
+      readMetadata().flush(metadata);
+      expect(next).toHaveBeenCalledExactlyOnceWith(outcome);
+    });
+
+    it.each([true, false])('reads fresh metadata after a lost write response (committed: %s)', committed => {
+      const next = vi.fn();
+      const error = vi.fn();
+      const attempt = service.syncCategorySpendingReport(SPREADSHEET_ID, true);
+      attempt.subscribe({ next, error });
+      readMetadata().flush({ sheets: personalTabs });
+      writeReport().error(new ProgressEvent('error'));
+      expect(error).toHaveBeenCalledOnce();
+      expect(next).not.toHaveBeenCalled();
+      attempt.subscribe(next);
+      readMetadata().flush({ sheets: committed ? [...personalTabs, report] : personalTabs });
+      const retry = writeReport();
+      if (committed) {
+        expect(retry.request.body.requests).toEqual([
+          { updateCells: { range: rosterColumn, fields: 'userEnteredValue', rows: rosterRows } },
+        ]);
+      } else {
+        expect(retry.request.body.requests[0].addSheet.properties.title).toBe('Overview');
+      }
+      retry.flush({});
+      expect(next).toHaveBeenCalledExactlyOnceWith('ready');
+    });
+
+    it('reports a conflict on retry when another editor has claimed the title', () => {
+      const next = vi.fn();
+      const error = vi.fn();
+      const attempt = service.syncCategorySpendingReport(SPREADSHEET_ID, true);
+      attempt.subscribe({ error });
+      readMetadata().flush({});
+      writeReport().flush('Title already exists', { status: 400, statusText: 'Bad Request' });
+      expect(error).toHaveBeenCalledOnce();
+      attempt.subscribe(next);
+      readMetadata().flush({ sheets: [{ properties: { title: 'Overview' } }] });
+      expect(next).toHaveBeenCalledExactlyOnceWith('title-conflict');
+    });
+  });
+
   describe('addExpense() column E (in-debt flag)', () => {
     it('[AC1] writes numberValue: expense.amount into the column-E cell when isInDebt is true', () => {
       const expense: Expense = { ...baseExpense, isInDebt: true };

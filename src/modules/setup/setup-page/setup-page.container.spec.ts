@@ -5,6 +5,7 @@ import { Observable, Subject, of, throwError } from 'rxjs';
 import { AppActions, categoriesSelector, reducers } from 'src/@state';
 import { ROUTE } from 'src/constants';
 import { AbstractSecurityService, PickerService, SpreadsheetService } from 'src/services';
+import type { ReportOutcome } from 'src/services/spreadsheet/category-spending-report';
 import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
 import { Category } from 'src/shared/models';
 import { SettingsPageContainer } from './setup-page.container';
@@ -36,6 +37,7 @@ describe('SettingsPageContainer spreadsheet setup', () => {
     createSpreadsheet: vi.fn<() => Observable<gapi.client.sheets.Spreadsheet>>(),
     setSpreadsheetId: vi.fn(),
     getSpreadsheet: vi.fn<(id: string) => Observable<gapi.client.sheets.Spreadsheet>>(),
+    syncCategorySpendingReport: vi.fn<(id: string, createIfMissing: boolean) => Observable<ReportOutcome>>(),
     addSheet: vi.fn<(title: string, count: number) => Observable<gapi.client.sheets.SheetProperties>>(),
     setCategoriesSheetFormats: vi.fn<(id: number) => Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse>>(),
     setDataSheetFormats: vi.fn<(id: number) => Observable<gapi.client.sheets.BatchUpdateSpreadsheetResponse>>(),
@@ -52,6 +54,7 @@ describe('SettingsPageContainer spreadsheet setup', () => {
     picker.pickSpreadsheet.mockReturnValue(of('file-1'));
     service.createSpreadsheet.mockReturnValue(of({ spreadsheetId: 'file-1' }));
     service.getSpreadsheet.mockReturnValue(of(metadata));
+    service.syncCategorySpendingReport.mockReturnValue(of('absent'));
     service.addSheet.mockImplementation(title => of({ title, sheetId: title === 'categories' ? 11 : 12 }));
     service.setCategoriesSheetFormats.mockReturnValue(of({}));
     service.setDataSheetFormats.mockReturnValue(of({}));
@@ -477,6 +480,115 @@ describe('SettingsPageContainer spreadsheet setup', () => {
     expect([...(fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>)].every(b => b.type === 'button')).toBe(
       true,
     );
+  });
+
+  it('checks a new file after data formatting and before reading categories', () => {
+    const format = new Subject<gapi.client.sheets.BatchUpdateSpreadsheetResponse>();
+    const inspection = new Subject<ReportOutcome>();
+    service.getSpreadsheet.mockReturnValue(of({ sheets: [] }));
+    service.setDataSheetFormats.mockReturnValue(format);
+    service.syncCategorySpendingReport.mockReturnValueOnce(inspection);
+    component.createNewSpreadsheet();
+    expect(service.syncCategorySpendingReport).not.toHaveBeenCalled();
+    format.next({});
+    format.complete();
+    expect(service.syncCategorySpendingReport).toHaveBeenCalledExactlyOnceWith('file-1', false);
+    expect(service.getAllCategories).not.toHaveBeenCalled();
+    inspection.next('absent');
+    inspection.complete();
+    expect(service.getAllCategories).toHaveBeenCalledOnce();
+    component.updateReport();
+    fixture.detectChanges();
+    expect(button('Add Overview')).toBeUndefined();
+    component.skipCategories();
+    fixture.detectChanges();
+    expect(button('Add Overview').type).toBe('button');
+    button('Finish').click();
+    expect(router.navigate).toHaveBeenCalledOnce();
+    expect(service.syncCategorySpendingReport).toHaveBeenCalledOnce();
+  });
+
+  it.each(['existing', 'save', 'skip'])('offers Add after the %s category path and guards pending report requests', path => {
+    if (path === 'existing') saved = [{ name: 'Food', id: 0 }];
+    choose();
+    if (path === 'save') component.saveCategories();
+    if (path === 'skip') component.skipCategories();
+    fixture.detectChanges();
+    const request = new Subject<ReportOutcome>();
+    service.syncCategorySpendingReport.mockReturnValueOnce(request);
+    button('Add Overview').click();
+    expect(text()).toContain('Checking Overview');
+    expect(button('Finish').disabled).toBe(true);
+    expect(button('Create a new spreadsheet for me').disabled).toBe(true);
+    expect(button('Choose existing').disabled).toBe(true);
+    component.updateReport();
+    component.finishSetup();
+    component.chooseExisting();
+    component.createNewSpreadsheet();
+    expect(service.syncCategorySpendingReport.mock.calls).toEqual([
+      ['file-1', false],
+      ['file-1', true],
+    ]);
+    expect(router.navigate).not.toHaveBeenCalled();
+    expect(service.createSpreadsheet).not.toHaveBeenCalled();
+    expect(picker.pickSpreadsheet).toHaveBeenCalledOnce();
+    request.next('ready');
+    request.complete();
+    expect(text()).toContain('Overview is ready.');
+    expect(button('Add Overview')).toBeUndefined();
+    expect(button('Finish').disabled).toBe(false);
+  });
+
+  it.each([
+    ['title-conflict', 'A tab named Overview already exists.'],
+    ['roster-conflict', 'Setup could not identify the report’s people list.'],
+  ] as const)('shows the %s message and repeats discovery on Retry report', (outcome, message) => {
+    service.syncCategorySpendingReport.mockReturnValueOnce(of(outcome));
+    choose();
+    component.skipCategories();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('[role="alert"]').textContent).toContain(message);
+    expect(button('Finish').disabled).toBe(false);
+    button('Retry report').click();
+    fixture.detectChanges();
+    expect(button('Add Overview')).toBeDefined();
+    expect(service.syncCategorySpendingReport.mock.calls).toEqual([
+      ['file-1', false],
+      ['file-1', false],
+    ]);
+  });
+
+  it('allows category completion and Finish after failed report discovery', () => {
+    service.syncCategorySpendingReport.mockReturnValueOnce(throwError(() => new Error('metadata')));
+    choose();
+    component.saveCategories();
+    expect(text()).toContain('Could not update Overview.');
+    expect(button('Retry report').disabled).toBe(false);
+    button('Finish').click();
+    expect(router.navigate).toHaveBeenCalledOnce();
+  });
+
+  it('preserves Add intent across a lost response and Picker cancellation, then inspects a new file', () => {
+    saved = [{ name: 'Food', id: 0 }];
+    choose();
+    service.syncCategorySpendingReport.mockReturnValueOnce(throwError(() => new Error('lost response')));
+    button('Add Overview').click();
+    picker.pickSpreadsheet.mockReturnValueOnce(of(undefined));
+    choose();
+    expect(text()).toContain('Could not update Overview.');
+    service.syncCategorySpendingReport.mockReturnValueOnce(of('ready'));
+    button('Retry report').click();
+    expect(text()).toContain('Overview is ready.');
+    picker.pickSpreadsheet.mockReturnValueOnce(of('file-2'));
+    choose();
+    expect(button('Add Overview')).toBeDefined();
+    expect(text()).not.toContain('Overview is ready.');
+    expect(service.syncCategorySpendingReport.mock.calls).toEqual([
+      ['file-1', false],
+      ['file-1', true],
+      ['file-1', true],
+      ['file-2', false],
+    ]);
   });
 
   it('keeps errors and progress outside Details and gives editor inputs visible labels', async () => {

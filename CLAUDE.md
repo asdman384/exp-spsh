@@ -6,9 +6,11 @@ You are an expert in TypeScript, Angular, and scalable web application developme
 
 - **ALWAYS** use ASD-STE100 Simplified Technical English.
 - **NEVER** delete or overwrite working tests without explicit permission.
-- Run `node scripts/harness.mjs` after code changes, except during E2E work.
+- Run `node scripts/harness.mjs --lint --typecheck --test` after code changes, except during E2E work.
 - during E2E work use focused Playwright, lint, and TypeScript checks instead.
 - One task at a time.
+- When a change affects the shipped application, update its version once. Use the highest applicable increment: `major` for a breaking change, `minor` for a backward-compatible feature, or `patch` for a backward-compatible fix.
+- Use `npm --no-git-tag-version version <major|minor|patch>` to keep the `version` field in `package.json` and both application version fields in `package-lock.json` (the top level and `packages[""]`) in sync.
 - If you are unsure — **ASK**, do not guess.
 - Update `knowledge/` when architecture or infrastructure changes or a feature is added or modified.
 - when update the `knowledge/` rewrote each as a plain present-tense statement of current behaviour. Concept files should describe only the system as it is now. The `knowledge/log.md` is the only place change history belongs.

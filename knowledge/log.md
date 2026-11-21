@@ -1,5 +1,14 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-21 - Overview reporting period
+
+- Overview creation includes the previous 12 months and the current month in the table and chart.
+
+## 2026-11-20 - Six-month category spending report
+
+- Added optional Overview creation to Setup and roster refresh for existing reports.
+- Documented the report layout, calendar and spending calculations, request types and retry behavior.
+
 ## 2026-11-18 - Receipt photo shortcut
 
 - Added a guarded Android launcher shortcut with camera preview and single-photo handoff to receipt review.

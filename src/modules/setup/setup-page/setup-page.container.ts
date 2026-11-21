@@ -1,5 +1,5 @@
 import { AsyncPipe } from '@angular/common';
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -14,6 +14,7 @@ import { EMPTY, Observable, catchError, concatMap, finalize, from, map, of, swit
 import { AppActions, categoriesSheetIdSelector, currentSheetSelector, spreadsheetIdSelector } from 'src/@state';
 import { CATEGORIES_SHEET_ID, CATEGORIES_SHEET_TITLE, DATA_SHEETS, DATA_SHEET_TITLE_PREFIX, ROUTE, SPREADSHEET_ID } from 'src/constants';
 import { AbstractSecurityService, PickerService, SpreadsheetService } from 'src/services';
+import type { ReportOutcome } from 'src/services/spreadsheet/category-spending-report';
 import { EXPENSE_COLUMN_COUNT } from 'src/services/spreadsheet/expense-row';
 import { Category, Sheet, Userinfo } from 'src/shared/models';
 
@@ -42,6 +43,20 @@ export class SettingsPageContainer {
   protected readonly acceptedCategories = signal<Category[] | undefined>(undefined);
   protected readonly validationError = signal('');
   protected readonly retryAllowed = signal(false);
+  protected readonly report = signal<ReportOutcome | 'checking' | 'failed' | undefined>(undefined);
+  protected readonly reportError = computed(() => {
+    switch (this.report()) {
+      case 'title-conflict':
+        return 'A tab named Overview already exists. You can rename that tab in Sheets, then retry, or select Finish.';
+      case 'roster-conflict':
+        return 'Setup could not identify the report’s people list. Check the report in Sheets or select Finish.';
+      case 'failed':
+        return 'Could not update Overview. Retry the report or select Finish.';
+      default:
+        return '';
+    }
+  });
+  private createReportOnRetry = false;
 
   constructor(
     private readonly router: Router,
@@ -132,6 +147,8 @@ export class SettingsPageContainer {
       this.draft.set(undefined);
       this.acceptedCategories.set(undefined);
       this.validationError.set('');
+      this.report.set(undefined);
+      this.createReportOnRetry = false;
     }
     this.stage.set('tabs');
     this.error.set('');
@@ -149,7 +166,29 @@ export class SettingsPageContainer {
           }),
         ),
       ),
+      switchMap(() => this.syncReport(id, false)),
       switchMap(() => (this.acceptedCategories() ? this.saveAcceptedCategories() : this.loadCategories())),
+    );
+  }
+
+  updateReport(): void {
+    const id = this.selectedSpreadsheetId();
+    if (this.loading() || this.stage() !== 'ready' || !id || (this.report() !== 'absent' && !this.reportError())) return;
+    this.loading.set(true);
+    this.syncReport(id, this.report() === 'absent' || this.createReportOnRetry)
+      .pipe(finalize(() => this.loading.set(false)))
+      .subscribe();
+  }
+
+  private syncReport(id: string, createIfMissing: boolean): Observable<ReportOutcome | 'failed'> {
+    this.createReportOnRetry = createIfMissing;
+    this.report.set('checking');
+    return this.spreadsheetService.syncCategorySpendingReport(id, createIfMissing).pipe(
+      catchError(error => {
+        log(error);
+        return of('failed' as const);
+      }),
+      tap(outcome => this.report.set(outcome)),
     );
   }
 

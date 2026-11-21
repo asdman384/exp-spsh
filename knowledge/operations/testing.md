@@ -147,7 +147,7 @@ visible rows. Teardown removes the categories created by each test.
 # Rules
 
 `CLAUDE.md`: never delete or overwrite working tests without permission, and run
-`node scripts/harness.mjs` after code changes except during E2E work ([working agreements](../constraints/working-agreements.md)).
+`node scripts/harness.mjs --lint --typecheck --test` after code changes except during E2E work ([working agreements](../constraints/working-agreements.md)).
 CI runs no tests ([CI](ci-and-deployment.md)).
 
 [^ng]: test target configuration

@@ -12,6 +12,9 @@ sources:
   - id: setuphtml
     resource: ../../src/modules/setup/setup-page/setup-page.container.html
     title: Setup form template
+  - id: report
+    resource: ../../src/services/spreadsheet/category-spending-report.ts
+    title: Category spending report
   - id: picker
     resource: ../../src/services/picker/picker.service.ts
     title: PickerService
@@ -34,15 +37,30 @@ Choose existing opens Google Picker; cancellation preserves the selected file, d
 completion state.[^picker] No default Google tab is removed.
 
 For a confirmed ID, Setup sets the service ID, dispatches `spreadsheetId`, and reads fresh
-metadata. It discovers visible `data_` tabs for the User selector. It reuses exact matching
+metadata. A change of file clears the current user selection and the cached `dataSheets` list.
+Setup fills the User selector and the cache with the selected file's visible `data_` tabs. It reuses exact matching
 tab titles or creates missing tabs. It formats `categories` (two columns) first, then
 `data_<user.name>` (five columns), because data validation refers to categories. Existing
 expense and category rows remain unchanged. Each tab is complete only after its format
 request succeeds.[^setup]
 
+# Optional Overview report
+
+After Setup formats both tabs, it reads the selected file's metadata again. If the file
+contains the tagged spending report, Setup refreshes its list of people. The list includes
+the names after the `data_` prefix from all matching tabs in spreadsheet order, including hidden tabs.
+If the file has no report, Setup offers **Add Overview** beside **Finish** once the category
+step is complete. The owner can add the report on any later visit.[^report]
+
+**Retry report** reads fresh metadata for the same file. After a failed inspection it checks
+the report again. After a failed Add it creates a missing report or refreshes the existing one.
+If an unrelated tab uses the title `Overview`, Setup asks the owner to rename it. An invalid
+report grid or ambiguous report tag prompts the owner to check the report in Sheets.
+The owner can finish Setup after either conflict or a failed report request.[^setup]
+
 # Category choice
 
-After both tabs are ready, Setup reads categories. Non-empty results go to `storeCategories`
+After the report check settles, Setup reads categories. Non-empty results go to `storeCategories`
 and enable Finish. An empty result opens a local draft in this order: Groceries, Eating out,
 Transport, Home, Health, Clothes, Entertainment, Subscriptions, Gifts, Other.
 
@@ -85,3 +103,4 @@ network access and does not use the expense outbox.[^setup]
 [^picker]: PickerService
 [^setuphtml]: Setup form template
 [^setup]: SettingsPageContainer
+[^report]: Category spending report

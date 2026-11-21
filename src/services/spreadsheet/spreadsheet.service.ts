@@ -3,11 +3,12 @@
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, map } from 'rxjs';
+import { Observable, map, of, switchMap } from 'rxjs';
 
 import { CATEGORIES_SHEET_TITLE } from 'src/constants';
 import { Category, Expense } from 'src/shared/models';
 
+import { categorySpendingReportUpdate, ReportOutcome } from './category-spending-report';
 import {
   EXPENSE_COLUMN_COUNT,
   EXPENSE_COLUMN_INDEX,
@@ -123,6 +124,22 @@ export class SpreadsheetService {
     return this.http.get<gapi.client.sheets.Spreadsheet>(`https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}`, {
       params: new HttpParams({ fromObject: { includeGridData: false, key: keys.API_KEY } }),
     });
+  }
+
+  syncCategorySpendingReport(spreadsheetId: string, createIfMissing: boolean): Observable<ReportOutcome> {
+    return this.getSpreadsheet(spreadsheetId).pipe(
+      switchMap(spreadsheet => {
+        const { outcome, requests } = categorySpendingReportUpdate(spreadsheet, createIfMissing);
+        if (!requests.length) return of(outcome);
+        return this.http
+          .post<gapi.client.sheets.BatchUpdateSpreadsheetResponse>(
+            `https://content-sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}:batchUpdate`,
+            { requests } satisfies gapi.client.sheets.BatchUpdateSpreadsheetRequest,
+            { params: new HttpParams({ fromObject: { alt: 'json', key: keys.API_KEY } }) },
+          )
+          .pipe(map(() => outcome));
+      }),
+    );
   }
 
   /**
