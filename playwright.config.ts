@@ -42,10 +42,10 @@ export default defineConfig({
   webServer: process.env['E2E_BASE_URL']
     ? undefined
     : {
-        stdout: 'pipe',
+        // stdout: 'pipe',
         command: 'npm run e2e:serve',
         url: baseURL,
         reuseExistingServer: false,
-        timeout: 120_000,
+        timeout: 240_000,
       },
 });
