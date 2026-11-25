@@ -1,5 +1,12 @@
 @if (enabled) {
   @for (i of numbers; track $index) {
-    <div class="snow material-icons">{{ i ? 'favorite' : 'favorite_border' }}</div>
+    <div
+      class="material-icons snow"
+      [ngClass]="{
+        'material-icons-outlined': ocasion === 'snow',
+      }"
+    >
+      {{ i ? this[ocasion] : this[ocasion + 'Alter'] }}
+    </div>
   }
 }

@@ -3,10 +3,7 @@
 :host {
   display: block;
   position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  right: 0;
+  inset: 0;
   overflow: hidden;
   z-index: 100;
   pointer-events: none;
@@ -18,14 +15,21 @@
   @return $random_range;
 }
 
+:host(.heart) {
+  .heart {
+    color: #fc2e5a;
+  }
+}
+
+:host(.snow) {
+  .snow {
+    color: #cccccc;
+  }
+}
+
 .snow {
   $total: 50;
   position: absolute;
-  //   width: 10px;
-  //   height: 10px;
-  //   background: orange;
-  //   border-radius: 50%;
-  color: #fc2e5a;
   user-select: none;
   pointer-events: none;
 
