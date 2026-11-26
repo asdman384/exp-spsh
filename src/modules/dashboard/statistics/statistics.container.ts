@@ -1,49 +1,95 @@
 import '@angular/common/locales/global/pl';
-import { AsyncPipe, DecimalPipe } from '@angular/common';
-import { AfterViewInit, ChangeDetectionStrategy, Component, ElementRef, computed, inject, viewChild } from '@angular/core';
-import { toObservable } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
+import {
+  AfterViewInit,
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  DestroyRef,
+  ElementRef,
+  Renderer2,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabGroup, MatTabsModule } from '@angular/material/tabs';
 
 import { Store } from '@ngrx/store';
-import { BehaviorSubject, Observable, combineLatest, map, switchMap, take } from 'rxjs';
+import { combineLatest, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, sheetsSelector } from 'src/@state';
 import { ExpensesTableComponent } from 'src/shared/components';
-import { Expense, ExpenseTableRow, Sheet } from 'src/shared/models';
+import { Sheet } from 'src/shared/models';
 import { StatisticsDataService } from './statistics-data.service';
 import { categoryName, summarizeMonth } from './statistics-summary';
 
 const MONTH_BUTTON_WIDTH = 50;
 const PADDINGS = 76;
+const HOLD_DELAY = 500;
+const MOVE_TOLERANCE = 8;
+
+interface RowPress {
+  pointerId: number;
+  pointerType: string;
+  x: number;
+  y: number;
+  captureTarget: HTMLElement;
+  timer: ReturnType<typeof setTimeout>;
+}
 
 @Component({
   selector: 'exp-statistics-container',
   host: {
-    '[class.category-view]': 'selectedCategory !== undefined',
-    '[class.summary-view]': 'selectedCategory === undefined',
+    '[class.category-view]': 'selectedCategory() !== undefined',
+    '[class.summary-view]': 'selectedCategory() === undefined',
   },
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
-  imports: [FormsModule, AsyncPipe, DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
+  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
   providers: [StatisticsDataService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StatisticsContainer implements AfterViewInit {
   private readonly store = inject(Store);
+  private readonly changeDetector = inject(ChangeDetectorRef);
+  private readonly renderer = inject(Renderer2);
+  private readonly destroyRef = inject(DestroyRef);
   protected readonly data = inject(StatisticsDataService);
+  protected readonly selectedCategory = signal<string | undefined>(undefined);
+  protected readonly summaryRows = computed(() => {
+    const { current, previous } = this.data.state();
+    return summarizeMonth(current, previous).spending;
+  });
+  protected readonly unchecked = signal<ReadonlySet<string> | null>(null);
+  protected readonly checkedRows = computed(() => this.summaryRows().filter(row => !this.unchecked()?.has(row.category)));
+  protected readonly summaryTotal = computed(() => this.checkedRows().reduce((sum, row) => sum + row.amount, 0));
+  protected readonly allChecked = computed(() => this.checkedRows().length > 0 && this.checkedRows().length === this.summaryRows().length);
+  protected readonly detailRows = computed(() => {
+    const category = this.selectedCategory();
+    return this.data
+      .state()
+      .current.filter(row => categoryName(row) === category)
+      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
+      .map(({ amount, comment, date }) => ({ amount, comment, date }));
+  });
+  protected readonly detailTotal = computed(() => this.detailRows().reduce((sum, row) => sum + Number(row.amount ?? 0), 0));
   protected readonly debtTotal = computed(() =>
     this.data
       .state()
       .current.filter(row => row.isInDebt)
       .reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
   );
-  private readonly expensesList$ = toObservable(this.data.state);
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
-  private readonly aggregator$ = new BehaviorSubject<AggregatorFn>(groupByCategory);
+  private readonly categoryTable = viewChild<ExpensesTableComponent>('categoryTable');
+  private readonly backButton = viewChild('backButton', { read: ElementRef<HTMLButtonElement> });
+  private context?: { sheetId: number; year: number; month: number };
+  private press?: RowPress;
+  private suppressClick = false;
+  private navigationId = 0;
 
   // [Jan Feb ... Dec]
   protected readonly monthTabs = new Array(12).fill(0).map((v, i) => new Date(0, i).toLocaleString('default', { month: 'short' }));
@@ -51,19 +97,10 @@ export class StatisticsContainer implements AfterViewInit {
   // [2024, 2023 ... 2019]
   protected readonly yearsTabs = new Array(new Date().getFullYear() - 2018).fill(0).map((v, i) => new Date().getFullYear() - i);
 
-  protected readonly expenses$ = this.aggregator$.pipe(
-    switchMap(fn => this.expensesList$.pipe(map(fn))),
-    switchMap(this.startViewTransition.bind(this)),
-  );
-
   protected sheets: Array<Sheet> = [];
   protected currentSheetIndex = 0;
   protected currentYearIndex = 0;
   protected currentMonthIndex = new Date().getMonth();
-  protected tableReversed: boolean = false;
-  protected selectable = true;
-  protected selectedCategory?: string;
-  protected total = 0;
 
   constructor() {
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
@@ -77,6 +114,14 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   ngAfterViewInit(): void {
+    // Capture runs before the release click can activate a checkbox inserted by the hold.
+    const unlisten = this.renderer.listen(this.summaryTable()!.nativeElement, 'click', (event: MouseEvent) => this.clickRow(event), {
+      capture: true,
+    });
+    this.destroyRef.onDestroy(() => {
+      unlisten();
+      this.clearPress();
+    });
     this.scrollToCurrentMonth();
   }
 
@@ -87,47 +132,139 @@ export class StatisticsContainer implements AfterViewInit {
   }
 
   protected formChanged(sheetIndex: number, yearIndex: number, monthIndex: number, sheets: Array<Sheet>): void {
-    this.tableAnimation('none');
-    this.selectedCategory = undefined;
-    this.selectable = true;
-    this.total = 0;
-    this.aggregator$.next(groupByCategory);
     const year = this.yearsTabs[yearIndex];
     const sheet = sheets[sheetIndex];
-    if (sheet) this.data.load(sheet.id, year, monthIndex);
+    if (!sheet) return;
+    if (this.context?.sheetId !== sheet.id || this.context.year !== year || this.context.month !== monthIndex) {
+      this.context = { sheetId: sheet.id, year, month: monthIndex };
+      this.navigationId++;
+      this.cancelPress();
+      this.tableAnimation('none');
+      this.selectedCategory.set(undefined);
+      this.unchecked.set(null);
+    }
+    this.data.load(sheet.id, year, monthIndex);
   }
 
-  protected expensesTableCellClickHandler(event: { field: keyof Expense; cellData: unknown; rowData: Expense }): void {
-    if (event.field !== 'category') {
+  protected enterSelection(): void {
+    this.unchecked.set(new Set());
+    this.changeDetector.detectChanges();
+    this.categoryTable()?.focusSelectionHeader();
+  }
+
+  protected toggleSelection(category: string | null): void {
+    if (category === null) {
+      this.unchecked.set(new Set(this.allChecked() ? this.summaryRows().map(row => row.category) : []));
       return;
     }
+    const unchecked = new Set(this.unchecked());
+    if (unchecked.has(category)) unchecked.delete(category);
+    else unchecked.add(category);
+    this.unchecked.set(unchecked);
+  }
 
-    if (typeof event.cellData === 'string') {
-      this.selectable = false;
-      this.tableAnimation('straight');
-      this.selectedCategory = event.cellData;
-      this.aggregator$.next(filterByCategoryName(this.selectedCategory));
+  protected startPress(event: PointerEvent): void {
+    if (!event.isPrimary || event.button !== 0) return;
+    this.clearPress();
+    this.suppressClick = false;
+    const target = event.target as Element;
+    const row = target.closest<HTMLTableRowElement>('tr[data-category]');
+    if (!row || target.closest('.mat-column-select')) return;
+    const host = event.currentTarget as HTMLElement;
+    row.setPointerCapture(event.pointerId);
+    this.press = {
+      pointerId: event.pointerId,
+      pointerType: event.pointerType,
+      x: event.clientX,
+      y: event.clientY,
+      captureTarget: row,
+      timer: setTimeout(() => {
+        if (!this.press) return;
+        if (!row.isConnected) {
+          this.cancelPress();
+          return;
+        }
+        this.suppressClick = true;
+        if (this.unchecked() === null) {
+          // Adding the checkbox column replaces the Material rows. Keep capture on the table host until release.
+          this.press.captureTarget = host;
+          host.setPointerCapture(event.pointerId);
+          this.unchecked.set(new Set());
+        }
+      }, HOLD_DELAY),
+    };
+  }
+
+  protected movePress(event: PointerEvent): void {
+    if (this.press?.pointerId !== event.pointerId) return;
+    if (Math.hypot(event.clientX - this.press.x, event.clientY - this.press.y) > MOVE_TOLERANCE) this.cancelPress();
+  }
+
+  protected finishPress(event: PointerEvent): void {
+    if (this.press?.pointerId !== event.pointerId) return;
+    this.movePress(event);
+    this.clearPress();
+  }
+
+  protected cancelPress(event?: PointerEvent): void {
+    if (!this.press || (event && event.pointerId !== this.press.pointerId)) return;
+    if (event?.type === 'lostpointercapture' && event.target !== this.press.captureTarget) return;
+    this.suppressClick = true;
+    this.clearPress();
+  }
+
+  protected handleContextMenu(event: MouseEvent): void {
+    // A native touch menu can arrive before the 500 ms hold timer expires.
+    const press = this.press;
+    if (!press || press.pointerType === 'mouse') return;
+    if (event instanceof PointerEvent && event.pointerType !== press.pointerType) return;
+    if (press.captureTarget.contains(event.target as Node)) event.preventDefault();
+  }
+
+  private clearPress(): void {
+    const press = this.press;
+    if (!press) return;
+    this.press = undefined;
+    clearTimeout(press.timer);
+    if (press.captureTarget.hasPointerCapture(press.pointerId)) press.captureTarget.releasePointerCapture(press.pointerId);
+  }
+
+  private clickRow(event: MouseEvent): void {
+    const pointerClick = event.detail > 0 || (event instanceof PointerEvent && event.pointerType !== '');
+    if (this.suppressClick && pointerClick) {
+      this.suppressClick = false;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
     }
+    const target = event.target as Element;
+    const category = target.closest<HTMLElement>('tr[data-category]')?.dataset['category'];
+    if (category !== undefined && !target.closest('.mat-column-select')) this.showCategory(category, !pointerClick);
   }
 
-  protected onSelection(data: ReadonlyArray<Expense>): void {
-    this.total = data.reduce((p, c) => p + Number(c.amount), 0);
-  }
-
-  protected unCategory(): void {
-    this.selectedCategory = undefined;
-    this.selectable = true;
-    this.tableAnimation('reverse');
-    this.aggregator$.next(groupByCategory);
-  }
-
-  private startViewTransition(data: Array<ExpenseTableRow>): Observable<Array<ExpenseTableRow>> {
-    return new Observable(subscriber => {
-      transitionHelper(() => {
-        subscriber.next(data);
-        subscriber.complete();
-      });
-    });
+  protected showCategory(category: string | undefined, keyboard = false): void {
+    this.suppressClick = false;
+    const previous = this.selectedCategory();
+    const id = ++this.navigationId;
+    this.tableAnimation(category === undefined ? 'reverse' : 'straight');
+    const update = () => {
+      if (this.destroyRef.destroyed || id !== this.navigationId) return;
+      this.selectedCategory.set(category);
+      this.changeDetector.detectChanges();
+      if (keyboard) {
+        if (category !== undefined) this.backButton()?.nativeElement.focus();
+        else if (previous !== undefined) {
+          this.summaryTable()
+            ?.nativeElement.querySelector<HTMLButtonElement>(`tr[data-category="${CSS.escape(previous)}"] .mat-column-category button`)
+            ?.focus();
+        }
+      }
+    };
+    if (document.startViewTransition) {
+      document.startViewTransition(update);
+    } else {
+      update();
+    }
   }
 
   private scrollToCurrentMonth(): void {
@@ -137,32 +274,4 @@ export class StatisticsContainer implements AfterViewInit {
       setTimeout(() => (this.monthSelector()._tabHeader.scrollDistance = width));
     }
   }
-}
-
-interface MonthRows {
-  current: Expense[];
-  previous: Expense[];
-}
-type AggregatorFn = (data: MonthRows) => ExpenseTableRow[];
-
-function filterByCategoryName(name: string): AggregatorFn {
-  return ({ current }) =>
-    current
-      .filter(row => categoryName(row) === name)
-      .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
-      .map(row => ({ amount: row.amount, comment: row.comment, date: row.date }));
-}
-
-function groupByCategory({ current, previous }: MonthRows): ExpenseTableRow[] {
-  return summarizeMonth(current, previous).spending;
-}
-
-function transitionHelper(updateDOM: () => void): void {
-  if (!document.startViewTransition) {
-    updateDOM();
-    console.warn('View transitions unsupported');
-    return;
-  }
-
-  document.startViewTransition(updateDOM);
 }

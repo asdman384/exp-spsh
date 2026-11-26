@@ -1,7 +1,4 @@
-:host(.summary-view) {
-  --exp-table-amount-column-min-width: 191px;
-}
-:host(.category-view) {
+:host {
   --exp-table-first-col-padding-left: 16px;
   --exp-table-last-col-padding-right: 16px;
 }
@@ -34,19 +31,46 @@
 .statistics-summary {
   display: flex;
   align-items: center;
-  height: 48px;
-  gap: 8px;
+  min-height: 48px;
+  gap: 12px;
+  font-variant-numeric: tabular-nums;
 
-  .button-container {
-    width: 48px;
+  h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 500;
   }
 }
 
-.statistics-note,
-h2 {
-  margin: 12px 16px;
+:host(.summary-view) .statistics-summary {
+  gap: 24px;
+  padding: 0 16px;
 }
 
-h2 {
-  font-size: 16px;
+.spending-total,
+.debt-total {
+  display: grid;
+  gap: 2px;
+  font-size: 14px;
+  color: #555;
+}
+
+.spending-total strong {
+  font-size: 24px;
+  font-weight: 600;
+  color: #222;
+}
+
+.selection-entry:not(:focus-visible) {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.statistics-note {
+  margin: 12px 16px;
 }

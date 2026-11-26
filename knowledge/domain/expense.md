@@ -29,10 +29,16 @@ interface Expense {
 }
 ```
 
-Every field is optional because [statistics](../flows/statistics.md) reuses the type for
-aggregate rows (`category` + `amount`, or `amount` + `comment` + `date`). The
-[expenses table](../interfaces/expenses-table-component.md) renders only the columns that
-have data.
+Every field is optional. Category details pass the date, amount, and comment of each
+saved expense to the [expenses table](../interfaces/expenses-table-component.md),
+which displays columns that have data.
+
+The [month summary](../flows/statistics.md) uses a separate `CategorySummary` type.
+Each row has a category name, current amount, percentage share, change from the
+previous month, and a `previousOnly` flag. The flag records whether the category
+has entries only in the previous month. The shared table accepts these rows as
+`ExpenseTableRow` values. The comparison fields are required on `CategorySummary`
+and optional on `ExpenseTableRow`. They exist only for display.
 
 # Row mapping
 

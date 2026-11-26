@@ -26,11 +26,12 @@ The user, year, and month tabs select a numeric sheet ID and a local calendar mo
 Years run from the current year to 2019. Month labels use the browser's default locale.
 The month carousel scrolls to the current month through Material's private `_elementRef`
 and `_tabHeader.scrollDistance` members.
-A selection change returns to the category summary.
+Changing the sheet, year, or month returns to the category summary and resets category selection.
 
 `StatisticsDataService` belongs to the page. It reads one range from the start of the
 previous month to the start of the following month, exclusive. It splits the result at
-the selected month start. January includes December of the previous year. The Dashboard
+the selected month start. A saved expense dated later in the selected month counts toward that month.
+January includes December of the previous year. The Dashboard
 expense signal is independent of these reads. Only saved rows enter statistics.
 
 A new selection cancels the previous request and clears its rows. Going offline clears
@@ -42,37 +43,47 @@ unavailable. Failure dispatches the fixed `loadExpenses$` toast. Page destructio
 `summarizeMonth` is a pure function. It groups all rows by category, regardless of `isInDebt`.
 Missing or empty category names display as `Uncategorized`. The summary contains the union
 of categories in both months, sorted by current amount descending, then category name.
-A category present only in the previous month has a current amount of zero.
+A category present only in the previous month has a current amount of zero. Its name and all
+three values appear in gray. A category with current entries keeps the standard colors,
+even when its amounts add up to zero.
 
-Spending rows show their percentage of the current spending total, with one decimal at
-most. A zero total gives zero shares. Flagged rows enter totals and shares exactly like all other rows.
-Spending rows show current minus previous amount, with a sign and direction arrow. No
-previous entries means a zero baseline. The comparison is against the full previous
-calendar month, including when the selected month is still in progress.
-
-The table displays share and delta beside the amount in the same cell.
-The summary header shows `Debt · amount`, the signed sum of current-month debt.
-There is no debt table or debt drill-down. The flag does not affect spending deltas.
+The page passes category totals and the previous month's tab label to the shared expenses
+table. It displays Category, Amount, Share, and `vs` followed by that label.
+Names can wrap. The three numeric columns align to the right. Amount
+has weight 600. Share uses at most one decimal place and is zero when the month total is zero.
+Change is the current amount minus the full previous month's amount. An increase has a plus
+sign, a decrease has a minus sign, and a change that rounds to zero displays as `0`.
+Amounts and changes use Polish number formatting with at most two decimal places.
 
 # Drill-down and totals
 
-Clicking a category shows all its current-month rows, newest first.
-The container host has `summary-view` when no category is selected.
-Only `summary-view` sets `--exp-table-amount-column-min-width` to `191px` on the host.
-The debt flag does not filter the detail list or change its total. Back restores the category summary. Detail rows contain amount, comment,
-and date; they do not show category shares or deltas.
+Spending appears above its total. Debt appears beside it and sums all signed,
+flagged amounts in the selected month. Initially Spending includes all categories
+and the checkbox column is hidden.
 
-All spending summary rows start selected. The `Spending` figure sums checked
-rows. Shares always use the whole spending total, independent of checkbox selection.
-In detail mode the total sums all rows of that category.
+A short tap on a row opens the category. A stationary half-second press shows the
+checkboxes with every category checked. A vertical scroll leaves the summary open.
+Keyboard users enter selection with the **Select categories** button. Focus moves to the
+header checkbox. Each category has its own details button and, in selection mode, a checkbox.
+
+The page keeps the unchecked category names and passes the checked rows to the table.
+The table reports each checkbox action to the page. Spending sums checked categories.
+A partial selection gives the header checkbox an
+indeterminate state. Activating it selects all categories. Clearing a fully checked
+header sets Spending to zero. Shares and Debt always use the full month.
+
+Details use the shared expenses table. It lists the category's current entries, newest
+first, with date, amount, and comment. The detail total includes every entry in that
+category. A previous-only category has an empty detail view and a zero total.
+Back restores the checked categories and the subtotal. Reloading the same sheet and
+month preserves the selection by category name. New categories start checked.
 
 # Animation
 
 The page keeps the straight and reverse View Transitions animations for drill-down and
-back. A new emission unsubscribes from the previous table-update observable; its View Transition
-callback can still run, but the closed subscriber does not emit obsolete rows. `summaryTable` is an
-optional view query because selection can run before the view exists. The month selector
-is read after view init.
+Back. The page renders the new view inside the transition callback. Later navigation or
+a context change invalidates a pending callback. Browsers without View Transitions
+switch views immediately.
 
 [^statshtml]: Statistics template
 [^stats]: StatisticsContainer

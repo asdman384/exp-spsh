@@ -5,4 +5,6 @@
 
 - [2026-11-05-queued-expenses-offline] Show Queued Expenses With Offline Discard — Show pending and failed expenses in the Dashboard list and totals; allow offline discard.
 
+- [2026-11-22-month-summary-readability] Improve Month Summary Readability — Emphasize category amounts and spending totals, label monthly comparisons, and review category selection on mobile.
+
 

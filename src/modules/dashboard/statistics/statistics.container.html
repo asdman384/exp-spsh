@@ -34,31 +34,48 @@
   </mat-tab-group>
 </div>
 
-@if (data.state().status === 'ready') {
-  <div class="statistics-summary">
-    <div class="button-container">
-      @if (selectedCategory) {
-        <button mat-icon-button aria-label="Back to categories" (click)="unCategory()"><mat-icon>undo</mat-icon></button>
-      }
+<div class="statistics-summary">
+  @if (selectedCategory(); as category) {
+    <button #backButton mat-icon-button aria-label="Back to categories" (click)="showCategory(undefined, $event.detail === 0)">
+      <mat-icon>undo</mat-icon>
+    </button>
+    <h2>{{ category }}</h2>
+    <span>{{ detailTotal() | number: '1.0-2' : 'pl' }}</span>
+  } @else {
+    <div class="spending-total">
+      <span>Spending</span>
+      <strong>{{ summaryTotal() | number: '1.0-2' : 'pl' }}</strong>
     </div>
-    <div style="font-weight: 500">{{ selectedCategory ?? 'Spending ·' }}</div>
-    <div style="font-weight: 500">{{ total | number: '1.0-2' : 'pl' }}</div>
-    @if (!selectedCategory) {
-      <div style="flex: 1"></div>
-      <div style="font-weight: 500; margin: 0 46px 0 0">Debt · {{ debtTotal() | number: '1.0-2' : 'pl' }}</div>
+    <div class="debt-total">
+      <span>Debt</span>
+      <span>{{ debtTotal() | number: '1.0-2' : 'pl' }}</span>
+    </div>
+  }
+</div>
+
+<div #summaryTable class="statistics-table">
+  @if (selectedCategory() !== undefined) {
+    <expenses-table [dataSource]="detailRows()"></expenses-table>
+  } @else {
+    @if (unchecked() === null && summaryRows().length) {
+      <button class="selection-entry" type="button" (click)="enterSelection()">Select categories</button>
     }
-  </div>
-}
-@if ((expenses$ | async) || []; as expenses) {
-  <expenses-table
-    #summaryTable
-    [selected]="expenses"
-    [selectable]="selectable"
-    [dataSource]="expenses"
-    (cellClick)="expensesTableCellClickHandler($event)"
-    (selectionChange)="onSelection($event)"
-  ></expenses-table>
-  @if (data.state().status === 'ready' && expenses.length === 0) {
+    <expenses-table
+      #categoryTable
+      [dataSource]="summaryRows()"
+      [summaryMonthLabel]="monthTabs[(currentMonthIndex + 11) % 12]"
+      [selectable]="unchecked() !== null"
+      [selected]="checkedRows()"
+      (summarySelectionToggle)="toggleSelection($event)"
+      (pointerdown)="startPress($event)"
+      (pointermove)="movePress($event)"
+      (pointerup)="finishPress($event)"
+      (pointercancel)="cancelPress($event)"
+      (lostpointercapture)="cancelPress($event)"
+      (contextmenu)="handleContextMenu($event)"
+    ></expenses-table>
+  }
+  @if (data.state().status === 'ready' && (selectedCategory() === undefined ? summaryRows() : detailRows()).length === 0) {
     <p class="statistics-note">No entries for this view.</p>
   }
-}
+</div>

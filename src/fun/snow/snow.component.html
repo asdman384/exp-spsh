@@ -6,7 +6,7 @@
         'material-icons-outlined': ocasion === 'snow',
       }"
     >
-      {{ i ? this[ocasion] : this[ocasion + 'Alter'] }}
+      {{ i ? icons[ocasion].regular : icons[ocasion].alternate }}
     </div>
   }
 }

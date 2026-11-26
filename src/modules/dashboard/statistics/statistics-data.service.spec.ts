@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideMockStore } from '@ngrx/store/testing';
-import { BehaviorSubject, Subject } from 'rxjs';
+import { BehaviorSubject, Subject, of } from 'rxjs';
 import { NetworkStatusService, SpreadsheetService } from 'src/services';
 import { Expense } from 'src/shared/models';
 import { Store } from '@ngrx/store';
@@ -8,6 +8,31 @@ import { StatisticsDataService } from './statistics-data.service';
 
 describe('StatisticsDataService', () => {
   afterEach(() => vi.unstubAllGlobals());
+
+  it('includes a saved November 25 expense when the local date is November 22', () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      vi.setSystemTime(new Date(2026, 10, 22, 12));
+      const october = { category: 'Food', date: new Date(2026, 9, 31), amount: 10 };
+      const november = { category: 'Food', date: new Date(2026, 10, 25), amount: 25 };
+      const loadExpenses = vi.fn(() => of([october, november]));
+      TestBed.configureTestingModule({
+        providers: [
+          StatisticsDataService,
+          provideMockStore(),
+          { provide: SpreadsheetService, useValue: { loadExpenses } },
+          { provide: NetworkStatusService, useValue: { online$: of(true) } },
+        ],
+      });
+      const service = TestBed.inject(StatisticsDataService);
+      const today = new Date();
+      service.load(1, today.getFullYear(), today.getMonth());
+      expect(loadExpenses).toHaveBeenCalledWith({ sheetId: 1, from: new Date(2026, 9, 1), to: new Date(2026, 11, 1) });
+      expect(service.state()).toEqual({ status: 'ready', current: [november], previous: [october] });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 
   it('clears failed data, reports the failure, and reloads after reconnect', () => {
     vi.stubGlobal('log', vi.fn());

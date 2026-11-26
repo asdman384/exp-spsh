@@ -1,10 +1,18 @@
-import { Expense, ExpenseTableRow } from 'src/shared/models';
+import { Expense } from 'src/shared/models';
+
+interface CategorySummary {
+  category: string;
+  amount: number;
+  share: number;
+  delta: number;
+  previousOnly: boolean;
+}
 
 export function summarizeMonth(
   current: readonly Expense[],
   previous: readonly Expense[],
 ): {
-  spending: ExpenseTableRow[];
+  spending: CategorySummary[];
 } {
   const spending = compareCategories(current, previous);
   const total = spending.reduce((sum, row) => sum + row.amount, 0);
@@ -34,6 +42,7 @@ function compareCategories(current: readonly Expense[], previous: readonly Expen
       category,
       amount: now.get(category) ?? 0,
       delta: (now.get(category) ?? 0) - (before.get(category) ?? 0),
+      previousOnly: !now.has(category),
     }))
     .sort((a, b) => b.amount - a.amount || a.category.localeCompare(b.category));
 }

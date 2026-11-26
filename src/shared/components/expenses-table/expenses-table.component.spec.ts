@@ -150,6 +150,89 @@ describe('ExpensesTableComponent', () => {
     });
   });
 
+  describe('month summary', () => {
+    const rows = [
+      { category: 'Food', amount: 460.1, share: 13.29, delta: -566.1, previousOnly: false },
+      { category: 'TOTAL', amount: 267, share: 7.7, delta: 267, previousOnly: false },
+      { category: 'Health', amount: 0, share: 0, delta: -56, previousOnly: true },
+      { category: 'Zero', amount: 0, share: 0, delta: -0.001, previousOnly: false },
+    ];
+    let table: HTMLTableElement;
+
+    function checkbox(name: string): HTMLInputElement {
+      return table.querySelector<HTMLInputElement>(`input[aria-label="Select ${name}"]`)!;
+    }
+
+    beforeEach(() => {
+      fixture.componentRef.setInput('summaryMonthLabel', 'Oct');
+      fixture.componentRef.setInput('dataSource', rows);
+      fixture.detectChanges();
+      table = fixture.nativeElement.querySelector('table.category-summary');
+    });
+
+    it('renders separate amount, share and change cells and mutes only previous-month categories', () => {
+      expect(renderedHeaderColumns(fixture)).toEqual(['category', 'amount', 'share', 'delta']);
+      expect(Array.from(table.querySelectorAll('th'), cell => cell.textContent.trim())).toEqual(['Category', 'Amount', 'Share', 'vs Oct']);
+      const bodyRows = Array.from(table.querySelectorAll<HTMLTableRowElement>('tr[data-category]'));
+      expect(bodyRows.map(row => Array.from(row.cells, cell => cell.textContent.trim()))).toEqual([
+        ['Food', '460,1', '13,3%', '−566,1'],
+        ['TOTAL', '267', '7,7%', '+267'],
+        ['Health', '0', '0%', '−56'],
+        ['Zero', '0', '0%', '0'],
+      ]);
+      expect(bodyRows.filter(row => row.classList.contains('previous-only')).map(row => row.dataset['category'])).toEqual(['Health']);
+    });
+
+    it('emits synchronous user intents for a category named TOTAL and the header', () => {
+      fixture.componentRef.setInput('selectable', true);
+      fixture.componentRef.setInput('selected', rows);
+      fixture.detectChanges();
+      expect(renderedHeaderColumns(fixture)).toEqual(['select', 'category', 'amount', 'share', 'delta']);
+      const toggle = vi.fn();
+      component.summarySelectionToggle.subscribe(toggle);
+      component.focusSelectionHeader();
+      expect(document.activeElement).toBe(checkbox('all categories'));
+      expect(checkbox('TOTAL').checked).toBe(true);
+      checkbox('TOTAL').click();
+      expect(toggle.mock.calls).toEqual([['TOTAL']]);
+      checkbox('all categories').click();
+      expect(toggle.mock.calls).toEqual([['TOTAL'], [null]]);
+    });
+
+    it('updates checkboxes for fresh rows and tracks the same category element without emitting a user intent', () => {
+      const toggle = vi.fn();
+      component.summarySelectionToggle.subscribe(toggle);
+      fixture.componentRef.setInput('selectable', true);
+      fixture.componentRef.setInput('selected', rows);
+      fixture.detectChanges();
+      const header = checkbox('all categories');
+      expect(header.checked).toBe(true);
+      expect(header.indeterminate).toBe(false);
+      const food = checkbox('Food');
+      const refreshed = rows.map(row => ({ ...row })).reverse();
+      fixture.componentRef.setInput('dataSource', refreshed);
+      fixture.componentRef.setInput(
+        'selected',
+        refreshed.filter(row => row.category !== 'Food'),
+      );
+      fixture.detectChanges();
+      expect(checkbox('Food')).toBe(food);
+      expect(food.checked).toBe(false);
+      expect(checkbox('TOTAL').checked).toBe(true);
+      expect(header.checked).toBe(false);
+      expect(header.indeterminate).toBe(true);
+      fixture.componentRef.setInput('selected', []);
+      fixture.detectChanges();
+      expect(header.checked).toBe(false);
+      expect(header.indeterminate).toBe(false);
+      expect(header.disabled).toBe(false);
+      fixture.componentRef.setInput('dataSource', []);
+      fixture.detectChanges();
+      expect(header.disabled).toBe(true);
+      expect(toggle).not.toHaveBeenCalled();
+    });
+  });
+
   // [AC7 / draggable input]
   describe('draggable input', () => {
     it('should_disable_drag_by_default', () => {

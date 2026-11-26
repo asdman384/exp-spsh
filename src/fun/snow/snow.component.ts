@@ -12,17 +12,15 @@ import { Component } from '@angular/core';
   },
 })
 export class SnowComponent {
-  [key: string]: any;
   protected isFeb14 = new Date().getMonth() === 1 && new Date().getDate() === 14;
   protected enabled = [0, 1, 11].includes(new Date().getMonth());
 
   ocasion: 'heart' | 'snow' = this.isFeb14 ? 'heart' : 'snow';
 
-  snow = 'snowflake';
-  snowAlter = 'mode_cool';
-
-  heart = 'favorite';
-  heartAlter = 'favorite_border';
+  protected readonly icons = {
+    snow: { regular: 'snowflake', alternate: 'mode_cool' },
+    heart: { regular: 'favorite', alternate: 'favorite_border' },
+  };
 
   // in accordance with scss `$total` variable
   protected numbers = Array(50)

@@ -3,7 +3,6 @@ import { MatTabGroup } from '@angular/material/tabs';
 import { By } from '@angular/platform-browser';
 
 import { StatisticsContainer } from './statistics.container';
-import { FormsModule } from '@angular/forms';
 import { Store, StoreModule } from '@ngrx/store';
 import { AppActions } from 'src/@state';
 import { metaReducers, reducers } from 'src/@state/app.reducers';
@@ -19,12 +18,25 @@ function flushMacrotasks(): Promise<void> {
 }
 
 const TEST_SHEET: Sheet = { id: 1, title: 'sheet_2024' };
+const SECOND_SHEET: Sheet = { id: 2, title: 'sheet_2025' };
+const CURRENT: Expense[] = [
+  { category: 'Ресторан', amount: 218.43, comment: 'Lunch', date: new Date(2026, 10, 2) },
+  { category: 'Ресторан', amount: 241.67, isInDebt: true, comment: 'Loan', date: new Date(2026, 10, 3) },
+  { category: 'Господарські товари', amount: 2735.53 },
+  { category: 'TOTAL', amount: 267 },
+  { category: 'Zero', amount: 0 },
+];
+const PREVIOUS: Expense[] = [
+  { category: 'Ресторан', amount: 1026.2 },
+  { category: 'Медикаменти', amount: 56 },
+];
 
 describe('StatisticsContainer', () => {
   let component: StatisticsContainer;
   let fixture: ComponentFixture<StatisticsContainer>;
+  let root: HTMLElement;
   let viewTransitionSpy: ReturnType<typeof vi.spyOn>;
-  const monthState = signal<{ status: 'ready'; current: Expense[]; previous: Expense[] }>({
+  const monthState = signal<{ status: 'loading' | 'ready' | 'error'; current: Expense[]; previous: Expense[] }>({
     status: 'ready',
     current: [],
     previous: [],
@@ -33,7 +45,7 @@ describe('StatisticsContainer', () => {
   beforeEach(async () => {
     monthState.set({ status: 'ready', current: [], previous: [] });
     await TestBed.configureTestingModule({
-      imports: [FormsModule, StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })],
+      imports: [StatisticsContainer, StoreModule.forRoot(reducers, { metaReducers })],
     })
       .overrideComponent(StatisticsContainer, {
         set: {
@@ -50,20 +62,12 @@ describe('StatisticsContainer', () => {
       })
       .compileComponents();
 
-    // The container's constructor synchronously reads `sheetsSelector`/`currentSheetSelector` and
-    // indexes into `sheets` (`formChanged`, `statistics.container.ts:64,83`); an empty/unselected
-    // store throws there. Seed a valid current sheet before any `StatisticsContainer` is created
-    // (including the extra instances the tests below construct directly) so that path is
-    // deterministic and independent of whatever the real browser's localStorage happens to hold.
     const store = TestBed.inject(Store);
     store.dispatch(AppActions.upsertDataSheet({ dataSheet: TEST_SHEET }));
+    store.dispatch(AppActions.upsertDataSheet({ dataSheet: SECOND_SHEET }));
     store.dispatch(AppActions.setCurrentSheet({ sheet: TEST_SHEET }));
 
-    // `expenses$` (`statistics.container.ts:40-43`) calls `document.startViewTransition` on every
-    // change detection. The real View Transitions API allows only one active transition per
-    // document; the tests below that construct a second `StatisticsContainer` in the same test
-    // would otherwise make the browser abort the first transition, surfacing as an unhandled
-    // `AbortError` unrelated to anything under test here. Replace it with a synchronous stand-in.
+    // Run the view update synchronously so tests can inspect both branches.
     viewTransitionSpy = vi.spyOn(document, 'startViewTransition').mockImplementation(callbackOptions => {
       if (typeof callbackOptions === 'function') {
         callbackOptions();
@@ -80,6 +84,7 @@ describe('StatisticsContainer', () => {
 
     fixture = TestBed.createComponent(StatisticsContainer);
     component = fixture.componentInstance;
+    root = fixture.nativeElement;
     fixture.detectChanges();
   });
 
@@ -91,44 +96,322 @@ describe('StatisticsContainer', () => {
     expect(component).toBeTruthy();
   });
 
-  it('shows shares and deltas, and includes debt rows in category statistics', async () => {
-    monthState.set({
-      status: 'ready',
-      current: [
-        { category: 'Food', amount: 70, comment: 'Spending', date: new Date(2026, 0, 2) },
-        { category: 'Travel', amount: 30 },
-        { category: 'Food', amount: 200, isInDebt: true, comment: 'Loan', date: new Date(2026, 0, 3) },
-      ],
-      previous: [{ category: 'Food', amount: 50 }],
+  function showMonth(current: Expense[] = CURRENT, previous: Expense[] = PREVIOUS): void {
+    monthState.set({ status: 'ready', current, previous });
+    fixture.detectChanges();
+  }
+
+  function element<T extends HTMLElement>(selector: string): T {
+    const found = root.querySelector<T>(selector);
+    if (!found) throw new Error(`Missing element: ${selector}`);
+    return found;
+  }
+
+  function row(name: string): HTMLTableRowElement {
+    return element(`tr[data-category="${name}"]`);
+  }
+
+  function checkbox(name: string): HTMLInputElement {
+    return element(`.mat-column-select mat-checkbox input[aria-label="Select ${name}"]`);
+  }
+
+  function total(selector: string): string {
+    return element(selector).textContent.trim();
+  }
+
+  function click(target: HTMLElement): void {
+    target.click();
+    fixture.detectChanges();
+  }
+
+  function selectTab(group: number, index: number): void {
+    const tabGroup: MatTabGroup = fixture.debugElement.queryAll(By.directive(MatTabGroup))[group].componentInstance;
+    tabGroup.selectedIndexChange.emit(index);
+    fixture.detectChanges();
+  }
+
+  function enterSelection(): void {
+    click(element<HTMLButtonElement>('button.selection-entry'));
+  }
+
+  it('renders separate numeric columns, readable signs, and the previous English tab label', () => {
+    const englishTabs = Array.from({ length: 12 }, (_, month) => new Date(2026, month).toLocaleString('en', { month: 'short' }));
+    component['monthTabs'].splice(0, 12, ...englishTabs);
+    selectTab(2, 10);
+    showMonth();
+    const headings = () => Array.from(root.querySelectorAll('expenses-table .category-summary th'), cell => cell.textContent.trim());
+    expect(headings()).toEqual(['Category', 'Amount', 'Share', 'vs Oct']);
+    const cells = (name: string) => Array.from(row(name).cells, cell => cell.textContent.trim());
+    expect(cells('Ресторан')).toEqual(['Ресторан', '460,1', '13,3%', '−566,1']);
+    expect(cells('Медикаменти')).toEqual(['Медикаменти', '0', '0%', '−56']);
+    expect(row('Медикаменти').classList.contains('previous-only')).toBe(true);
+    expect(row('Zero').classList.contains('previous-only')).toBe(false);
+    expect(cells('TOTAL')[3]).toBe('+267');
+    expect(cells('Zero')[3]).toBe('0');
+    expect(root.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(total('.spending-total > span')).toBe('Spending');
+    expect(total('.spending-total strong')).toBe('3\u00a0462,63');
+    expect(total('.debt-total > span:first-child')).toBe('Debt');
+    expect(total('.debt-total > span:last-child')).toBe('241,67');
+    selectTab(2, 0);
+    expect(headings()[3]).toBe('vs Dec');
+  });
+
+  it('keeps shares and debt constant as the keyboard user selects none, one, and all categories', () => {
+    showMonth();
+    enterSelection();
+    const header = checkbox('all categories');
+    expect(document.activeElement).toBe(header);
+    expect(header.checked).toBe(true);
+    expect(header.indeterminate).toBe(false);
+    const assertTotals = (spending: string) => {
+      expect(total('.spending-total strong')).toBe(spending);
+      expect(total('.debt-total > span:last-child')).toBe('241,67');
+      expect(row('Ресторан').querySelector('.mat-column-share')?.textContent.trim()).toBe('13,3%');
+    };
+
+    click(header);
+    assertTotals('0');
+    expect(checkbox('TOTAL').checked).toBe(false);
+    expect(header.indeterminate).toBe(false);
+    click(checkbox('TOTAL'));
+    assertTotals('267');
+    expect(header.checked).toBe(false);
+    expect(header.indeterminate).toBe(true);
+    click(header);
+    assertTotals('3\u00a0462,63');
+    expect(header.checked).toBe(true);
+    expect(header.indeterminate).toBe(false);
+    expect(Array.from(root.querySelectorAll<HTMLInputElement>('td.mat-column-select input'), input => input.checked)).toEqual(
+      Array(5).fill(true),
+    );
+  });
+
+  it('retains a partial selection through details and Back, and counts all category expenses in date order', () => {
+    showMonth();
+    enterSelection();
+    click(checkbox('Ресторан'));
+    expect(total('.spending-total strong')).toBe('3\u00a0002,53');
+    click(row('Ресторан').querySelector('.mat-column-category button')!);
+    expect(viewTransitionSpy).toHaveBeenCalledTimes(1);
+    expect(element('.statistics-table').classList.contains('summary-table-straight')).toBe(true);
+    expect(total('.statistics-summary h2')).toBe('Ресторан');
+    expect(total('.statistics-summary > span')).toBe('460,1');
+    expect(Array.from(root.querySelectorAll('expenses-table td.mat-column-comment'), cell => cell.textContent.trim())).toEqual([
+      'Loan',
+      'Lunch',
+    ]);
+    expect(root.querySelector('expenses-table input')).toBeNull();
+    const back = element<HTMLButtonElement>('[aria-label="Back to categories"]');
+    expect(document.activeElement).toBe(back);
+    click(back);
+    expect(element('.statistics-table').classList.contains('summary-table-reverse')).toBe(true);
+    expect(document.activeElement).toBe(row('Ресторан').querySelector('.mat-column-category button'));
+    expect(checkbox('Ресторан').checked).toBe(false);
+    expect(total('.spending-total strong')).toBe('3\u00a0002,53');
+    expect(total('.debt-total > span:last-child')).toBe('241,67');
+    click(row('Медикаменти').querySelector('button')!);
+    expect(total('.statistics-summary > span')).toBe('0');
+    expect(total('.statistics-note')).toBe('No entries for this view.');
+    click(element('[aria-label="Back to categories"]'));
+    expect(document.activeElement).toBe(row('Медикаменти').querySelector('button'));
+    expect(checkbox('Ресторан').checked).toBe(false);
+  });
+
+  it('keeps unchecked names on a same-month reload and selects new categories', () => {
+    selectTab(2, 10);
+    showMonth();
+    enterSelection();
+    click(checkbox('Ресторан'));
+    selectTab(2, 10);
+    monthState.set({ status: 'loading', current: [], previous: [] });
+    fixture.detectChanges();
+    expect(root.querySelector('.statistics-summary')).toBeNull();
+    expect(root.querySelector('.statistics-note')).toBeNull();
+    showMonth([...CURRENT.map(expense => ({ ...expense })), { category: 'New', amount: 2 }]);
+    expect(checkbox('Ресторан').checked).toBe(false);
+    expect(checkbox('New').checked).toBe(true);
+    expect(total('.spending-total strong')).toBe('3\u00a0004,53');
+  });
+
+  it.each(['sheet', 'month', 'year'])('resets a partial selection on a %s change', context => {
+    selectTab(2, 10);
+    showMonth();
+    enterSelection();
+    click(checkbox('Ресторан'));
+    if (context === 'sheet')
+      selectTab(
+        0,
+        component['sheets'].findIndex(sheet => sheet.id === SECOND_SHEET.id),
+      );
+    if (context === 'month') selectTab(2, 9);
+    if (context === 'year') selectTab(1, 1);
+    expect(root.querySelector('input[type="checkbox"]')).toBeNull();
+    expect(total('.spending-total strong')).toBe('3\u00a0462,63');
+  });
+
+  it('shows zero spending and the empty message only for ready data', () => {
+    showMonth();
+    enterSelection();
+    showMonth([], []);
+    expect(total('.spending-total strong')).toBe('0');
+    expect(checkbox('all categories').disabled).toBe(true);
+    expect(total('.statistics-note')).toBe('No entries for this view.');
+    monthState.set({ status: 'error', current: [], previous: [] });
+    fixture.detectChanges();
+    expect(root.querySelector('.statistics-summary')).toBeNull();
+    expect(root.querySelector('.statistics-note')).toBeNull();
+  });
+
+  it('discards a pending detail transition after a month change', () => {
+    selectTab(2, 10);
+    showMonth();
+    let update: ViewTransitionUpdateCallback | undefined;
+    vi.mocked(document.startViewTransition).mockImplementationOnce(options => {
+      if (typeof options === 'function') update = options;
+      const done = Promise.resolve();
+      return { ready: done, finished: done, updateCallbackDone: done, skipTransition: () => undefined, types: new Set() };
     });
-    fixture.detectChanges();
-    await fixture.whenStable();
-    const root: HTMLElement = fixture.nativeElement;
-    const tables = root.querySelectorAll('expenses-table');
-    expect(Array.from(tables[0].querySelectorAll('.share'), share => share.textContent?.trim())).toEqual(['90%', '10%']);
-    expect(tables[0].textContent).toContain('+220');
-    expect(root.querySelector('.statistics-summary')?.textContent).toContain('Spending ·');
-    expect(root.textContent).toContain('Debt · 200');
-    (tables[0].querySelector('td.mat-column-category') as HTMLElement).click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(root.textContent).toContain('Spending');
-    expect(root.textContent).toContain('Loan');
-    await flushMacrotasks();
-    fixture.detectChanges();
-    expect(root.querySelector('.statistics-summary')?.textContent).toContain('270');
-    (root.querySelector('[aria-label="Back to categories"]') as HTMLButtonElement).click();
-    fixture.detectChanges();
-    await fixture.whenStable();
-    expect(root.querySelectorAll('expenses-table')).toHaveLength(1);
-    expect(root.querySelector('.statistics-summary')?.textContent).toContain('Debt · 200');
+    click(row('Ресторан').querySelector('button')!);
+    selectTab(2, 9);
+    expect(update).toBeTypeOf('function');
+    update!();
+    expect(root.querySelector('[aria-label="Back to categories"]')).toBeNull();
+    expect(element('expenses-table .category-summary')).toBeTruthy();
+    expect(total('.spending-total strong')).toBe('3\u00a0462,63');
+  });
+
+  describe('row pointer gestures', () => {
+    function pointer(target: Element, type: string, clientY = 0): void {
+      target.dispatchEvent(
+        new PointerEvent(type, { bubbles: true, pointerId: 4, isPrimary: true, button: 0, pointerType: 'touch', clientY }),
+      );
+    }
+
+    function releaseClick(target: Element): boolean {
+      const accepted = target.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, detail: 1 }));
+      fixture.detectChanges();
+      return accepted;
+    }
+
+    beforeEach(() => {
+      showMonth();
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+      vi.spyOn(Element.prototype, 'setPointerCapture').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+      vi.mocked(Element.prototype.setPointerCapture).mockRestore();
+      vi.useRealTimers();
+    });
+
+    it.each(['category', 'amount', 'share', 'delta'])('opens details once on a short tap in the %s column', column => {
+      const cell = row('Ресторан').querySelector(`.mat-column-${column}`)!;
+      pointer(cell, 'pointerdown');
+      vi.advanceTimersByTime(499);
+      pointer(cell, 'pointerup');
+      releaseClick(cell);
+      expect(viewTransitionSpy).toHaveBeenCalledTimes(1);
+      expect(total('.statistics-summary h2')).toBe('Ресторан');
+    });
+
+    it.each(['Ресторан', 'Медикаменти'])('selects every row on a stationary hold over %s and consumes the release click', category => {
+      const pressed = row(category);
+      pointer(pressed, 'pointerdown');
+      vi.advanceTimersByTime(500);
+      fixture.detectChanges();
+      pointer(element('expenses-table'), 'pointerup');
+      expect(releaseClick(checkbox(category))).toBe(false);
+      expect(checkbox(category).checked).toBe(true);
+      expect(checkbox('all categories').checked).toBe(true);
+      const next = row('Ресторан');
+      pointer(next, 'pointerdown');
+      pointer(next, 'pointerup');
+      releaseClick(next);
+      expect(total('.statistics-summary h2')).toBe('Ресторан');
+    });
+
+    it('preserves unchecked rows on another hold', () => {
+      enterSelection();
+      click(checkbox('TOTAL'));
+      const pressed = row('TOTAL');
+      pointer(pressed, 'pointerdown');
+      vi.advanceTimersByTime(500);
+      pointer(pressed, 'pointerup');
+      expect(releaseClick(pressed)).toBe(false);
+      expect(checkbox('TOTAL').checked).toBe(false);
+    });
+
+    it.each(['label', 'cell'])('excludes a hold on the checkbox %s from row gestures', part => {
+      enterSelection();
+      const cell = row('TOTAL').querySelector<HTMLElement>('.mat-column-select')!;
+      const target = part === 'label' ? cell.querySelector('label')! : cell;
+      pointer(target, 'pointerdown');
+      vi.advanceTimersByTime(500);
+      expect(target.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }))).toBe(true);
+      pointer(target, 'pointerup');
+      expect(releaseClick(target)).toBe(true);
+      expect(checkbox('TOTAL').checked).toBe(part === 'cell');
+      expect(viewTransitionSpy).not.toHaveBeenCalled();
+    });
+
+    it('keeps a hold active through a same-context refresh of the row objects', () => {
+      const pressed = row('Ресторан');
+      pointer(pressed, 'pointerdown');
+      vi.advanceTimersByTime(250);
+      showMonth(CURRENT.map(expense => ({ ...expense })));
+      expect(row('Ресторан')).toBe(pressed);
+      vi.advanceTimersByTime(250);
+      fixture.detectChanges();
+      pointer(element('expenses-table'), 'pointerup');
+      expect(releaseClick(row('Ресторан'))).toBe(false);
+      expect(checkbox('all categories').checked).toBe(true);
+    });
+
+    it('keeps a stationary touch active when the native context menu arrives before the hold timer', () => {
+      const pressed = row('Ресторан');
+      const menu = () => pressed.dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true }));
+      expect(menu()).toBe(true);
+      pointer(pressed, 'pointerdown');
+      vi.advanceTimersByTime(490);
+      expect(menu()).toBe(false);
+      expect(root.querySelector('input[type="checkbox"]')).toBeNull();
+      vi.advanceTimersByTime(10);
+      fixture.detectChanges();
+      pointer(element('expenses-table'), 'pointerup');
+      expect(releaseClick(row('Ресторан'))).toBe(false);
+      expect(checkbox('all categories').checked).toBe(true);
+    });
+
+    it.each(['pointermove', 'pointercancel', 'lostpointercapture'])('cancels the hold and tap on %s', type => {
+      const pressed = row('Ресторан');
+      pointer(pressed, 'pointerdown');
+      pointer(pressed, type, 12);
+      vi.advanceTimersByTime(600);
+      pointer(pressed, 'pointerup', 12);
+      expect(releaseClick(pressed)).toBe(false);
+      expect(root.querySelector('input[type="checkbox"]')).toBeNull();
+      expect(root.querySelector('[aria-label="Back to categories"]')).toBeNull();
+      expect(row('Ресторан')).toBeTruthy();
+    });
+
+    it('cancels a pending hold when the month changes', () => {
+      selectTab(2, 10);
+      pointer(row('Ресторан'), 'pointerdown');
+      selectTab(2, 9);
+      vi.advanceTimersByTime(600);
+      fixture.detectChanges();
+      expect(root.querySelector('input[type="checkbox"]')).toBeNull();
+      expect(root.querySelector('[aria-label="Back to categories"]')).toBeNull();
+      expect(row('Ресторан')).toBeTruthy();
+    });
   });
 
   // [AC15] `tableAnimation()` still adds/removes the right CSS classes on the summary table
   // element for each direction, reading the migrated optional `summaryTable` viewChild.
   describe('tableAnimation() class toggling', () => {
     function summaryTableClasses(): DOMTokenList {
-      return (fixture.debugElement.query(By.css('expenses-table')).nativeElement as HTMLElement).classList;
+      return (fixture.debugElement.query(By.css('.statistics-table')).nativeElement as HTMLElement).classList;
     }
 
     it('should_add_summary_table_straight_class_and_remove_reverse_when_direction_is_straight', () => {

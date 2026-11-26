@@ -2,9 +2,9 @@ import '@angular/common/locales/global/pl';
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, effect, input, output, signal } from '@angular/core';
+import { Component, computed, effect, input, output, signal, viewChild } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCheckbox, MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -13,6 +13,7 @@ import { DATE_FORMAT, DATE_TIME_FORMAT } from 'src/constants';
 import { Expense, ExpenseTableRow } from 'src/shared/models';
 
 const DEFAULT_COLS: Array<keyof Expense> = ['date', 'category', 'amount', 'comment', 'isInDebt'];
+const SUMMARY_COLS = ['category', 'amount', 'share', 'delta'] as const;
 const DELETE_THRESHOLD = 100;
 
 @Component({
@@ -25,6 +26,7 @@ export class ExpensesTableComponent {
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected readonly selection = new SelectionModel<Expense>(true, []);
+  private readonly selectionHeader = viewChild<MatCheckbox>('selectionHeader');
 
   protected readonly dragPlaceholderY = signal(0);
   protected readonly dragging = signal(false);
@@ -36,9 +38,12 @@ export class ExpensesTableComponent {
   readonly draggable = input(false);
   readonly selectable = input(false);
   readonly selected = input<ReadonlyArray<Expense>>([]);
+  readonly summaryMonthLabel = input<string>();
+  protected readonly summaryMode = computed(() => this.summaryMonthLabel() !== undefined);
 
   readonly deleteRow = output<ExpenseTableRow>();
   readonly cellClick = output<{ field: keyof Expense; cellData: unknown; rowData: Expense }>();
+  readonly summarySelectionToggle = output<string | null>();
   readonly selectionChange = outputFromObservable<ReadonlyArray<Expense>>(
     this.selection.changed.pipe(
       map(() => this.selection.selected),
@@ -46,15 +51,14 @@ export class ExpensesTableComponent {
     ),
   );
 
-  protected readonly columns = computed<Array<keyof Expense | 'select'>>(() => {
-    const exps = this.dataSource();
-    const cols: Array<keyof Expense | 'select'> = [];
-    if (this.selectable()) {
-      cols.push('select');
-    }
-    cols.push(...DEFAULT_COLS.filter(field => this.hasData(exps, field) && !this.isColHidden(field)));
-    return cols;
+  protected readonly columns = computed(() => {
+    const cols = this.summaryMode()
+      ? SUMMARY_COLS
+      : DEFAULT_COLS.filter(field => this.hasData(this.dataSource(), field) && !this.isColHidden(field));
+    return this.selectable() ? ['select', ...cols] : cols;
   });
+
+  protected readonly trackRow = (_index: number, row: ExpenseTableRow) => (this.summaryMode() ? row.category : row);
 
   constructor() {
     effect(() => {
@@ -73,7 +77,7 @@ export class ExpensesTableComponent {
   }
 
   protected cellClickHandler(field: keyof Expense, cellData: unknown, rowData: Expense): void {
-    this.cellClick.emit({ field, cellData, rowData });
+    if (!this.summaryMode()) this.cellClick.emit({ field, cellData, rowData });
   }
 
   protected cdkDragMoved(event: CdkDragMove<ExpenseTableRow>): void {
@@ -99,7 +103,9 @@ export class ExpensesTableComponent {
   }
 
   protected toggleAllRows(): void {
-    if (this.isAllSelected()) {
+    if (this.summaryMode()) {
+      this.summarySelectionToggle.emit(null);
+    } else if (this.isAllSelected()) {
       this.selection.clear();
     } else {
       this.selection.select(...this.dataSource());
@@ -107,7 +113,15 @@ export class ExpensesTableComponent {
   }
 
   protected toggleRow(row: Expense): void {
-    this.selection.toggle(row);
+    if (this.summaryMode()) {
+      if (row.category !== undefined) this.summarySelectionToggle.emit(row.category);
+    } else {
+      this.selection.toggle(row);
+    }
+  }
+
+  focusSelectionHeader(): void {
+    this.selectionHeader()?.focus();
   }
 
   protected isAllSelected(): boolean {

@@ -17,15 +17,14 @@ sources:
     title: Table template
 ---
 
-`<expenses-table>` is the one shared feature component, used by the dashboard and
-statistics. It imports `DatePipe`, `DecimalPipe`, `DragDropModule`, and Material checkbox, icon, table, and
+`<expenses-table>` displays Dashboard expenses, the Statistics month summary,
+and the entries for one category. The shared table
+imports `DatePipe`, `DecimalPipe`, `DragDropModule`, and Material checkbox, icon, table, and
 tooltip modules directly.[^comp]
 
-`ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`, `share`, and `delta`.
-Share and delta render beside the amount only when supplied. They are display metadata,
-not spreadsheet fields. Plain expenses and
-Statistics aggregate rows remain valid inputs. Column keys come from `Expense`; the metadata
-is not a column. Drag data and the delete output retain the original row and its metadata.[^comp]
+`ExpenseTableRow` extends `Expense` with optional numeric `enqueuedAt`, `share`, and `delta`
+and an optional boolean `previousOnly`. Plain expenses are valid inputs. Drag data and the
+delete output retain the original row and its display metadata.[^comp]
 
 # Inputs
 
@@ -37,36 +36,45 @@ All are `input()` signals; none is required.
 | `showDateCol` | `boolean` | `true` | `false` hides the date column (dashboard) |
 | `draggable` | `boolean` | `false` | enables swipe-to-delete |
 | `selectable` | `boolean` | `false` | adds the checkbox column |
+| `summaryMonthLabel` | `string` | omitted | supplies the comparison month label and enables summary columns |
 | `selected` | `ReadonlyArray<Expense>` | `[]` | rows to pre-select; an `effect()` clears the `SelectionModel` and re-selects on change |
 
 # Outputs
 
-| Output | Payload | Used by |
+| Output | Payload | Behavior |
 |---|---|---|
 | `deleteRow` | `ExpenseTableRow` | dashboard → [delete flow](../flows/delete-expense.md) |
-| `cellClick` | `{ field, cellData, rowData }` | statistics drill-down; wired only on the category cell |
-| `selectionChange` | `ReadonlyArray<Expense>` | statistics total |
+| `cellClick` | `{ field, cellData, rowData }` | reports a category cell click in the default table |
+| `summarySelectionToggle` | `string \| null` | synchronously reports the category whose checkbox changed, or `null` for the header |
+| `selectionChange` | `ReadonlyArray<Expense>` | emits the selected rows after a change |
 
 `selectionChange` is `outputFromObservable()` over `selection.changed`, delayed with
-`delay(0)`. The delay is required: selection changes happen during the table's own change
-detection, and a synchronous emission into the parent (which renders `total` after the table)
-would risk `NG0100`.
+`delay(0)`. The Statistics page calculates its totals from page data.
+Updating `selected` synchronizes the checkboxes without emitting `summarySelectionToggle`.
+The page calls `focusSelectionHeader()` after keyboard entry into selection mode.
+It focuses the header's Material checkbox.
 
 # Dynamic columns
 
-`columns` is a `computed()` over `dataSource()`, `selectable()`, and `showDateCol()`:
+With the default inputs, the table selects columns in this order:
 
 1. `select` first when `selectable()`;
 2. then each of `date`, `category`, `amount`, `comment`, `isInDebt` that has data and is not
    hidden — "has data" means some row's value is not `undefined`, except `isInDebt`, which
    needs some row with `true`.
 
-So aggregate rows (`category` + `amount`) show two columns, the drill-down projection shows
-`date`, `amount`, `comment`, and the **Debt** column appears only when a debt row exists.
+The Statistics detail projection supplies `date`, `amount`, and `comment`.
+The Dashboard shows the **Debt** column when a debt row exists.
+
+With `summaryMonthLabel`, the table always shows Category, Amount, Share, and
+`vs <label>`. When `selectable` is true, the checkbox column comes first.
+Summary rows use the category name for tracking and expose it in `data-category`.
+The page handles activation of the category button and clicks elsewhere on the row
+outside the checkbox cell.
 
 # Rendering
 
-Amount cells keep their table-cell layout. Their inner `.column-amount-container` uses
+In the default table, amount cells keep their table-cell layout. Their inner `.column-amount-container` uses
 `display: flex` with a 10 px gap to place amount, share, and delta on one line.
 Material's generated `mat-column-amount` class sets the minimum column width from
 `--exp-table-amount-column-min-width`.
@@ -82,8 +90,11 @@ decimal place. Statistics totals use the same format. Date pipes use the global 
   `cloud_upload` icon in the category cell. The icon has `role="img"`, `aria-hidden="false"`,
   and `aria-label="Not sent yet"`. It remains visible when the date column is hidden.
   Pending and failed records use the same display. Plain saved and aggregate rows have no icon.
-- The header checkbox has an indeterminate state; rows whose category is `TOTAL` get no
-  checkbox.
+- A partial selection gives the header checkbox an indeterminate state. The default table
+  omits the row checkbox for `TOTAL`. In the summary, every category has a checkbox in
+  selection mode, including `TOTAL`. An empty summary disables the header checkbox.
+- Summary amounts have weight 600. Shares and signed changes occupy separate right-aligned
+  cells. A previous-only row uses gray text for the category and all three numbers.
 
 # Drag gesture
 

@@ -1,5 +1,10 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-25 - Month summary readability
+
+- Split category amount, share, and monthly change into separate columns. Highlighted Spending and marked previous-month-only rows in gray.
+- Added category selection by long press or keyboard. The checked subtotal is restored when the user returns from category details.
+
 ## 2026-11-21 - Overview reporting period
 
 - Overview creation includes the previous 12 months and the current month in the table and chart.
