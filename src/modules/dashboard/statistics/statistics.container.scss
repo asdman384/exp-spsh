@@ -53,22 +53,22 @@
   gap: 2px;
   font-size: 14px;
   color: #555;
+
+  exp-skeleton {
+    height: 20px;
+  }
+}
+
+.spending-total {
+  width: 110px;
 }
 
 .spending-total strong {
+  display: flex;
+  align-items: center;
   font-size: 24px;
   font-weight: 600;
   color: #222;
-}
-
-.selection-entry:not(:focus-visible) {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  border: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
 }
 
 .statistics-note {

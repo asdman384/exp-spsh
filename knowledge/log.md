@@ -1,5 +1,9 @@
 # Knowledge Bundle Update Log
 
+## 2026-11-27 - Month summary category selection
+
+- Removed the keyboard button for entering category selection. A long press on a category still shows the checkboxes.
+
 ## 2026-11-25 - Month summary readability
 
 - Split category amount, share, and monthly change into separate columns. Highlighted Spending and marked previous-month-only rows in gray.

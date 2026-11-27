@@ -131,7 +131,8 @@ describe('StatisticsContainer', () => {
   }
 
   function enterSelection(): void {
-    click(element<HTMLButtonElement>('button.selection-entry'));
+    component['unchecked'].set(new Set());
+    fixture.detectChanges();
   }
 
   it('renders separate numeric columns, readable signs, and the previous English tab label', () => {
@@ -157,11 +158,10 @@ describe('StatisticsContainer', () => {
     expect(headings()[3]).toBe('vs Dec');
   });
 
-  it('keeps shares and debt constant as the keyboard user selects none, one, and all categories', () => {
+  it('keeps shares and debt constant when selecting none, one, and all categories', () => {
     showMonth();
     enterSelection();
     const header = checkbox('all categories');
-    expect(document.activeElement).toBe(header);
     expect(header.checked).toBe(true);
     expect(header.indeterminate).toBe(false);
     const assertTotals = (spending: string) => {
@@ -226,9 +226,14 @@ describe('StatisticsContainer', () => {
     selectTab(2, 10);
     monthState.set({ status: 'loading', current: [], previous: [] });
     fixture.detectChanges();
-    expect(root.querySelector('.statistics-summary')).toBeNull();
+    expect(total('.spending-total')).toBe('Spending');
+    expect(total('.debt-total')).toBe('Debt');
+    expect(element('.spending-total exp-skeleton')).toBeTruthy();
+    expect(element('.debt-total exp-skeleton')).toBeTruthy();
     expect(root.querySelector('.statistics-note')).toBeNull();
     showMonth([...CURRENT.map(expense => ({ ...expense })), { category: 'New', amount: 2 }]);
+    expect(root.querySelector('exp-skeleton')).toBeNull();
+    expect(total('.debt-total > span:last-child')).toBe('241,67');
     expect(checkbox('Ресторан').checked).toBe(false);
     expect(checkbox('New').checked).toBe(true);
     expect(total('.spending-total strong')).toBe('3\u00a0004,53');
@@ -250,7 +255,7 @@ describe('StatisticsContainer', () => {
     expect(total('.spending-total strong')).toBe('3\u00a0462,63');
   });
 
-  it('shows zero spending and the empty message only for ready data', () => {
+  it('keeps the totals visible and shows the empty message only for ready data', () => {
     showMonth();
     enterSelection();
     showMonth([], []);
@@ -259,7 +264,8 @@ describe('StatisticsContainer', () => {
     expect(total('.statistics-note')).toBe('No entries for this view.');
     monthState.set({ status: 'error', current: [], previous: [] });
     fixture.detectChanges();
-    expect(root.querySelector('.statistics-summary')).toBeNull();
+    expect(total('.spending-total strong')).toBe('0');
+    expect(total('.debt-total > span:last-child')).toBe('0');
     expect(root.querySelector('.statistics-note')).toBeNull();
   });
 
@@ -279,6 +285,35 @@ describe('StatisticsContainer', () => {
     expect(root.querySelector('[aria-label="Back to categories"]')).toBeNull();
     expect(element('expenses-table .category-summary')).toBeTruthy();
     expect(total('.spending-total strong')).toBe('3\u00a0462,63');
+  });
+
+  it('renders each selected month inside the transition and ignores superseded results', () => {
+    selectTab(2, 0);
+    showMonth();
+    const updates: ViewTransitionUpdateCallback[] = [];
+    vi.mocked(document.startViewTransition).mockImplementation(options => {
+      if (typeof options === 'function') updates.push(options);
+      const done = Promise.resolve();
+      return { ready: done, finished: done, updateCallbackDone: done, skipTransition: () => undefined, types: new Set() };
+    });
+
+    selectTab(2, 1);
+    monthState.set({ status: 'loading', current: [], previous: [] });
+    fixture.detectChanges();
+    expect(row('TOTAL')).toBeTruthy();
+    updates[0]();
+    expect(root.querySelector('tr[data-category]')).toBeNull();
+
+    showMonth([{ category: 'February', amount: 20 }], []);
+    selectTab(2, 2);
+    showMonth([{ category: 'March', amount: 30 }], []);
+    expect(updates).toHaveLength(3);
+    expect(root.querySelector('tr[data-category]')).toBeNull();
+    updates[2]();
+    updates[1]();
+    expect(row('March')).toBeTruthy();
+    expect(root.querySelector('tr[data-category="February"]')).toBeNull();
+    expect(total('.spending-total strong')).toBe('30');
   });
 
   describe('row pointer gestures', () => {

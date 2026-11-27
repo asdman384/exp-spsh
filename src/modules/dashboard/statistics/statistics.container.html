@@ -42,13 +42,22 @@
     <h2>{{ category }}</h2>
     <span>{{ detailTotal() | number: '1.0-2' : 'pl' }}</span>
   } @else {
+    @let loading = monthData().status === 'loading';
     <div class="spending-total">
       <span>Spending</span>
-      <strong>{{ summaryTotal() | number: '1.0-2' : 'pl' }}</strong>
+      @if (loading) {
+        <exp-skeleton />
+      } @else {
+        <strong>{{ summaryTotal() | number: '1.0-2' : 'pl' }}</strong>
+      }
     </div>
     <div class="debt-total">
       <span>Debt</span>
-      <span>{{ debtTotal() | number: '1.0-2' : 'pl' }}</span>
+      @if (loading) {
+        <exp-skeleton />
+      } @else {
+        <span> {{ debtTotal() | number: '1.0-2' : 'pl' }}</span>
+      }
     </div>
   }
 </div>
@@ -57,11 +66,7 @@
   @if (selectedCategory() !== undefined) {
     <expenses-table [dataSource]="detailRows()"></expenses-table>
   } @else {
-    @if (unchecked() === null && summaryRows().length) {
-      <button class="selection-entry" type="button" (click)="enterSelection()">Select categories</button>
-    }
     <expenses-table
-      #categoryTable
       [dataSource]="summaryRows()"
       [summaryMonthLabel]="monthTabs[(currentMonthIndex + 11) % 12]"
       [selectable]="unchecked() !== null"
@@ -75,7 +80,7 @@
       (contextmenu)="handleContextMenu($event)"
     ></expenses-table>
   }
-  @if (data.state().status === 'ready' && (selectedCategory() === undefined ? summaryRows() : detailRows()).length === 0) {
+  @if (monthData().status === 'ready' && (selectedCategory() === undefined ? summaryRows() : detailRows()).length === 0) {
     <p class="statistics-note">No entries for this view.</p>
   }
 </div>

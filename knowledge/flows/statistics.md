@@ -35,8 +35,11 @@ January includes December of the previous year. The Dashboard
 expense signal is independent of these reads. Only saved rows enter statistics.
 
 A new selection cancels the previous request and clears its rows. Going offline clears
-the rows and waits for a connection. Reconnect reloads the latest selection. The summary header is hidden while data is
-unavailable. Failure dispatches the fixed `loadExpenses$` toast. Page destruction cancels subscriptions.
+the rows and waits for a connection. Reconnect reloads the latest selection. The Spending
+and Debt labels stay visible. A skeleton replaces each amount while the month loads or
+waits for a connection. A highlight moves from left to right across the skeleton unless
+the user prefers reduced motion. An empty month or a failed request shows zero for both amounts.
+Failure dispatches the fixed `loadExpenses$` toast. Page destruction cancels subscriptions.
 
 # Aggregation
 
@@ -63,8 +66,7 @@ and the checkbox column is hidden.
 
 A short tap on a row opens the category. A stationary half-second press shows the
 checkboxes with every category checked. A vertical scroll leaves the summary open.
-Keyboard users enter selection with the **Select categories** button. Focus moves to the
-header checkbox. Each category has its own details button and, in selection mode, a checkbox.
+Each category has its own details button and, in selection mode, a checkbox.
 
 The page keeps the unchecked category names and passes the checked rows to the table.
 The table reports each checkbox action to the page. Spending sums checked categories.
@@ -80,7 +82,11 @@ month preserves the selection by category name. New categories start checked.
 
 # Animation
 
-The page keeps the straight and reverse View Transitions animations for drill-down and
+When the user changes the month, year, or person, the page uses the browser's default
+crossfade as it clears the old data and displays the new results. Only the latest
+response can update the table.
+
+The page uses the straight and reverse View Transitions animations for drill-down and
 Back. The page renders the new view inside the transition callback. Later navigation or
 a context change invalidates a pending callback. Browsers without View Transitions
 switch views immediately.

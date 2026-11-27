@@ -1,6 +1,6 @@
 {
   "name": "exp-spsh",
-  "version": "0.17.0",
+  "version": "0.17.3",
   "scripts": {
     "harness": "node scripts/harness.mjs",
     "ng": "ng",

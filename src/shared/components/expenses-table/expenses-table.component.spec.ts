@@ -190,8 +190,6 @@ describe('ExpensesTableComponent', () => {
       expect(renderedHeaderColumns(fixture)).toEqual(['select', 'category', 'amount', 'share', 'delta']);
       const toggle = vi.fn();
       component.summarySelectionToggle.subscribe(toggle);
-      component.focusSelectionHeader();
-      expect(document.activeElement).toBe(checkbox('all categories'));
       expect(checkbox('TOTAL').checked).toBe(true);
       checkbox('TOTAL').click();
       expect(toggle.mock.calls).toEqual([['TOTAL']]);

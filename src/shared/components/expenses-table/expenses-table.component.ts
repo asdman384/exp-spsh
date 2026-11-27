@@ -2,9 +2,9 @@ import '@angular/common/locales/global/pl';
 import { SelectionModel } from '@angular/cdk/collections';
 import { CdkDrag, CdkDragEnd, CdkDragMove, CdkDragStart, DragDropModule } from '@angular/cdk/drag-drop';
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, computed, effect, input, output, signal, viewChild } from '@angular/core';
+import { Component, computed, effect, input, output, signal } from '@angular/core';
 import { outputFromObservable } from '@angular/core/rxjs-interop';
-import { MatCheckbox, MatCheckboxModule } from '@angular/material/checkbox';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -26,7 +26,6 @@ export class ExpensesTableComponent {
   protected readonly dateFormat = DATE_FORMAT;
   protected readonly dateTimeFormat = DATE_TIME_FORMAT;
   protected readonly selection = new SelectionModel<Expense>(true, []);
-  private readonly selectionHeader = viewChild<MatCheckbox>('selectionHeader');
 
   protected readonly dragPlaceholderY = signal(0);
   protected readonly dragging = signal(false);
@@ -118,10 +117,6 @@ export class ExpensesTableComponent {
     } else {
       this.selection.toggle(row);
     }
-  }
-
-  focusSelectionHeader(): void {
-    this.selectionHeader()?.focus();
   }
 
   protected isAllSelected(): boolean {

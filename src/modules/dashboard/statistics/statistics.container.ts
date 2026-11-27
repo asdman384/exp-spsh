@@ -9,6 +9,7 @@ import {
   ElementRef,
   Renderer2,
   computed,
+  effect,
   inject,
   signal,
   viewChild,
@@ -21,7 +22,7 @@ import { Store } from '@ngrx/store';
 import { combineLatest, take } from 'rxjs';
 
 import { AppActions, currentSheetSelector, sheetsSelector } from 'src/@state';
-import { ExpensesTableComponent } from 'src/shared/components';
+import { ExpensesTableComponent, SkeletonComponent } from 'src/shared/components';
 import { Sheet } from 'src/shared/models';
 import { StatisticsDataService } from './statistics-data.service';
 import { categoryName, summarizeMonth } from './statistics-summary';
@@ -48,7 +49,7 @@ interface RowPress {
   },
   templateUrl: './statistics.container.html',
   styleUrl: './statistics.container.scss',
-  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent],
+  imports: [DecimalPipe, MatButtonModule, MatIconModule, MatTabsModule, ExpensesTableComponent, SkeletonComponent],
   providers: [StatisticsDataService],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -57,10 +58,12 @@ export class StatisticsContainer implements AfterViewInit {
   private readonly changeDetector = inject(ChangeDetectorRef);
   private readonly renderer = inject(Renderer2);
   private readonly destroyRef = inject(DestroyRef);
-  protected readonly data = inject(StatisticsDataService);
+  private readonly data = inject(StatisticsDataService);
+  // Keep the old rows on screen until the browser captures the outgoing view.
+  protected readonly monthData = signal(this.data.state());
   protected readonly selectedCategory = signal<string | undefined>(undefined);
   protected readonly summaryRows = computed(() => {
-    const { current, previous } = this.data.state();
+    const { current, previous } = this.monthData();
     return summarizeMonth(current, previous).spending;
   });
   protected readonly unchecked = signal<ReadonlySet<string> | null>(null);
@@ -69,24 +72,22 @@ export class StatisticsContainer implements AfterViewInit {
   protected readonly allChecked = computed(() => this.checkedRows().length > 0 && this.checkedRows().length === this.summaryRows().length);
   protected readonly detailRows = computed(() => {
     const category = this.selectedCategory();
-    return this.data
-      .state()
+    return this.monthData()
       .current.filter(row => categoryName(row) === category)
       .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0))
       .map(({ amount, comment, date }) => ({ amount, comment, date }));
   });
   protected readonly detailTotal = computed(() => this.detailRows().reduce((sum, row) => sum + Number(row.amount ?? 0), 0));
   protected readonly debtTotal = computed(() =>
-    this.data
-      .state()
+    this.monthData()
       .current.filter(row => row.isInDebt)
       .reduce((sum, row) => sum + Number(row.amount ?? 0), 0),
   );
   private readonly summaryTable = viewChild<unknown, ElementRef<HTMLElement>>('summaryTable', { read: ElementRef });
   private readonly monthSelector = viewChild.required('monthSelector', { read: MatTabGroup });
-  private readonly categoryTable = viewChild<ExpensesTableComponent>('categoryTable');
   private readonly backButton = viewChild('backButton', { read: ElementRef<HTMLButtonElement> });
   private context?: { sheetId: number; year: number; month: number };
+  private animateMonthChange = false;
   private press?: RowPress;
   private suppressClick = false;
   private navigationId = 0;
@@ -103,6 +104,19 @@ export class StatisticsContainer implements AfterViewInit {
   protected currentMonthIndex = new Date().getMonth();
 
   constructor() {
+    effect(() => {
+      const month = this.data.state();
+      if (!this.animateMonthChange || !document.startViewTransition) {
+        this.monthData.set(month);
+        return;
+      }
+      if (month.status !== 'loading') this.animateMonthChange = false;
+      document.startViewTransition(() => {
+        if (this.destroyRef.destroyed || this.data.state() !== month) return;
+        this.monthData.set(month);
+        this.changeDetector.detectChanges();
+      });
+    });
     this.store.dispatch(AppActions.setTitle({ title: 'Month summary', icon: 'query_stats' }));
     combineLatest([this.store.select(sheetsSelector), this.store.select(currentSheetSelector)])
       .pipe(take(1))
@@ -136,6 +150,7 @@ export class StatisticsContainer implements AfterViewInit {
     const sheet = sheets[sheetIndex];
     if (!sheet) return;
     if (this.context?.sheetId !== sheet.id || this.context.year !== year || this.context.month !== monthIndex) {
+      this.animateMonthChange = this.context !== undefined;
       this.context = { sheetId: sheet.id, year, month: monthIndex };
       this.navigationId++;
       this.cancelPress();
@@ -144,12 +159,6 @@ export class StatisticsContainer implements AfterViewInit {
       this.unchecked.set(null);
     }
     this.data.load(sheet.id, year, monthIndex);
-  }
-
-  protected enterSelection(): void {
-    this.unchecked.set(new Set());
-    this.changeDetector.detectChanges();
-    this.categoryTable()?.focusSelectionHeader();
   }
 
   protected toggleSelection(category: string | null): void {

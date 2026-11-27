@@ -62,6 +62,23 @@ test.beforeEach(async ({ page, context, baseURL }) => {
   await page.goto('./#/dashboard/statistics');
 });
 
+test('selecting another month crossfades the new results', async ({ page, statisticsPage: stats }) => {
+  await expect(stats.cell('Food')).toBeVisible();
+  const crossfade = page.evaluate(
+    () =>
+      new Promise<void>(resolve => {
+        document.addEventListener('animationstart', function onAnimation(event) {
+          if (event.pseudoElement !== '::view-transition-new(root)' || !document.querySelector('.statistics-note')) return;
+          document.removeEventListener('animationstart', onAnimation);
+          resolve();
+        });
+      }),
+  );
+  await stats.tab('Mar').click();
+  await crossfade;
+  await expect(page.getByText('No entries for this view.', { exact: true })).toBeVisible();
+});
+
 test('January spending compares with December and updates when a category is unchecked', async ({ statisticsPage: stats }) => {
   await expect(stats.summary).toHaveText(/Spending ·\s*100\s*Debt · 40/);
   const food = stats.categoryRow('Food');

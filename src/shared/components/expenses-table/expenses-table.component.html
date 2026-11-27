@@ -10,7 +10,6 @@
   <ng-container matColumnDef="select">
     <th mat-header-cell *matHeaderCellDef>
       <mat-checkbox
-        #selectionHeader
         color="primary"
         [aria-label]="summaryMode() ? 'Select all categories' : 'Select all expenses'"
         [disabled]="summaryMode() && dataSource().length === 0"

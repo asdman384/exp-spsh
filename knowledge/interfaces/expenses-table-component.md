@@ -51,8 +51,6 @@ All are `input()` signals; none is required.
 `selectionChange` is `outputFromObservable()` over `selection.changed`, delayed with
 `delay(0)`. The Statistics page calculates its totals from page data.
 Updating `selected` synchronizes the checkboxes without emitting `summarySelectionToggle`.
-The page calls `focusSelectionHeader()` after keyboard entry into selection mode.
-It focuses the header's Material checkbox.
 
 # Dynamic columns
 
